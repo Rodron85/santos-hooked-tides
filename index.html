@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="dark">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Santos Hooked Tides</title>
+<meta name="theme-color" content="#161616">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Santos Tides">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Santos Hooked brand: charcoal, bone and rust; sea-green for water. Layout: one page per topic, bottom tab bar. */
+  --sea: #161616;
+  --panel: #1f1e1d;
+  --card: #252321;
+  --deep: #1a1918;
+  --line: #34312d;
+  --ink: #EDE8DF;
+  --muted: #A8A29A;
+  --rust: #C4552B;
+  --moon: #EDE8DF;
+  --tide: #7FA9A3;
+  --dusk: #D98A4E;
+  --bad: #D9634B;
+  --font-display: "Bebas Neue", "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-label: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { overflow-x: clip; margin: 0; background: var(--sea); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45; }
+.wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; max-width: 860px; margin: 0 auto; padding: calc(16px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(96px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left)); }
+.wrap > *, .page > * { min-width: 0; }
+header.brand { display: grid; gap: 6px; }
+h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(2rem, 10vw, 2.6rem); line-height: .9; margin: 0; letter-spacing: .1em; white-space: nowrap; }
+h1 .hookS { height: .8em; width: auto; vertical-align: baseline; margin-right: .06em; overflow: visible; }
+.tagline { display: flex; align-items: center; gap: 10px; font-family: var(--font-label); font-weight: 500; font-size: .8rem; letter-spacing: .3em; color: var(--muted); text-transform: uppercase; }
+.tagline i { display: block; width: 28px; height: 1px; background: var(--muted); }
+.pagetitle { font-family: var(--font-display); font-weight: 400; font-size: 2rem; letter-spacing: .06em; margin: 4px 0 0; line-height: 1; }
+.pagesub { color: var(--muted); margin: 4px 0 0; font-size: .9rem; }
+h2 { font-family: var(--font-display); font-weight: 400; font-size: 1.45rem; letter-spacing: .06em; margin: 0 0 10px; }
+h3 { font-family: var(--font-label); font-weight: 600; font-size: 1rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 14px 0 6px; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.page { display: none; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+.page.on { display: grid; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+button { font: inherit; color: var(--ink); background: #292623; border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+button:hover { background: #35302b; }
+button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--rust); outline-offset: 2px; }
+a { color: var(--tide); }
+.nav { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+.datelabel { font-weight: 600; text-align: center; flex: 1; }
+.week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.day { padding: 8px 2px; text-align: center; border-radius: 10px; display: grid; gap: 2px; }
+.day.sel { border-color: var(--rust); background: #2c2420; }
+.day .dn { font-family: var(--font-label); font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.day .dd { font-weight: 600; }
+.dots { display: flex; justify-content: center; gap: 2px; }
+.dots i { width: 5px; height: 5px; border-radius: 50%; background: #3d3934; }
+.dots i.on { background: var(--rust); }
+.hero { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; align-items: center; }
+.rating { font-family: var(--font-display); font-size: 2.3rem; letter-spacing: .05em; line-height: 1; }
+.stars { color: var(--rust); letter-spacing: 2px; font-size: 1.1rem; }
+.next { margin-top: 6px; color: var(--muted); }
+.next b { color: var(--ink); }
+.kv { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; }
+.kv span:nth-child(odd) { color: var(--muted); }
+.moonrow { display: flex; gap: 14px; align-items: center; margin-bottom: 10px; }
+.moonname { font-weight: 600; font-size: 1.05rem; }
+.list { display: grid; gap: 8px; }
+.row { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 10px; align-items: start; padding: 9px 10px; border-radius: 9px; background: var(--card); border-left: 3px solid var(--line); }
+.row.major { border-left-color: var(--rust); }
+.row.minor { border-left-color: var(--muted); }
+.row.dawn, .row.dusk { border-left-color: var(--dusk); }
+.row.prime { background: #2e2420; }
+.row .what { font-weight: 600; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.row .chips { margin-top: 4px; }
+.chip { font-size: .74rem; padding: 2px 8px; border-radius: 99px; background: var(--deep); color: var(--muted); border: 1px solid var(--line); }
+.chip.prime { color: var(--ink); background: var(--rust); border-color: var(--rust); font-weight: 600; }
+.chip.tide { color: var(--tide); }
+.chip.size { color: var(--ink); border-color: #5a4a3e; }
+.chip.ret { color: #fff; background: #7a2e20; border-color: #9a3d2a; font-weight: 600; }
+.chip.bait { color: var(--ink); background: #1c1b1a; }
+.timeline { overflow-x: auto; }
+.timeline svg { display: block; width: 100%; min-width: 560px; height: auto; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: .78rem; color: var(--muted); margin-top: 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+td, th { padding: 7px 4px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { font-family: var(--font-label); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-size: .8rem; }
+td.r, th.r { text-align: right; }
+.hw { color: var(--tide); font-weight: 600; }
+.note { color: var(--muted); font-size: .84rem; margin: 10px 0 0; max-width: 65ch; }
+.squid { border-color: #4a2e22; background: linear-gradient(160deg, #2a1f1a, var(--panel)); }
+.calib { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+input[type="time"], input[type="search"] { font: inherit; color: var(--ink); background: var(--deep); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; color-scheme: dark; }
+input[type="search"] { width: 100%; }
+.tidedays { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.tideday { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.tideday.today { border-color: var(--rust); }
+.tideday .tdh { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+.tideday .tdh b { font-family: var(--font-display); font-weight: 400; font-size: 1.3rem; letter-spacing: .05em; }
+.tideday td { padding: 4px 2px; }
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+.cal .dh { font-family: var(--font-label); color: var(--muted); font-size: .75rem; text-align: center; letter-spacing: .06em; }
+.cal button { padding: 6px 0 5px; display: grid; justify-items: center; gap: 3px; border-radius: 8px; }
+.cal button.today { border-color: var(--rust); }
+.cal .num { font-size: .82rem; font-weight: 600; }
+.cal .blank { visibility: hidden; }
+.events { display: grid; gap: 6px; }
+.event { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; background: var(--card); border-radius: 9px; }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.filters button[aria-pressed="true"] { background: var(--rust); border-color: var(--rust); }
+.species { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.fish { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: grid; gap: 7px; align-content: start; }
+.fish.peak { border-color: #7a3a20; }
+.fish .note { margin: 0; }
+.fishhead { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.fishname { font-family: var(--font-display); font-size: 1.45rem; letter-spacing: .05em; line-height: 1; }
+.latin { font-size: .75rem; color: var(--muted); font-style: italic; }
+.season { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 2px; }
+.season i { font-style: normal; font-size: .66rem; text-align: center; padding: 2px 0; border-radius: 3px; background: var(--deep); color: #5a554f; }
+.season i.on { background: #3a3430; color: var(--ink); }
+.season i.pk { background: var(--rust); color: var(--ink); }
+.season i.cur { outline: 1.5px solid var(--tide); }
+.lbl { font-family: var(--font-label); font-size: .74rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.rulebox { display: grid; gap: 8px; }
+.big { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.stat { background: var(--card); border-radius: 10px; padding: 10px 12px; border-left: 3px solid var(--rust); }
+.stat b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 1.7rem; letter-spacing: .04em; line-height: 1.05; }
+.stat span { color: var(--muted); font-size: .8rem; }
+.warn { border-left: 3px solid var(--bad); background: #2a1d1a; padding: 10px 12px; border-radius: 9px; font-size: .9rem; }
+ul.tight { margin: 6px 0 0; padding-left: 18px; }
+ul.tight li { margin: 3px 0; }
+.tablewrap { overflow-x: auto; }
+nav.tabs { position: sticky; top: 0; z-index: 10; background: rgba(22,22,22,.97); border-bottom: 1px solid var(--line); margin: 0 -16px; padding: calc(4px + env(safe-area-inset-top)) 8px 4px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+nav.tabs a { display: grid; justify-items: center; gap: 2px; padding: 6px 0; color: var(--muted); text-decoration: none; font-family: var(--font-label); font-size: .74rem; letter-spacing: .06em; text-transform: uppercase; border-radius: 8px; }
+nav.tabs a svg { width: 22px; height: 22px; }
+nav.tabs a.on { color: var(--ink); }
+nav.tabs a.on svg { color: var(--rust); }
+button.small, a.btnlink { font-size: .8rem; padding: 4px 10px; border-radius: 99px; }
+a.btnlink { display: inline-block; text-decoration: none; color: var(--ink); background: #292623; border: 1px solid var(--line); }
+.livebar { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: .82rem; margin: -4px 0 10px; }
+.livebar button { margin-left: auto; }
+.dotlive, .dotoff { width: 8px; height: 8px; border-radius: 50%; background: #6fae7a; }
+.dotoff { background: var(--muted); }
+.wxnow { display: flex; gap: 16px; align-items: center; }
+.wxdir { display: grid; justify-items: center; gap: 2px; color: var(--tide); }
+.wxbig { font-family: var(--font-display); font-size: 2.6rem; letter-spacing: .04em; line-height: 1; }
+.wxbig small { font-size: 1.1rem; color: var(--muted); }
+.wxmsg { padding: 8px 10px; border-radius: 8px; font-size: .88rem; background: var(--card); border-left: 3px solid var(--tide); }
+.wxmsg.warn { border-left-color: var(--dusk); }
+.wxmsg.bad { border-left-color: var(--bad); background: #2a1d1a; }
+.hours { display: flex; gap: 4px; overflow-x: auto; padding: 6px 0 4px; }
+.hr { flex: 0 0 52px; display: grid; justify-items: center; gap: 2px; padding: 6px 2px; border-radius: 8px; background: var(--card); font-size: .78rem; color: var(--tide); }
+.hr .mono { color: var(--muted); font-size: .7rem; }
+.hr b { color: var(--ink); font-size: .95rem; }
+.hr .g { color: var(--muted); font-size: .7rem; }
+.hr .rp { color: #8fb0d0; font-size: .7rem; min-height: 1em; }
+.hr.good { background: #3a2620; box-shadow: inset 0 -3px 0 var(--rust); }
+.hr.nowh { outline: 1.5px solid var(--ink); }
+.tdwx { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 2px 0 6px; font-size: .8rem; color: var(--muted); }
+.tdwx svg { color: var(--tide); }
+.srcline { font-size: .8rem; color: var(--tide); margin: 4px 0 0; }
+form.logf { display: grid; gap: 10px; }
+.frow { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field label { font-family: var(--font-label); font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.field input, .field select, .field textarea { font: inherit; color: var(--ink); background: var(--deep); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; color-scheme: dark; width: 100%; min-width: 0; }
+.field textarea { min-height: 60px; resize: vertical; }
+button.primary { background: var(--rust); border-color: var(--rust); font-weight: 600; }
+.okmsg { padding: 8px 10px; border-radius: 8px; background: var(--card); border-left: 3px solid var(--rust); font-size: .9rem; }
+.catch { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
+.catch img { width: 88px; height: 88px; object-fit: cover; border-radius: 8px; }
+.cbody { display: grid; gap: 6px; grid-column: auto; }
+.catch:not(:has(img)) .cbody { grid-column: 1 / -1; }
+.morelist { display: grid; gap: 10px; }
+.morelist a { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: center; padding: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; text-decoration: none; color: var(--ink); }
+.morelist a svg { color: var(--rust); width: 30px; height: 30px; }
+.morelist a b { font-family: var(--font-display); font-weight: 400; font-size: 1.4rem; letter-spacing: .05em; display: block; line-height: 1.1; }
+.morelist a span { color: var(--muted); font-size: .85rem; }
+.rig { display: grid; gap: 8px; }
+.rig svg { width: 100%; max-width: 420px; height: auto; background: var(--deep); border-radius: 10px; }
+ol.steps { margin: 4px 0 0; padding-left: 20px; }
+ol.steps li { margin: 4px 0; }
+.back { font-size: .85rem; }
+.locbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.locbar select { flex: 1; min-width: 0; font: inherit; font-weight: 600; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; color-scheme: dark; }
+
+@media (prefers-reduced-motion: no-preference) { button { transition: background .15s; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="brand">
+    <h1 aria-label="Santos Hooked"><svg class="hookS" viewBox="14 -2 96 162" aria-hidden="true"><circle cx="80" cy="8" r="8" fill="none" stroke="var(--rust)" stroke-width="5"/><path d="M80 24 C30 24 22 44 26 64 C32 92 98 84 98 120 C98 156 44 162 28 134" fill="none" stroke="var(--rust)" stroke-width="18"/><path d="M28 134 L52 122" fill="none" stroke="var(--rust)" stroke-width="13"/></svg>ANTOS HOOKED</h1>
+    <div class="tagline"><i></i>Tides · Moon · Bites<i></i></div>
+  </header>
+  <nav class="tabs" aria-label="Pages">
+  <a href="#today" data-p="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>Today</a>
+  <a href="#tides" data-p="tides"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 9c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2M2 15c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2"/></svg>Tides</a>
+  <a href="#fish" data-p="fish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12c3-5 9-7 14-3l5-3-1.5 6L21 18l-5-3c-5 4-11 2-14-3z"/><circle cx="7" cy="11" r=".8" fill="currentColor"/></svg>Fish</a>
+  <a href="#spots" data-p="spots"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s7-6.5 7-12a7 7 0 0 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>Spots</a>
+  <a href="#log" data-p="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>Log</a>
+  <a href="#more" data-p="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>More</a>
+</nav>
+  <div class="locbar" id="locbar"></div>
+
+  <!-- TODAY -->
+  <section class="page" id="p-today">
+    <div class="nav">
+      <button id="prev" aria-label="Previous day">‹</button>
+      <div class="datelabel" id="datelabel"></div>
+      <button id="next" aria-label="Next day">›</button>
+      <button id="today">Today</button>
+    </div>
+    <div class="week" id="week"></div>
+    <div class="panel hero" id="hero"></div>
+    <div class="panel" id="wx"></div>
+    <div class="panel">
+      <h2>Day at a glance</h2>
+      <div class="timeline" id="timeline"></div>
+      <div class="legend">
+        <span><i style="background:var(--rust)"></i>Major feeding (moon overhead / underfoot)</span>
+        <span><i style="background:var(--muted)"></i>Minor feeding (moonrise / moonset)</span>
+        <span><i style="background:var(--tide)"></i>Tide height (m)</span>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Best times to fish</h2>
+      <div class="list" id="windows"></div>
+    </div>
+    <div class="panel squid" id="squid"></div>
+    <div class="panel">
+      <h2>Bite now</h2>
+      <div class="chips" id="topfish"></div>
+      <p class="note"><a href="#fish">All fish, baits and sizes →</a></p>
+    </div>
+  </section>
+
+  <!-- TIDES -->
+  <section class="page" id="p-tides">
+    <div><div class="pagetitle" id="tidetitle">Tides · Southampton</div><p class="pagesub" id="tidesub"></p><p class="srcline" id="tidesrc"></p></div>
+    <div class="tidedays" id="tidedays"></div>
+    <div class="panel">
+      <h2>Line up the tides</h2>
+      <p class="note" style="margin-top:0">Southampton has a double high water: the tide rises to a 1st high, stays high for 2–3 hours, then makes a 2nd high before a quick ebb. Low water is the sharpest point, so the app times everything from it. Low waters are worked out from the moon and tuned to Southampton tide tables (usually within 10 min); a live ocean model is only used if it agrees to within 20 min, because in the Solent it runs about an hour early. The two highs are less exact (within about 30 min). Check <a href="https://easytide.admiralty.co.uk/" target="_blank" rel="noopener">Admiralty EasyTide</a> (easytide.admiralty.co.uk) once, type today's first low water here (Southampton) or first high water (elsewhere), and the app lines itself up.</p>
+      <div class="calib">
+        <label for="hwinput" id="hwlabel">Today's first low water:</label>
+        <input type="time" id="hwinput">
+        <button id="calib">Line up tides</button>
+        <button id="reset">Reset</button>
+        <span class="note" id="offsetnote" style="margin:0"></span>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Fishing the tide</h2>
+      <ul class="tight">
+        <li><b>Springs</b> (a day or two after new and full moon): big range, strong flow, food stirred up. Best for bass, rays, cod and smoothhound.</li>
+        <li><b>Neaps</b>: gentle flow, clearer water. Easier for float fishing, mullet, wrasse and light lures.</li>
+        <li><b>Flood tide</b> into high water is the classic shore window in the Solent; the first of the ebb often fishes well too.</li>
+        <li>Southampton's high-water stand between the 1st and 2nd high gives you 2–3 extra hours at the top of the tide. The ebb that follows is fast.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- MOON -->
+  <section class="page" id="p-moon">
+    <a class="back" href="#more">‹ More</a>
+    <div><div class="pagetitle">Moon</div><p class="pagesub">Phase, rise and set, and the best days ahead</p></div>
+    <div class="panel" id="moonnow"></div>
+    <div class="panel">
+      <h2>Next 4 weeks</h2>
+      <div class="cal" id="cal"></div>
+      <p class="note">Dots show the day's rating. Tap a day to open it.</p>
+    </div>
+    <div class="panel">
+      <h2>Coming up</h2>
+      <div class="events" id="events"></div>
+    </div>
+    <div class="panel">
+      <h2>How the moon affects fishing</h2>
+      <ul class="tight">
+        <li><b>Major periods</b>: about 2 hours around the moon passing overhead or underfoot. Fish feed hardest then.</li>
+        <li><b>Minor periods</b>: about 1 hour around moonrise and moonset.</li>
+        <li><b>New and full moon</b> give the strongest days, and they also bring spring tides.</li>
+        <li>When a major or minor period lands on <b>dawn or dusk</b>, it's prime time.</li>
+        <li>For <b>squid at night</b>, a dark sky (new moon, or moon below the horizon) makes pier lights work best.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- FISH -->
+  <section class="page" id="p-fish">
+    <div><div class="pagetitle">Fish of the Solent</div><p class="pagesub" id="fishsub"></p></div>
+    <div class="filters">
+      <button id="f-season" aria-pressed="true">In season</button>
+      <button id="f-all" aria-pressed="false">All species</button>
+      <input type="search" id="f-q" placeholder="Search fish or bait" aria-label="Search fish or bait">
+    </div>
+    <div class="species" id="species"></div>
+    <p class="note">Species and seasons are for the Solent and the south coast. Sizes are the legal minimum to keep a fish in the Southern IFCA area (Hampshire, Dorset and the Isle of Wight), measured from the tip of the snout to the end of the tail. See Rules for details.</p>
+  </section>
+
+  <!-- RULES -->
+  <section class="page" id="p-rules">
+    <a class="back" href="#more">‹ More</a>
+    <div><div class="pagetitle">Rules · what you can keep</div><p class="pagesub">Recreational sea angling, Southern IFCA area. Checked 7 Nov 2026.</p></div>
+    <div id="rulesregion"></div>
+
+    <div class="panel rulebox">
+      <h2>Bass</h2>
+      <div class="big">
+        <div class="stat"><b>42 cm</b><span>minimum size</span></div>
+        <div class="stat"><b>3 a day</b><span>per angler, Apr–Jan</span></div>
+        <div class="stat"><b>Feb–Mar</b><span>catch and release only</span></div>
+      </div>
+      <ul class="tight">
+        <li>Applies from the shore and from a boat. No bass may be taken with fixed or drift nets, and bass caught for fun can never be sold.</li>
+        <li><b>Southampton Water bass nursery area</b>, 30 April to 1 November: from a boat you must not target bass or use sandeel as bait for any fish. Fawley power station outfall: all year. Shore fishing is not covered, but return small bass there.</li>
+      </ul>
+    </div>
+
+    <div class="panel rulebox">
+      <h2>Pollack</h2>
+      <div class="big">
+        <div class="stat"><b>30 cm</b><span>minimum size</span></div>
+        <div class="stat"><b>3 a day</b><span>new limit for 2026</span></div>
+      </div>
+      <p class="note" style="margin:0">The UK and EU agreed a recreational limit of 3 pollack per angler per day for 2026. Check gov.uk that it's in force before you keep a fourth.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Must go back</h2>
+      <ul class="tight">
+        <li><b>European eel</b>: anglers can't keep them (Environment Agency byelaw).</li>
+        <li><b>Tope</b>: tope caught on rod and line must be released (national rules).</li>
+        <li><b>Shad</b> (allis and twaite): protected.</li>
+        <li><b>Undulate ray</b>: endangered; release it alive (Angling Trust advice).</li>
+        <li><b>Any fish under its minimum size</b>: return it to the sea straight away.</li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <h2>Minimum sizes · fish</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Species</th><th class="r">Legal min</th><th class="r">Recommended</th></tr></thead>
+        <tbody id="sizetable"></tbody>
+      </table></div>
+      <p class="note">Legal = the law. Recommended = the size at which most fish have bred at least once (Angling Trust guidance). There's no legal daily limit for other species, but take only what you'll eat.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Minimum sizes · shellfish</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Species</th><th>Measure</th><th class="r">Min size</th></tr></thead>
+        <tbody>
+          <tr><td>Lobster</td><td>Carapace length</td><td class="r mono">87 mm</td></tr>
+          <tr><td>Edible (brown) crab</td><td>Shell width</td><td class="r mono">140 mm</td></tr>
+          <tr><td>Spider crab</td><td>Shell length</td><td class="r mono">M 130 / F 120 mm</td></tr>
+          <tr><td>Velvet crab</td><td>Shell width</td><td class="r mono">65 mm</td></tr>
+          <tr><td>King scallop</td><td>Shell width</td><td class="r mono">110 mm</td></tr>
+          <tr><td>Queen scallop</td><td>Shell width</td><td class="r mono">40 mm</td></tr>
+          <tr><td>Whelk</td><td>Shell length</td><td class="r mono">45 mm</td></tr>
+          <tr><td>Razor clam</td><td>Shell length</td><td class="r mono">100 mm</td></tr>
+          <tr><td>Mussel</td><td>Shell length</td><td class="r mono">50 mm</td></tr>
+          <tr><td>Oyster</td><td>Won't pass a ring</td><td class="r mono">70 mm</td></tr>
+          <tr><td>Cockle</td><td>Won't pass a square gauge</td><td class="r mono">23.8 mm</td></tr>
+        </tbody>
+      </table></div>
+      <ul class="tight">
+        <li>Never keep lobsters carrying eggs (berried) or with a V-notch in the tail.</li>
+        <li>The crab and scallop sizes are for the eastern Channel (ICES area 7d), which includes the Solent.</li>
+      </ul>
+      <div class="warn" style="margin-top:10px">Shellfish from Southampton Water and parts of the Solent can be unsafe to eat because of water quality. Check the local shellfish classification before cooking anything you gather.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Sources</h2>
+      <ul class="tight">
+        <li><a href="https://www.southern-ifca.gov.uk/minimum-sizes" target="_blank" rel="noopener">Southern IFCA · minimum sizes</a></li>
+        <li><a href="https://www.southern-ifca.gov.uk/bass-regulations" target="_blank" rel="noopener">Southern IFCA · bass rules and nursery areas</a></li>
+        <li><a href="https://www.gov.uk/government/publications/minimum-conservation-reference-sizes-mcrs/minimum-conservation-reference-sizes-mcrs-in-uk-waters." target="_blank" rel="noopener">GOV.UK · minimum sizes in UK waters</a></li>
+        <li><a href="https://www.gov.uk/government/publications/bass-industry-guidance-2026/bass-fishing-guidance-2025" target="_blank" rel="noopener">GOV.UK · bass fishing guidance</a></li>
+        <li><a href="https://anglingtrust.net/minimum-conservation-reference-sizes-mcrss/" target="_blank" rel="noopener">Angling Trust · recommended sizes</a></li>
+      </ul>
+      <p class="note">Rules change. If in doubt, call Southern IFCA on 01202 721373. You can also ask them for a free fish measuring sticker.</p>
+    </div>
+  </section>
+
+  <!-- SPOTS -->
+  <section class="page" id="p-spots">
+    <div><div class="pagetitle">Spots</div><p class="pagesub" id="spotsub"></p></div>
+    <div class="filters">
+      <button id="s-month" aria-pressed="true">Good this month</button>
+      <button id="s-all" aria-pressed="false">All spots</button>
+    </div>
+    <div class="species" id="spots"></div>
+    <p class="note">Access, parking and fishing rules can change. Follow local signs, and check tide times before walking out on spits or mud.</p>
+  </section>
+
+  <!-- LOG -->
+  <section class="page" id="p-log">
+    <div><div class="pagetitle">Catch log</div><p class="pagesub">Saved on this phone only. Tide, moon and wind are added automatically.</p></div>
+    <div class="panel">
+      <h2>Add a catch</h2>
+      <form class="logf" id="logform">
+        <div class="frow">
+          <div class="field"><label for="l-sp">Species</label><select id="l-sp"></select></div>
+          <div class="field"><label for="l-len">Length (cm)</label><input id="l-len" type="number" inputmode="decimal" step="0.5" min="0"></div>
+          <div class="field"><label for="l-wt">Weight (kg)</label><input id="l-wt" type="number" inputmode="decimal" step="0.01" min="0"></div>
+        </div>
+        <div class="note" id="l-hint" style="margin:-4px 0 0"></div>
+        <div class="frow">
+          <div class="field"><label for="l-bait">Bait or lure</label><input id="l-bait" list="l-baits" autocomplete="off"><datalist id="l-baits"></datalist></div>
+          <div class="field"><label for="l-spot">Spot</label><select id="l-spot"></select></div>
+        </div>
+        <div class="frow">
+          <div class="field"><label for="l-time">When</label><input id="l-time" type="datetime-local"></div>
+          <div class="field"><label for="l-kept">Kept or released</label><select id="l-kept"><option>Released</option><option>Kept</option></select></div>
+        </div>
+        <div class="field"><label for="l-photo">Photo</label><input id="l-photo" type="file" accept="image/*"></div>
+        <div class="field"><label for="l-notes">Notes</label><textarea id="l-notes" placeholder="Who caught it, the rig, anything worth remembering"></textarea></div>
+        <div class="chips"><button type="submit" class="primary">Save catch</button><button type="button" id="l-export">Export CSV</button></div>
+      </form>
+      <div class="okmsg" id="logmsg" style="display:none;margin-top:10px"></div>
+    </div>
+    <div class="panel"><h2>Your season</h2><div id="logstats"></div></div>
+    <div class="list" id="loglist"></div>
+  </section>
+
+  <!-- RIGS & KNOTS -->
+  <section class="page" id="p-rigs">
+    <a class="back" href="#more">‹ More</a>
+    <div><div class="pagetitle">Rigs &amp; knots</div><p class="pagesub">The rigs that cover most Solent shore fishing</p></div>
+
+    <div class="panel rig">
+      <h2>Two-hook flapper</h2>
+      <svg viewBox="0 0 300 250" role="img" aria-label="Two-hook flapper rig diagram">
+        <g stroke="#EDE8DF" stroke-width="2" fill="none">
+          <line x1="120" y1="8" x2="120" y2="22"/><line x1="120" y1="34" x2="120" y2="196"/>
+          <path d="M120 80 L205 108"/><path d="M120 140 L205 168"/>
+          <path d="M205 108 v12 a6 6 0 0 1 -12 0 l3 -3"/><path d="M205 168 v12 a6 6 0 0 1 -12 0 l3 -3"/>
+          <path d="M116 196 h8 v8 h-8z"/>
+        </g>
+        <g fill="#C4552B"><circle cx="120" cy="28" r="5"/><circle cx="120" cy="72" r="4"/><circle cx="120" cy="88" r="4"/><circle cx="120" cy="132" r="4"/><circle cx="120" cy="148" r="4"/></g>
+        <path d="M120 206 c-12 14 -12 32 0 34 c12 -2 12 -20 0 -34z" fill="#7a7068"/>
+        <g fill="#A8A29A" font-size="11" font-family="Barlow Condensed, sans-serif"><text x="132" y="18">Shock leader</text><text x="132" y="32">Swivel</text><text x="28" y="84">Beads + swivel</text><text x="214" y="122">Hook</text><text x="172" y="76">Snood 15–20 cm</text><text x="28" y="144">Beads + swivel</text><text x="132" y="204">Lead clip</text><text x="140" y="232">Lead</text></g>
+      </svg>
+      <p class="note" style="margin:0">Whiting, pouting, dab, flounder, dogfish. Size 1–2 hooks, 50–60 lb rig body. Plain lead lets the bait roll for flounder; a grip lead holds in fast tide.</p>
+    </div>
+
+    <div class="panel rig">
+      <h2>Pulley pennel</h2>
+      <svg viewBox="0 0 300 250" role="img" aria-label="Pulley pennel rig diagram">
+        <g stroke="#EDE8DF" stroke-width="2" fill="none">
+          <line x1="120" y1="8" x2="120" y2="36"/><line x1="130" y1="44" x2="130" y2="196"/>
+          <path d="M120 36 Q170 50 185 70 L185 168"/>
+          <path d="M185 168 v12 a6 6 0 0 1 -12 0 l3 -3"/><path d="M185 192 v12 a6 6 0 0 1 -12 0 l3 -3"/>
+          <path d="M185 180 v12"/>
+          <path d="M126 196 h8 v8 h-8z"/><path d="M130 160 l8 6"/>
+        </g>
+        <g fill="#C4552B"><circle cx="120" cy="40" r="6"/></g>
+        <path d="M130 206 c-12 14 -12 32 0 34 c12 -2 12 -20 0 -34z" fill="#7a7068"/>
+        <g fill="#A8A29A" font-size="11" font-family="Barlow Condensed, sans-serif"><text x="132" y="18">Shock leader</text><text x="26" y="44">Pulley bead/swivel</text><text x="196" y="110">Trace 60–80 lb</text><text x="196" y="186">Two hooks (pennel)</text><text x="56" y="166">Bait clip</text><text x="142" y="204">Lead link</text><text x="150" y="232">Grip lead</text></g>
+      </svg>
+      <p class="note" style="margin:0">Bass, rays, smoothhound and conger over rough ground. The pulley pulls the lead up off the snags when you wind in. Hooks 2/0–4/0.</p>
+    </div>
+
+    <div class="panel rig">
+      <h2>Running ledger</h2>
+      <svg viewBox="0 0 300 230" role="img" aria-label="Running ledger rig diagram">
+        <g stroke="#EDE8DF" stroke-width="2" fill="none">
+          <line x1="90" y1="8" x2="90" y2="110"/>
+          <path d="M90 122 L250 190"/>
+          <path d="M250 190 v12 a6 6 0 0 1 -12 0 l3 -3"/>
+          <path d="M90 60 h-26"/>
+        </g>
+        <rect x="84" y="52" width="12" height="16" rx="2" fill="#4a453f"/>
+        <path d="M64 64 c-10 12 -10 26 0 28 c10 -2 10 -16 0 -28z" fill="#7a7068"/>
+        <g fill="#C4552B"><circle cx="90" cy="98" r="4"/><circle cx="90" cy="116" r="5"/></g>
+        <g fill="#A8A29A" font-size="11" font-family="Barlow Condensed, sans-serif"><text x="102" y="18">Main line</text><text x="102" y="62">Lead slider (boom)</text><text x="102" y="102">Bead</text><text x="102" y="120">Swivel</text><text x="150" y="144">Trace 60–90 cm</text><text x="210" y="222">Hook</text></g>
+      </svg>
+      <p class="note" style="margin:0">The fish can take line without feeling the lead. Great for flounder in the estuaries, bass and mullet. Hook size 1 to 2/0 to suit the bait.</p>
+    </div>
+
+    <div class="panel rig">
+      <h2>Float rig (squid, garfish, mackerel)</h2>
+      <svg viewBox="0 0 300 250" role="img" aria-label="Float rig diagram">
+        <path d="M0 84 q15 -6 30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0" stroke="#7FA9A3" stroke-width="2" fill="none"/>
+        <g stroke="#EDE8DF" stroke-width="2" fill="none"><line x1="120" y1="6" x2="120" y2="60"/><line x1="120" y1="112" x2="120" y2="210"/></g>
+        <path d="M116 26 l8 0" stroke="#EDE8DF" stroke-width="4"/>
+        <circle cx="120" cy="40" r="4" fill="#C4552B"/>
+        <path d="M120 56 c-9 8 -9 40 0 56 c9 -16 9 -48 0 -56z" fill="#C4552B"/>
+        <rect x="116" y="132" width="8" height="12" rx="2" fill="#7a7068"/>
+        <circle cx="120" cy="154" r="4" fill="#C4552B"/><circle cx="120" cy="164" r="4" fill="#EDE8DF"/>
+        <path d="M112 210 h16 l6 14 h-28z" fill="#D98A4E"/><path d="M106 226 l-6 10 M114 226 l-3 12 M126 226 l3 12 M134 226 l6 10" stroke="#EDE8DF" stroke-width="1.5"/>
+        <g fill="#A8A29A" font-size="11" font-family="Barlow Condensed, sans-serif"><text x="134" y="30">Stop knot (sets depth)</text><text x="134" y="44">Bead</text><text x="138" y="76">Float</text><text x="134" y="142">Drilled bullet</text><text x="134" y="168">Bead + swivel</text><text x="134" y="192">Trace 60 cm</text><text x="148" y="222">Squid jig or baited hook</text></g>
+      </svg>
+      <p class="note" style="margin:0">Set the depth with the stop knot: 1–3 m for squid under lights, shallower for garfish. Use a size 4–6 hook with a mackerel strip for garfish and mackerel.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Knots</h2>
+      <h3>Improved clinch: hooks and swivels on mono</h3>
+      <ol class="steps"><li>Pass the line through the eye.</li><li>Wrap the tag end around the main line 5–7 times.</li><li>Push the tag through the small loop by the eye, then back through the big loop.</li><li>Wet it, pull tight slowly, trim.</li></ol>
+      <h3>Palomar: best for braid</h3>
+      <ol class="steps"><li>Double 15 cm of line and push the loop through the eye.</li><li>Tie a loose overhand knot with the doubled line.</li><li>Pass the hook or swivel through the loop.</li><li>Wet it, pull both ends tight, trim.</li></ol>
+      <h3>Uni knot: all-rounder</h3>
+      <ol class="steps"><li>Pass the line through the eye and lay the tag back alongside, making a loop.</li><li>Wrap the tag around both lines inside the loop 5–6 times.</li><li>Wet it and pull the tag to snug the turns.</li><li>Pull the main line to slide the knot down to the eye. Trim.</li></ol>
+      <h3>Uni-to-uni: main line to shock leader</h3>
+      <ol class="steps"><li>Overlap the two ends by about 20 cm.</li><li>Tie a uni knot with the leader around the main line (5 turns).</li><li>Tie a uni knot with the main line around the leader (8–10 turns if it's braid).</li><li>Wet both, pull them together, trim close.</li></ol>
+      <h3>Stop knot: for float rigs</h3>
+      <ol class="steps"><li>Lay a short piece of line or power gum along the main line, making a loop.</li><li>Wrap the tag through the loop 4–5 times.</li><li>Pull tight and leave the ends 1 cm long so they pass through the rod rings.</li></ol>
+    </div>
+
+    <div class="panel">
+      <h2>Quick guide</h2>
+      <ul class="tight">
+        <li><b>Shock leader:</b> 10 lb breaking strain for every 1 oz of lead (5 oz lead = 50 lb leader). Always use one when casting hard; a snapped lead can kill.</li>
+        <li><b>Hooks:</b> size 1–2 for whiting, pouting, dab and flounder; 2–6 for plaice and sole; 6–10 for mullet and bream; 1/0–3/0 for bass and smoothhound; 3/0–6/0 for rays and conger.</li>
+        <li><b>Leads:</b> grip leads in fast tide (Calshot, Hurst); plain leads to roll a bait in the estuaries.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- MORE -->
+  <section class="page" id="p-more">
+    <div><div class="pagetitle">More</div></div>
+    <div class="morelist">
+      <a href="#moon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><div><b>Moon</b><span>Phases, calendar, best days and spring tides</span></div></a>
+      <a href="#rules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8l2-2 13 13-2 2zM7 6l2 2M9 4l2 2M11 6l1 1M13 8l2 2M15 10l1 1"/></svg><div><b>Rules</b><span>Legal sizes, bag limits, bass nursery areas, shellfish</span></div></a>
+      <a href="#rigs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v12a4 4 0 1 1-4-4"/><circle cx="12" cy="2.5" r="1"/></svg><div><b>Rigs &amp; knots</b><span>Flapper, pulley, ledger and float rigs, plus 5 knots</span></div></a>
+    </div>
+    <div class="panel">
+      <h2>About</h2>
+      <p class="note" style="margin-top:0">Wind, weather, waves and tides away from the Solent: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Made for Santos Hooked.</p>
+    </div>
+  </section>
+</div>
+
+
+
+<script>
+(function () {
+  let LAT = 50.9097, LNG = -1.4044;
+  const HWI_MIN = 670; // lunitidal interval estimate for Southampton (first HW)
+  const MEAN = 2.6;    // mean sea level above chart datum, m
+  const rad = Math.PI / 180, dayMs = 864e5, J1970 = 2440588, J2000 = 2451545, MIN = 6e4, HOUR = 36e5;
+  const e = rad * 23.4397; let phi = rad * LAT, lw = rad * -LNG;
+
+  // ---------- astronomy (low precision, after suncalc / Meeus) ----------
+  const toDays = t => t / dayMs - 0.5 + J1970 - J2000;
+  const ra = (l, b) => Math.atan2(Math.sin(l) * Math.cos(e) - Math.tan(b) * Math.sin(e), Math.cos(l));
+  const dec = (l, b) => Math.asin(Math.sin(b) * Math.cos(e) + Math.cos(b) * Math.sin(e) * Math.sin(l));
+  const alt = (H, d) => Math.asin(Math.sin(phi) * Math.sin(d) + Math.cos(phi) * Math.cos(d) * Math.cos(H));
+  const sidereal = d => rad * (280.16 + 360.9856235 * d) - lw;
+  function sunCoords(d) {
+    const M = rad * (357.5291 + 0.98560028 * d);
+    const C = rad * (1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M));
+    const L = M + C + rad * 102.9372 + Math.PI;
+    return { dec: dec(L, 0), ra: ra(L, 0) };
+  }
+  function moonCoords(d) {
+    const L = rad * (218.316 + 13.176396 * d), M = rad * (134.963 + 13.064993 * d), F = rad * (93.272 + 13.22935 * d);
+    const l = L + rad * 6.289 * Math.sin(M), b = rad * 5.128 * Math.sin(F);
+    return { ra: ra(l, b), dec: dec(l, b), dist: 385001 - 20905 * Math.cos(M) };
+  }
+  const norm = H => ((H + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+  function sunAlt(t) { const d = toDays(t), c = sunCoords(d); return alt(sidereal(d) - c.ra, c.dec) / rad; }
+  function moonState(t) { const d = toDays(t), c = moonCoords(d), H = sidereal(d) - c.ra; return { alt: alt(H, c.dec) / rad, H: norm(H) }; }
+  function moonPhase(t) {
+    const d = toDays(t), s = sunCoords(d), m = moonCoords(d), sd = 149598000;
+    const p = Math.acos(Math.sin(s.dec) * Math.sin(m.dec) + Math.cos(s.dec) * Math.cos(m.dec) * Math.cos(s.ra - m.ra));
+    const inc = Math.atan2(sd * Math.sin(p), m.dist - sd * Math.cos(p));
+    const ang = Math.atan2(Math.cos(s.dec) * Math.sin(s.ra - m.ra), Math.sin(s.dec) * Math.cos(m.dec) - Math.cos(s.dec) * Math.sin(m.dec) * Math.cos(s.ra - m.ra));
+    return { frac: (1 + Math.cos(inc)) / 2, phase: 0.5 + 0.5 * inc * (ang < 0 ? -1 : 1) / Math.PI };
+  }
+  function crossings(a, b, fn, thr, step) {
+    const out = []; let pv = fn(a) - thr;
+    for (let t = a + step; t <= b; t += step) {
+      const cv = fn(t) - thr;
+      if ((pv < 0) !== (cv < 0)) out.push({ t: t - step + (-pv) / (cv - pv) * step, type: cv > pv ? 'rise' : 'set' });
+      pv = cv;
+    }
+    return out;
+  }
+  function transits(a, b) {
+    const step = 10 * MIN, out = []; let pv = moonState(a).H;
+    for (let t = a + step; t <= b; t += step) {
+      const cv = moonState(t).H;
+      if (pv < 0 && cv >= 0 && cv - pv < 1) out.push({ t: t - step + (-pv) / (cv - pv) * step, type: 'upper' });
+      else if (pv > 2 && cv < -2) out.push({ t: t - step + (Math.PI - pv) / (cv + 2 * Math.PI - pv) * step, type: 'lower' });
+      pv = cv;
+    }
+    return out;
+  }
+
+  // ---------- UK time ----------
+  function lastSun(y, mo) { const d = new Date(Date.UTC(y, mo + 1, 0)); return Date.UTC(y, mo, d.getUTCDate() - d.getUTCDay(), 1); }
+  function ukOff(t) { const y = new Date(t).getUTCFullYear(); return (t >= lastSun(y, 2) && t < lastSun(y, 9)) ? HOUR : 0; }
+  function ukMidnight(y, m, d) { const t = Date.UTC(y, m, d); return t - ukOff(t); }
+  function ukParts(t) { const x = new Date(t + ukOff(t)); return { y: x.getUTCFullYear(), m: x.getUTCMonth(), d: x.getUTCDate(), dow: x.getUTCDay(), hh: x.getUTCHours(), mm: x.getUTCMinutes() }; }
+  const pad = n => String(n).padStart(2, '0');
+  function fmt(t) { const p = ukParts(t); return pad(p.hh) + ':' + pad(p.mm); }
+  const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const MONTH = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  // ---------- storage ----------
+  let offsetMin = 0;
+  try { offsetMin = Number(localStorage.getItem('solent-tide-offset')) || 0; } catch (err) { offsetMin = 0; }
+  function saveOffset() { try { localStorage.setItem('solent-tide-offset', String(offsetMin)); } catch (err) {} }
+
+  // ---------- tides ----------
+  function springF(t) { const p = moonPhase(t - 1.5 * dayMs).phase; return (1 + Math.cos(4 * Math.PI * p)) / 2; }
+  const rangeAt = t => 1.9 + 2.1 * springF(t);
+  // Southampton shape: low water is the sharp, reliable point; then a long flood to a 1st high water,
+  // a stand of ~2.5 h to a 2nd high water, and a quick ebb. Offsets checked against Southampton tables (Nov 2026).
+  const LW_SHIFT = -28, HW1_AFTER_LW = 393, HW2_AFTER_LW = 520;
+  function shapeFromLW(lws) {
+    const ex = []; lws = lws.slice().sort((a, b) => a - b);
+    lws.forEach((t, i) => {
+      ex.push({ t, type: 'LW', h: MEAN - rangeAt(t) / 2 });
+      const n = lws[i + 1]; if (!n) return;
+      const h1 = t + HW1_AFTER_LW * MIN, h2 = t + HW2_AFTER_LW * MIN, H = MEAN + rangeAt(h1) / 2;
+      ex.push({ t: h1, type: 'HW', n: 1, h: H });
+      if (h2 < n - 100 * MIN) ex.push({ t: h2, type: 'HW', n: 2, h: H + 0.12 });
+    });
+    return ex;
+  }
+  function estimateLW(trs) {
+    const hw = trs.map(x => x.t + HWI_MIN * MIN).sort((a, b) => a - b), out = [];
+    for (let i = 0; i < hw.length - 1; i++) {
+      const t0 = (hw[i] + hw[i + 1]) / 2 + LW_SHIFT * MIN, p = moonPhase(t0).phase;
+      // spring–neap (priming/lagging) correction fitted to Southampton low waters, Nov 2026: rms error ~5 min
+      out.push(t0 - (27.6 + 28.5 * Math.sin(4 * Math.PI * p) - 20.6 * Math.cos(4 * Math.PI * p)) * MIN);
+    }
+    return out;
+  }
+  function buildTides(trs) { return shapeFromLW(estimateLW(trs).map(t => t + offsetMin * MIN)); }
+
+  // Weymouth shape: sharp high water, then a double low water (~4.5 h and ~7 h after high).
+  // Time and height after the moon's transit, fitted to Weymouth tables (Nov 2026): rms ~11 min.
+  const WEY_T = [370.604, -26.843, 57.141, -16.271, -0.483], WEY_H = [2.117, 0.249, 0.304, -0.14, -0.075];
+  const harm = (c, p) => c[0] + c[1] * Math.sin(4 * Math.PI * p) + c[2] * Math.cos(4 * Math.PI * p) + c[3] * Math.sin(2 * Math.PI * p) + c[4] * Math.cos(2 * Math.PI * p);
+  function buildWeymouth(trs) {
+    const hws = trs.map(x => { const p = moonPhase(x.t + 370 * MIN).phase; return { t: x.t + (harm(WEY_T, p) + offsetMin) * MIN, h: harm(WEY_H, p) }; }).sort((a, b) => a.t - b.t);
+    const ex = [];
+    hws.forEach((hw, i) => {
+      ex.push({ t: hw.t, type: 'HW', h: hw.h });
+      const n = hws[i + 1]; if (!n) return;
+      const sp = springF(hw.t), lw = 0.85 - 0.3 * sp;
+      ex.push({ t: hw.t + 270 * MIN, type: 'LW', n: 1, h: lw + 0.08 });
+      if (hw.t + 420 * MIN < n.t - 150 * MIN) ex.push({ t: hw.t + 420 * MIN, type: 'LW', n: 2, h: lw });
+    });
+    return ex;
+  }
+
+  function tideAt(ex, x) {
+    for (let i = 0; i < ex.length - 1; i++) if (x >= ex[i].t && x < ex[i + 1].t) {
+      const a = ex[i], b = ex[i + 1], f = (x - a.t) / (b.t - a.t);
+      return a.h + (b.h - a.h) * (1 - Math.cos(Math.PI * f)) / 2;
+    }
+    return MEAN;
+  }
+  function tideState(ex, x) {
+    let i = ex.findIndex(q => q.t > x); if (i <= 0) return '';
+    const pv = ex[i - 1], nx = ex[i];
+    if (pv.type === nx.type) return pv.type === 'HW' ? 'High water stand' : 'Low water stand';
+    if (x - pv.t <= HOUR) return pv.type === 'HW' ? 'High water' : 'Low water';
+    if (nx.t - x <= HOUR) return nx.type === 'HW' ? 'High water' : 'Low water';
+    return nx.type === 'HW' ? 'Flooding tide' : 'Ebbing tide';
+  }
+
+  // ---------- day model ----------
+  const cache = {};
+  function setGeo(lat, lng) { LAT = lat; LNG = lng; phi = rad * lat; lw = rad * -lng; Object.keys(cache).forEach(k => delete cache[k]); }
+  function computeDay(y, m, d) {
+    const key = y + '-' + m + '-' + d + '@' + offsetMin + '@' + liveVer() + '@' + LAT.toFixed(3) + ',' + LNG.toFixed(3);
+    if (cache[key]) return cache[key];
+    const start = ukMidnight(y, m, d), end = ukMidnight(y, m, d + 1), step = 5 * MIN;
+    const sun = crossings(start, end, sunAlt, -0.833, step);
+    const sunrise = (sun.find(s => s.type === 'rise') || {}).t, sunset = (sun.find(s => s.type === 'set') || {}).t;
+    const moon = crossings(start, end, t => moonState(t).alt, 0.125, step);
+    const trs = transits(start - 30 * HOUR, end + 20 * HOUR);
+    const liveT = liveTidesFor(start, end, trs), tides = liveT || (inSolent() ? buildTides(trs) : inWeymouth() ? buildWeymouth(trs) : []);
+    const ph = moonPhase(start + 12 * HOUR);
+    const wins = [];
+    trs.filter(x => x.t >= start && x.t < end).forEach(x => wins.push({ kind: 'major', label: x.type === 'upper' ? 'Moon overhead' : 'Moon underfoot', s: x.t - HOUR, e: x.t + HOUR }));
+    moon.forEach(x => wins.push({ kind: 'minor', label: x.type === 'rise' ? 'Moonrise' : 'Moonset', s: x.t - 30 * MIN, e: x.t + 30 * MIN }));
+    const light = [];
+    if (sunrise) light.push({ kind: 'dawn', label: 'Dawn', s: sunrise - HOUR, e: sunrise + HOUR });
+    if (sunset) light.push({ kind: 'dusk', label: 'Dusk', s: sunset - HOUR, e: sunset + 90 * MIN });
+    let overlap = 0;
+    wins.forEach(w => {
+      let o = 0; light.forEach(l => { o += Math.max(0, Math.min(w.e, l.e) - Math.max(w.s, l.s)); });
+      w.prime = o >= 20 * MIN; overlap += o * (w.kind === 'major' ? 1 : 0.6);
+    });
+    light.forEach(l => { l.prime = wins.some(w => w.prime && Math.min(w.e, l.e) > Math.max(w.s, l.s)); });
+    const all = wins.concat(light).sort((a, b) => a.s - b.s);
+    all.forEach(w => { w.tide = tideState(tides, (w.s + w.e) / 2); });
+    const phaseF = (1 + Math.cos(4 * Math.PI * ph.phase)) / 2, sp = springF(start + 12 * HOUR);
+    const score = 15 + 35 * phaseF + 20 * sp + 30 * Math.min(1, overlap / (90 * MIN));
+    const stars = Math.max(1, Math.min(5, Math.round(score / 20)));
+    const res = { y, m, d, start, end, sunrise, sunset, moon, tides, ph, wins: all, stars, sp, live: !!liveT };
+    cache[key] = res; return res;
+  }
+
+  // ---------- rendering helpers ----------
+  const RATING = ['', 'Slow', 'Fair', 'Good', 'Very good', 'Excellent'];
+  function phaseName(p) {
+    if (p < 0.03 || p > 0.97) return 'New moon';
+    if (p < 0.22) return 'Waxing crescent';
+    if (p < 0.28) return 'First quarter';
+    if (p < 0.47) return 'Waxing gibbous';
+    if (p < 0.53) return 'Full moon';
+    if (p < 0.72) return 'Waning gibbous';
+    if (p < 0.78) return 'Last quarter';
+    return 'Waning crescent';
+  }
+  function moonSVG(p, k, size) {
+    const r = size / 2 - 2, c = size / 2;
+    let lit = '';
+    if (k > 0.99) lit = `<circle cx="${c}" cy="${c}" r="${r}" fill="var(--moon)"/>`;
+    else if (k > 0.01) {
+      const waxing = p < 0.5, rx = Math.abs(1 - 2 * k) * r;
+      const outer = waxing ? 1 : 0, term = waxing ? (k < 0.5 ? 0 : 1) : (k < 0.5 ? 1 : 0);
+      lit = `<path d="M${c},${c - r} A${r},${r} 0 0 ${outer} ${c},${c + r} A${rx},${r} 0 0 ${term} ${c},${c - r} Z" fill="var(--moon)"/>`;
+    }
+    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img" aria-label="${phaseName(p)}"><circle cx="${c}" cy="${c}" r="${r}" fill="#2e2c29" stroke="#4a453f"/>${lit}</svg>`;
+  }
+  const starStr = n => '★'.repeat(n) + '☆'.repeat(5 - n);
+  const springLabel = f => f > 0.66 ? 'Spring tides (big range, strong flow)' : f < 0.33 ? 'Neap tides (small range, slack flow)' : 'Between springs and neaps';
+
+
+
+  // ---------- fish data (Solent and nearby) ----------
+  // m = months caught (0 = Jan), p = peak, min = legal minimum (Southern IFCA / UK), bag = legal daily limit, where = shore/boat, ret = must return
+  const FISH = [
+    { n: 'Bass', l: 'Dicentrarchus labrax', m: [0,3,4,5,6,7,8,9,10,11], p: [5,6,7,8,9], min: '42 cm', bag: '3 a day · Feb–Mar release only', where: 'Shore & boat', bait: ['Peeler crab', 'Ragworm', 'Live or frozen sandeel', 'Soft plastics & surface lures'], tip: 'Dawn and dusk on the flood and first of the ebb, in the surf line or around structure. Shown in season Apr–Jan because Feb–Mar is release only.' },
+    { n: 'Squid', l: 'Loligo vulgaris', m: [8,9,10,11,0], p: [9,10,11], min: null, where: 'Shore & boat', bait: ['Egi jigs 2.0–2.5', 'Squid jig under a float', 'Mackerel strip on a jig'], tip: 'After dark under pier and harbour lights, around high water. Slow lifts and long pauses.' },
+    { n: 'Cuttlefish', l: 'Sepia officinalis', m: [3,4,5,8,9], p: [4], min: null, where: 'Shore & boat', bait: ['Egi jigs', 'Mackerel strip under a float', 'Prawn'], tip: 'They come into the Solent shallows to breed in spring. Fish slowly near weed and structure.' },
+    { n: 'Whiting', l: 'Merlangius merlangus', m: [9,10,11,0,1], p: [10,11], min: '27 cm', where: 'Shore & boat', bait: ['Mackerel strip', 'Squid strip', 'Lugworm tipped with squid'], tip: 'Best after dark. Two- or three-hook flapper rig with size 1–2 hooks.' },
+    { n: 'Cod', l: 'Gadus morhua', m: [10,11,0,1], p: [11,0], min: '35 cm', where: 'Shore & boat', bait: ['Black lugworm', 'Squid', 'Lug & squid cocktail', 'Peeler crab'], tip: 'Scarce in the Solent. Go for big spring tides at night after a blow, when the water has colour.' },
+    { n: 'Pouting', l: 'Trisopterus luscus', m: [8,9,10,11,0,1,2], p: [9,10,11], min: null, where: 'Shore & boat', bait: ['Ragworm', 'Squid strip', 'Mackerel strip'], tip: 'Around piers, wrecks and rough ground. Bites well, so it\'s great for the kids.' },
+    { n: 'Poor cod', l: 'Trisopterus minutus', m: [8,9,10,11,0,1,2], p: [10,11], min: null, where: 'Shore & boat', bait: ['Ragworm', 'Squid strip'], tip: 'Small cousin of the pouting, found on the same marks. Good live bait for bass.' },
+    { n: 'Rockling', l: 'Gaidropsarus spp.', m: [9,10,11,0,1,2], p: [11,0,1], min: null, where: 'Shore', bait: ['Ragworm', 'Lugworm', 'Squid strip'], tip: 'Rough ground and harbour walls at night in winter.' },
+    { n: 'Pollack', l: 'Pollachius pollachius', m: [3,4,5,6,7,8,9,10,11], p: [5,6,7,8,9], min: '30 cm', bag: '3 a day (2026)', where: 'Mostly boat; rocks', bait: ['Soft plastic eels & shads', 'Live sandeel', 'Ragworm under a float'], tip: 'Rocks and wrecks: Hurst, the Isle of Wight and Dorset. Dawn and dusk; keep the lure just off the bottom.' },
+    { n: 'Dogfish', l: 'Scyliorhinus canicula', m: [0,1,2,3,4,5,6,7,8,9,10,11], p: [9,10,11,0,1,2], min: null, where: 'Shore & boat', bait: ['Mackerel', 'Squid', 'Sandeel'], tip: 'Bites all year, mostly at night. A fish bait on the bottom will find them.' },
+    { n: 'Bull huss', l: 'Scyliorhinus stellaris', m: [0,1,2,3,4,5,6,7,8,9,10,11], p: [5,6,7,8], min: null, where: 'Boat; deep rough ground', bait: ['Mackerel fillet', 'Squid', 'Whole small pouting'], tip: 'Big cousin of the dogfish. Rough ground at night; return it to grow.' },
+    { n: 'Smoothhound', l: 'Mustelus spp.', m: [3,4,5,6,7,8,9], p: [4,5,6], min: null, where: 'Shore & boat', bait: ['Peeler crab (best)', 'Hardback crab', 'Squid'], tip: 'Calshot and Lepe on the flood, evening into dark. They run hard, so set a strong drag. Release recommended.' },
+    { n: 'Tope', l: 'Galeorhinus galeus', m: [4,5,6,7,8], p: [5,6,7], min: null, ret: true, where: 'Boat', bait: ['Whole mackerel', 'Mackerel flapper'], tip: 'Fast-running shark on the banks off the Isle of Wight. Wire trace. Rod-caught tope must go back.' },
+    { n: 'Thornback ray', l: 'Raja clavata', m: [2,3,4,5,8,9], p: [3,4], min: '40 cm whole / 20 cm wing', where: 'Shore & boat', bait: ['Mackerel', 'Sandeel', 'Herring', 'Peeler crab'], tip: 'Spring is best. Night on the flood, with a big bait on a pulley rig.' },
+    { n: 'Small-eyed ray', l: 'Raja microocellata', m: [3,4,5,6,7,8,9], p: [5,6,7], min: '40 cm whole / 20 cm wing', where: 'Shore & boat', bait: ['Sandeel (best)', 'Squid', 'Mackerel strip'], tip: 'Sandy beaches near the Needles and the Isle of Wight, at night.' },
+    { n: 'Spotted & blonde ray', l: 'Raja montagui / brachyura', m: [3,4,5,6,7,8,9], p: [5,6,7], min: '40 cm whole / 20 cm wing', where: 'Boat', bait: ['Sandeel', 'Squid', 'Mackerel'], tip: 'Sandbanks in the western Solent and off the Isle of Wight.' },
+    { n: 'Undulate ray', l: 'Raja undulata', m: [3,4,5,6,7,8,9], p: [4,5,6], min: null, ret: true, where: 'Shore & boat', bait: ['Sandeel', 'Squid', 'Mackerel'], tip: 'Recognisable by its wavy lines. Endangered, so always release it alive.' },
+    { n: 'Flounder', l: 'Platichthys flesus', m: [9,10,11,0,1,2,3], p: [0,1,2], min: '27 cm', where: 'Shore', bait: ['Peeler crab', 'Ragworm', 'Lugworm', 'Add beads or a small spoon'], tip: 'The Itchen and Test estuaries on the flood. Fish close in; they feed in shallow water.' },
+    { n: 'Dab', l: 'Limanda limanda', m: [10,11,0,1,2], p: [11,0,1], min: '23 cm', where: 'Shore & boat', bait: ['Lugworm', 'Ragworm'], tip: 'Clean sand, small hooks. Attractor beads help.' },
+    { n: 'Plaice', l: 'Pleuronectes platessa', m: [2,3,4,5,6], p: [3,4], min: '27 cm', where: 'Shore & boat', bait: ['Ragworm', 'Lugworm tipped with squid', 'Beads & sequins'], tip: 'Daylight over sand and shell banks. Let the bait move slowly with the tide.' },
+    { n: 'Sole', l: 'Solea solea', m: [4,5,6,7,8], p: [5,6,7], min: '24 cm', where: 'Shore', bait: ['Ragworm', 'Lugworm'], tip: 'Warm, calm nights close in on sandy beaches. Small hooks.' },
+    { n: 'Turbot & brill', l: 'Scophthalmus maximus / rhombus', m: [4,5,6,7,8,9], p: [6,7,8], min: '30 cm', where: 'Boat', bait: ['Live sandeel', 'Mackerel strip', 'Small whole fish'], tip: 'Drift the sandbanks such as the Shingles and the Shambles. Sometimes from Hurst Spit.' },
+    { n: 'Mackerel', l: 'Scomber scombrus', m: [5,6,7,8], p: [6,7], min: '20 cm', where: 'Shore & boat', bait: ['Feathers or sabikis', 'Small spinners', 'Mackerel strip under a float'], tip: 'Around high water in daylight, from Hurst Spit and the deeper piers.' },
+    { n: 'Scad (horse mackerel)', l: 'Trachurus trachurus', m: [6,7,8,9], p: [7,8], min: '15 cm', where: 'Shore & boat', bait: ['Sabikis', 'Mackerel strip under a float'], tip: 'At night under lights, often mixed in with mackerel.' },
+    { n: 'Garfish', l: 'Belone belone', m: [4,5,6,7,8], p: [5,6,7], min: null, where: 'Shore & boat', bait: ['Mackerel strip under a float', 'Small spinners'], tip: 'Float fish shallow on calm, bright days. They jump, so it makes good footage.' },
+    { n: 'Black bream', l: 'Spondyliosoma cantharus', m: [3,4,5,6,7], p: [4,5], min: '23 cm', where: 'Mostly boat', bait: ['Ragworm', 'Squid strip', 'Mackerel strip'], tip: 'Small hooks (size 4–6) near rough ground. Better from a boat, but Hurst can produce.' },
+    { n: 'Gilthead bream', l: 'Sparus aurata', m: [5,6,7,8,9], p: [6,7,8], min: null, where: 'Shore', bait: ['Peeler crab', 'Hardback crab', 'Mussel', 'Ragworm'], tip: 'Southampton Water and the estuaries in warm months. Shy biters, so give them time. Return small ones.' },
+    { n: 'Thick-lipped mullet', l: 'Chelon labrosus', m: [4,5,6,7,8,9], p: [6,7,8], min: '42 cm', where: 'Shore', bait: ['Bread flake with mashed-bread groundbait', 'Small ragworm'], tip: 'Harbours and marinas. Tiny hooks, light line and plenty of patience.' },
+    { n: 'Thin-lipped mullet', l: 'Chelon ramada', m: [4,5,6,7,8,9], p: [6,7,8], min: '42 cm', where: 'Shore', bait: ['Small spinner tipped with ragworm'], tip: 'Up the estuaries on the flood: the Test, the Itchen and the Hamble.' },
+    { n: 'Golden grey mullet', l: 'Chelon auratus', m: [5,6,7,8,9], p: [6,7,8], min: '36 cm', where: 'Shore', bait: ['Small ragworm', 'Harbour ragworm'], tip: 'Sandy beaches in the surf on warm days. Light leger and small hooks.' },
+    { n: 'Red mullet', l: 'Mullus surmuletus', m: [6,7,8,9], p: [7,8], min: '15 cm', where: 'Shore & boat', bait: ['Small ragworm'], tip: 'Sandy ground at night in late summer.' },
+    { n: 'Ballan wrasse', l: 'Labrus bergylta', m: [3,4,5,6,7,8,9], p: [4,5,6,7,8], min: '18 cm', where: 'Rocks', bait: ['Hardback or peeler crab', 'Ragworm', 'Prawn', 'Weedless soft plastics'], tip: 'Rocky marks (Hurst, the Isle of Wight, Dorset) in daylight. Strong line; return the big ones.' },
+    { n: 'Corkwing & small wrasse', l: 'Symphodus melops etc.', m: [4,5,6,7,8,9], p: [5,6,7], min: 'Corkwing 14 · Goldsinny & rock cook 12 cm', where: 'Rocks & piers', bait: ['Small ragworm', 'Prawn'], tip: 'Pier legs and harbour walls. Tiny hooks; fun for the kids.' },
+    { n: 'Triggerfish', l: 'Balistes capriscus', m: [6,7,8,9], p: [7,8], min: null, where: 'Shore & boat', bait: ['Squid', 'Prawn', 'Small crab'], tip: 'Late summer around piers, pontoons and wrecks. Strong small hooks; they bite through line.' },
+    { n: 'Gurnard', l: 'Chelidonichthys spp.', m: [3,4,5,6,7,8,9], p: [5,6,7,8], min: null, where: 'Boat', bait: ['Mackerel strip', 'Squid', 'Ragworm', 'Small lures'], tip: 'Sandy ground on the drift. They grunt when landed, which the kids will love.' },
+    { n: 'Conger', l: 'Conger conger', m: [0,1,2,3,4,5,6,7,8,9,10,11], p: [5,6,7,8], min: '58 cm', where: 'Shore & boat', bait: ['Mackerel fillet', 'Whole squid'], tip: 'Pier legs, harbour walls and wrecks at night. Heavy gear and a strong trace.' },
+    { n: 'European eel', l: 'Anguilla anguilla', m: [3,4,5,6,7,8,9], p: [5,6,7], min: null, ret: true, where: 'Estuaries', bait: ['Ragworm', 'Small fish strip'], tip: 'Caught in estuaries in warm months. Protected, so it must be returned.' },
+    { n: 'Lesser weever', l: 'Echiichthys vipera', m: [5,6,7,8], p: [6,7], min: null, warn: true, where: 'Sandy beaches', bait: ['Takes ragworm meant for other fish'], tip: 'Venomous spines on its back. Don\'t touch it with bare hands, and wear shoes when wading. If stung, put the area in hot water and get medical help.' }
+  ];
+
+
+  // ---------- recommended (Angling Trust size-at-maturity guidance) ----------
+  const REC = { 'Bass': '48 cm', 'Whiting': '30 cm', 'Cod': '60 cm', 'Pouting': '25 cm', 'Poor cod': '25 cm', 'Rockling': '20 cm', 'Pollack': '50 cm', 'Dogfish': '60 cm', 'Bull huss': '80 cm', 'Smoothhound': '85 cm', 'Flounder': '30 cm', 'Dab': '25 cm', 'Plaice': '35 cm', 'Sole': '35 cm', 'Turbot & brill': 'Turbot 46 · Brill 41 cm', 'Mackerel': '34 cm', 'Scad (horse mackerel)': '30 cm', 'Garfish': '45 cm', 'Black bream': '24 cm', 'Gilthead bream': '40 cm', 'Thick-lipped mullet': '47 cm', 'Thin-lipped mullet': '47 cm', 'Golden grey mullet': '47 cm', 'Red mullet': '24 cm', 'Ballan wrasse': '30 cm', 'Corkwing & small wrasse': '14 cm', 'Triggerfish': '20 cm', 'Gurnard': '25–30 cm', 'Conger': '100 cm', 'Thornback ray': '85 cm nose–tail', 'Small-eyed ray': '77 cm nose–tail', 'Spotted & blonde ray': 'Spotted 55 · Blonde 100 cm' };
+  FISH.forEach(f => { if (REC[f.n]) f.rec = REC[f.n]; });
+  const legalCm = f => { if (!f || !f.min) return null; const m = f.min.match(/(\d+(?:\.\d+)?)/); return m ? +m[1] : null; };
+
+  // ---------- spots ----------
+  const SPOTS = [
+    { n: 'Weston Shore', lat: 50.886, lon: -1.371, a: 'Southampton Water · east bank', type: 'Shingle shore', fish: ['Flounder', 'Bass', 'Whiting', 'Pouting', 'Thick-lipped mullet'], tide: 'Last 2 hours of the flood and the first of the ebb', note: 'Easy access along Weston Parade, good with the kids. Goes muddy at low water.', q: 'Weston Shore Southampton' },
+    { n: 'Netley · Royal Victoria Country Park', lat: 50.871, lon: -1.352, a: 'Southampton Water · east bank', type: 'Shingle shore', fish: ['Flounder', 'Bass', 'Whiting', 'Smoothhound', 'Thornback ray'], tide: 'Flood tide', note: 'Country park car park with toilets and café. Good family mark.', q: 'Royal Victoria Country Park Netley' },
+    { n: 'Mayflower Park', lat: 50.898, lon: -1.409, a: 'Southampton · Town Quay', type: 'Quay wall, deep water', fish: ['Thick-lipped mullet', 'Bass', 'Pouting', 'Conger', 'Whiting'], tide: 'Any state; deep water close in', note: 'City-centre mark next to the docks. Watch for signs about restricted areas near the terminals.', q: 'Mayflower Park Southampton' },
+    { n: 'Eling & Redbridge', lat: 50.911, lon: -1.479, a: 'River Test estuary', type: 'Estuary', fish: ['Flounder', 'Thin-lipped mullet', 'Bass'], tide: 'Flood tide', note: 'Small bass here are in a nursery area, so put them back. Eels must be returned.', q: 'Eling Quay Totton' },
+    { n: 'Woolston & the Itchen', lat: 50.894, lon: -1.381, a: 'River Itchen', type: 'Estuary', fish: ['Flounder', 'Thin-lipped mullet', 'Bass', 'Thick-lipped mullet'], tide: 'Flood tide', note: 'Flounder hotspot in winter. Soft mud below the walls; don\'t walk out on it.', q: 'Woolston Southampton waterfront' },
+    { n: 'Warsash & Hamble', lat: 50.853, lon: -1.306, a: 'River Hamble mouth', type: 'Quay & shore', fish: ['Flounder', 'Bass', 'Thick-lipped mullet', 'Smoothhound'], tide: '2 hours either side of high water', note: 'Crabbing from the quay walls is great for kids. Bass nursery area. Ask the harbour master before fishing from the jetties.', q: 'Warsash Hampshire' },
+    { n: 'Calshot Spit', lat: 50.818, lon: -1.311, a: 'Mouth of Southampton Water', type: 'Shingle spit, deep channel close in', fish: ['Smoothhound', 'Bass', 'Thornback ray', 'Plaice', 'Mackerel'], tide: 'Flood into high water; strong flow, use grip leads', note: 'Big ships pass close and throw a wash, so keep kids well back from the edge.', q: 'Calshot Spit' },
+    { n: 'Lepe Country Park', lat: 50.785, lon: -1.354, a: 'Western Solent', type: 'Beach', fish: ['Smoothhound', 'Bass', 'Thornback ray', 'Plaice', 'Sole', 'Cuttlefish'], tide: 'Flood, best into the evening', note: 'Country park car park, café and toilets. Cuttlefish in spring.', q: 'Lepe Country Park' },
+    { n: 'Stokes Bay', lat: 50.779, lon: -1.157, a: 'Gosport', type: 'Shingle beach', fish: ['Bass', 'Smoothhound', 'Thornback ray', 'Plaice', 'Sole', 'Mackerel'], tide: 'Flood tide', note: 'Seafront parking. Good night mark for rays and sole.', q: 'Stokes Bay Gosport' },
+    { n: 'Round Tower & Hot Walls', lat: 50.789, lon: -1.106, a: 'Portsmouth Harbour mouth', type: 'Harbour wall, deep fast water', fish: ['Bass', 'Mackerel', 'Black bream', 'Squid', 'Pollack'], tide: 'Either side of slack; very fast flow mid-tide', note: 'Squid on autumn nights. Busy with walkers in daylight.', q: 'Round Tower Portsmouth' },
+    { n: 'Hurst Spit & Castle', lat: 50.706, lon: -1.551, a: 'Western Solent', type: 'Shingle spit, deep water', fish: ['Bass', 'Smoothhound', 'Small-eyed ray', 'Mackerel', 'Black bream', 'Turbot & brill'], tide: 'Around slack water; the tide race is powerful', note: 'Long shingle walk from Milford (or the seasonal Keyhaven ferry). One of the best marks in the area. Strong tide, so not for young kids.', q: 'Hurst Castle' },
+    { n: 'Milford on Sea', lat: 50.722, lon: -1.588, a: 'Christchurch Bay', type: 'Beach', fish: ['Bass', 'Small-eyed ray', 'Smoothhound', 'Sole', 'Dogfish'], tide: 'Flood, at night', note: 'Seafront parking. Surf beach, so bass come close in after a blow.', q: 'Milford on Sea beach' },
+    { n: 'Mudeford Quay', lat: 50.725, lon: -1.742, a: 'Christchurch Harbour', type: 'Quay, fast harbour run', fish: ['Bass', 'Thick-lipped mullet', 'Mackerel', 'Flounder'], tide: 'Ebb out of the harbour', note: 'Quay car park. Very fast run on the ebb; watch the kids.', q: 'Mudeford Quay' },
+    { n: 'Yarmouth Pier', lat: 50.707, lon: -1.501, a: 'Isle of Wight', type: 'Pier', fish: ['Mackerel', 'Bass', 'Ballan wrasse', 'Black bream', 'Squid'], tide: 'Flood into high water', note: 'Ferry from Lymington. Check whether the pier charges a fishing fee.', q: 'Yarmouth Pier Isle of Wight' },
+    { n: 'Weymouth Stone Pier', lat: 50.607, lon: -2.448, a: 'Dorset · about 1h30 away', type: 'Pier', fish: ['Squid', 'Mackerel', 'Scad (horse mackerel)', 'Thick-lipped mullet', 'Black bream'], tide: 'Any state; best after dark around high water', note: 'Famous squid mark from October. Gets busy on good nights, so arrive early.', q: 'Weymouth Stone Pier' }
+  ];
+
+  // ---------- location ----------
+  const HOME = { mode: 'home', lat: 50.9097, lon: -1.4044, name: 'Southampton' };
+  let LOC = HOME;
+  try { const s = JSON.parse(localStorage.getItem('sh-loc') || 'null'); if (s && typeof s.lat === 'number') LOC = s; } catch (err) {}
+  const km = (a, b, c, d) => { const R = 6371, dLa = (c - a) * rad, dLo = (d - b) * rad, x = Math.sin(dLa / 2) ** 2 + Math.cos(a * rad) * Math.cos(c * rad) * Math.sin(dLo / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)); };
+  function inSolent() { return km(LAT, LNG, 50.90, -1.40) < 22; }
+  function inWeymouth() { return km(LAT, LNG, 50.608, -2.45) < 9; }
+  const tunedPort = () => inSolent() ? 'Southampton' : inWeymouth() ? 'Weymouth' : '';
+  const locKey = () => LOC.lat.toFixed(3) + ',' + LOC.lon.toFixed(3);
+  function region() {
+    const inUK = LOC.lat > 49.8 && LOC.lat < 61 && LOC.lon > -8.7 && LOC.lon < 1.9;
+    if (!inUK) return 'abroad';
+    return (LOC.lon > -2.95 && LOC.lon < -0.93 && LOC.lat > 50.45 && LOC.lat < 51.05) ? 'southern' : 'uk';
+  }
+  let gpsMsg = '';
+  function setLoc(l) {
+    LOC = l; try { localStorage.setItem('sh-loc', JSON.stringify(l)); } catch (err) {}
+    setGeo(l.lat, l.lon);
+    LIVE.wx = null; LIVE.sea = null; LIVE.tide = null; LIVE.wxAt = 0; LIVE.ver++;
+    renderAll(); loadLive(true);
+  }
+  async function useGPS() {
+    if (!navigator.geolocation) { gpsMsg = 'This phone or browser can\'t share its location.'; renderLocBar(); return; }
+    gpsMsg = 'Finding you…'; renderLocBar();
+    navigator.geolocation.getCurrentPosition(async pos => {
+      const lat = pos.coords.latitude, lon = pos.coords.longitude;
+      const near = SPOTS.map(s => ({ s, d: km(lat, lon, s.lat, s.lon) })).sort((a, b) => a.d - b.d)[0];
+      let name = near && near.d < 3 ? near.s.n : `${lat.toFixed(3)}, ${lon.toFixed(3)}`;
+      if (!(near && near.d < 3)) {
+        try { const g = await getJSON(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`); name = g.locality || g.city || g.principalSubdivision || name; } catch (err) {}
+      }
+      gpsMsg = ''; setLoc({ mode: 'gps', lat, lon, name });
+    }, err => { gpsMsg = err.code === 1 ? 'Location is blocked. Allow it for this app in your phone settings, then try again.' : 'Couldn\'t get your location. Try again outside.'; renderLocBar(); }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 10 * MIN });
+  }
+  function renderLocBar() {
+    const el = $('locbar'); if (!el) return;
+    const opts = [`<option value="gps">📍 Use my location</option>`, `<option value="home"${LOC.mode === 'home' ? ' selected' : ''}>Southampton (home)</option>`]
+      .concat(SPOTS.map((s, i) => `<option value="s${i}"${LOC.mode === 'spot' && LOC.name === s.n ? ' selected' : ''}>${s.n}</option>`));
+    if (LOC.mode === 'gps') opts.splice(1, 0, `<option value="cur" selected>📍 ${LOC.name}</option>`);
+    el.innerHTML = `<label for="locsel" class="lbl">Fishing at</label><select id="locsel">${opts.join('')}</select>${gpsMsg ? `<span class="note" style="margin:0">${gpsMsg}</span>` : ''}`;
+    $('locsel').addEventListener('change', ev => {
+      const v = ev.target.value;
+      if (v === 'gps') useGPS(); else if (v === 'home') setLoc(HOME); else if (v[0] === 's') { const s = SPOTS[+v.slice(1)]; setLoc({ mode: 'spot', lat: s.lat, lon: s.lon, name: s.n }); }
+    });
+  }
+
+  // ---------- live data (Open-Meteo) ----------
+  const DATUM = 2.9; // approx. mean sea level above chart datum at Southampton, m
+  const LIVE = { wx: null, wxAt: 0, tide: null, tideAt: 0, tideKey: '', sea: null, err: '', loading: false, ver: 0 };
+  try {
+    const c = JSON.parse(localStorage.getItem('sh-live') || 'null');
+    if (c && Date.now() - c.at < 2 * dayMs && c.key === (LOC.lat.toFixed(3) + ',' + LOC.lon.toFixed(3))) { LIVE.wx = c.wx; LIVE.wxAt = c.wxAt; LIVE.tide = c.tide; LIVE.tideAt = c.tideAt; LIVE.tideKey = c.key; LIVE.sea = c.sea; LIVE.ver = 1; }
+  } catch (err) {}
+  function liveVer() { return LIVE.ver; }
+  // Live model low waters, used only if they agree with the tuned Southampton calculation to within 20 min (the coarse model ran ~1 h early in testing)
+  // Live model tides. In the Solent they're only used if they agree with the tuned Southampton calculation
+  // (the coarse model ran ~1 h early there); elsewhere they're the best free source and shown as approximate.
+  function liveTidesFor(start, end, trs) {
+    const ex = LIVE.tide; if (!ex || ex.length < 4 || LIVE.tideKey !== locKey()) return null;
+    if (ex[0].t > start - 14 * HOUR || ex[ex.length - 1].t < end + 14 * HOUR) return null;
+    if (inWeymouth()) return null;
+    if (!inSolent()) return ex.map(q => ({ t: q.t + offsetMin * MIN, type: q.type, h: q.h, n: 1 }));
+    const lws = ex.filter(q => q.type === 'LW').map(q => q.t);
+    if (trs) {
+      const est = estimateLW(trs), diffs = lws.map(t => { let b = 1e15; est.forEach(s => { if (Math.abs(t - s) < Math.abs(b)) b = t - s; }); return b; }).filter(d => Math.abs(d) < 4 * HOUR).sort((a, b) => a - b);
+      if (!diffs.length || Math.abs(diffs[Math.floor(diffs.length / 2)]) > 20 * MIN) return null;
+    }
+    return shapeFromLW(lws.map(t => t + offsetMin * MIN));
+  }
+  function extremesFrom(ts, hs) {
+    const raw = [];
+    for (let i = 1; i < hs.length - 1; i++) {
+      const a = hs[i - 1], b = hs[i], c = hs[i + 1];
+      if (a == null || b == null || c == null) continue;
+      const isMax = b > a && b >= c, isMin = b < a && b <= c;
+      if (!isMax && !isMin) continue;
+      const den = a - 2 * b + c, off = den ? 0.5 * (a - c) / den : 0;
+      raw.push({ t: (ts[i] + off * 3600) * 1000, h: b - 0.25 * (a - c) * off + DATUM, type: isMax ? 'HW' : 'LW' });
+    }
+    const out = [];
+    raw.forEach(e => {
+      const last = out[out.length - 1];
+      if (!last) { out.push(e); return; }
+      if (last.type === e.type) { if ((e.type === 'HW' && e.h > last.h) || (e.type === 'LW' && e.h < last.h)) out[out.length - 1] = e; return; }
+      if (Math.abs(e.h - last.h) < 0.3) { out.pop(); return; }
+      out.push(e);
+    });
+    return out;
+  }
+  async function getJSON(url) { const r = await fetch(url, { cache: 'no-store' }); if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }
+  async function loadLive(force) {
+    if (LIVE.loading) return;
+    if (!force && Date.now() - LIVE.wxAt < 20 * MIN && LIVE.wx) return;
+    LIVE.loading = true; LIVE.err = ''; renderLiveBits();
+    const key = locKey(), wxUrl = `https://api.open-meteo.com/v1/forecast?latitude=${LOC.lat.toFixed(4)}&longitude=${LOC.lon.toFixed(4)}&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code,precipitation&hourly=temperature_2m,precipitation,precipitation_probability,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,precipitation_probability_max&wind_speed_unit=mph&timezone=Europe%2FLondon&timeformat=unixtime&past_days=2&forecast_days=7`;
+    const L0 = LOC.lat, G0 = LOC.lon, pts = inSolent() ? [[50.79, -1.30], [50.77, -1.22], [50.74, -1.12]] : [[L0, G0], [L0 - 0.06, G0], [L0 - 0.12, G0], [L0, G0 - 0.1], [L0, G0 + 0.1], [L0 + 0.06, G0]];
+    try {
+      const wx = await getJSON(wxUrl);
+      LIVE.wx = wx; LIVE.wxAt = Date.now();
+    } catch (err) { LIVE.err = 'Couldn\'t load wind and weather. Showing the last saved data.'; }
+    for (const [la, lo] of pts) {
+      try {
+        const m = await getJSON(`https://marine-api.open-meteo.com/v1/marine?latitude=${la}&longitude=${lo}&hourly=sea_level_height_msl,wave_height,wave_period,wave_direction,sea_surface_temperature&timezone=GMT&timeformat=unixtime&past_days=2&forecast_days=8`);
+        const H = m.hourly || {};
+        const lv = H.sea_level_height_msl || [], ok = lv.filter(v => v != null).length;
+        if (ok > 48) {
+          const ex = extremesFrom(H.time, lv);
+          if (ex.length > 8) { LIVE.tide = ex; LIVE.tideAt = Date.now(); LIVE.tideKey = key; }
+        }
+        if ((H.wave_height || []).some(v => v != null)) LIVE.sea = { time: H.time, wh: H.wave_height, wp: H.wave_period, wd: H.wave_direction, sst: H.sea_surface_temperature };
+        if (LIVE.tide && LIVE.tideKey === key) break;
+      } catch (err) { /* try next point */ }
+    }
+    LIVE.ver++; LIVE.loading = false;
+    if (key !== locKey()) { LIVE.loading = false; return; }
+    try { localStorage.setItem('sh-live', JSON.stringify({ at: Date.now(), key, wx: LIVE.wx, wxAt: LIVE.wxAt, tide: LIVE.tide, tideAt: LIVE.tideAt, sea: LIVE.sea })); } catch (err) {}
+    renderAll();
+  }
+  const COMPASS = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+  const compass = d => COMPASS[Math.round(((d % 360) + 360) % 360 / 22.5) % 16];
+  const arrow = (d, s) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" style="transform:rotate(${(d + 180) % 360}deg)" aria-label="Wind from ${compass(d)}"><path d="M12 3l5 9h-3.5v9h-3v-9H7z" fill="currentColor"/></svg>`;
+  function wcode(c) {
+    if (c == null) return '';
+    if (c === 0) return 'Clear'; if (c <= 2) return 'Partly cloudy'; if (c === 3) return 'Cloudy';
+    if (c <= 48) return 'Fog'; if (c <= 57) return 'Drizzle'; if (c <= 67) return 'Rain'; if (c <= 77) return 'Snow';
+    if (c <= 82) return 'Showers'; if (c <= 86) return 'Snow showers'; return 'Thunder';
+  }
+  function windWord(mph, gust) {
+    if (gust >= 40 || mph >= 28) return { t: 'Strong wind: stay off exposed marks, piers and spits', c: 'bad' };
+    if (mph >= 18) return { t: 'Fresh: fish sheltered marks like Southampton Water', c: 'warn' };
+    if (mph >= 10) return { t: 'Moderate: fine for most shore marks', c: 'ok' };
+    return { t: 'Light: perfect for float fishing and lures', c: 'ok' };
+  }
+  function seaAt(t) {
+    const S = LIVE.sea; if (!S) return null;
+    let best = -1, bd = 1e15; S.time.forEach((x, i) => { const d = Math.abs(x * 1000 - t); if (d < bd) { bd = d; best = i; } });
+    if (best < 0 || bd > 2 * HOUR) return null;
+    return { wh: S.wh[best], wp: S.wp[best], sst: S.sst ? S.sst[best] : null };
+  }
+  function wxHourIdx(t) {
+    const W = LIVE.wx; if (!W || !W.hourly) return -1;
+    let best = -1, bd = 1e15; W.hourly.time.forEach((x, i) => { const d = Math.abs(x * 1000 - t); if (d < bd) { bd = d; best = i; } });
+    return bd <= HOUR ? best : -1;
+  }
+  const ago = t => { const m = Math.round((Date.now() - t) / MIN); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : Math.round(m / 60) + ' h ago'; };
+
+  function renderLiveBits() {
+    const el = $('wx'); if (!el) return;
+    const W = LIVE.wx, D = computeDay(sel.y, sel.m, sel.d);
+    const status = `<div class="livebar"><span>📍 ${LOC.name}</span> · <span class="${LIVE.wx ? 'dotlive' : 'dotoff'}"></span><span>${LIVE.loading ? 'Updating…' : LIVE.wx ? 'Updated ' + ago(LIVE.wxAt) : 'Offline'}</span><button id="refresh" class="small">Refresh</button></div>`;
+    if (!W) {
+      el.innerHTML = `<h2>Wind &amp; sea</h2>${status}<p class="note">Live wind, weather and tides load when the app is online. Until then, tides are estimated from the moon.${LIVE.err ? ' ' + LIVE.err : ''}</p>`;
+    } else {
+      let head = '';
+      if (isToday(sel) && W.current) {
+        const c = W.current, sea = seaAt(Date.now()), ww = windWord(c.wind_speed_10m, c.wind_gusts_10m);
+        head = `<div class="wxnow"><div class="wxdir">${arrow(c.wind_direction_10m, 40)}<span class="mono">${compass(c.wind_direction_10m)}</span></div>
+          <div><div class="wxbig">${Math.round(c.wind_speed_10m)} <small>mph</small></div><div class="note" style="margin:0">Gusts ${Math.round(c.wind_gusts_10m)} mph · ${wcode(c.weather_code)} · ${Math.round(c.temperature_2m)}°C</div></div></div>
+          <div class="chips" style="margin:8px 0">${sea && sea.wh != null ? `<span class="chip tide">Waves ${sea.wh.toFixed(1)} m${sea.wp ? ' · ' + Math.round(sea.wp) + ' s' : ''}</span>` : ''}${sea && sea.sst != null ? `<span class="chip tide">Sea ${sea.sst.toFixed(1)}°C</span>` : ''}</div>
+          <div class="wxmsg ${ww.c}">${ww.t}</div>${(cl => cl ? `<div class="wxmsg ${cl.cls}" style="margin-top:8px"><b>Water: ${cl.label}</b> <span class="note" style="margin:0;display:block">${cl.why} (estimate)</span>${cl.tip}</div>` : '')(clarityAt(Date.now()))}`;
+      }
+      let strip = '';
+      for (let t = D.start; t < D.end; t += HOUR) {
+        const i = wxHourIdx(t); if (i < 0) continue;
+        const H = W.hourly, inWin = D.wins.some(w => t + 30 * MIN >= w.s && t + 30 * MIN < w.e && (w.kind === 'major' || w.prime));
+        strip += `<div class="hr${inWin ? ' good' : ''}${isToday(sel) && now >= t && now < t + HOUR ? ' nowh' : ''}"><span class="mono">${fmt(t)}</span>${arrow(H.wind_direction_10m[i], 18)}<b>${Math.round(H.wind_speed_10m[i])}</b><span class="g">${Math.round(H.wind_gusts_10m[i])}</span><span class="rp">${H.precipitation_probability[i] == null ? '' : H.precipitation_probability[i] + '%'}</span></div>`;
+      }
+      if (!isToday(sel)) { const cl = clarityAt(D.start + 12 * HOUR); if (cl) head = `<div class="wxmsg ${cl.cls}"><b>Water: ${cl.label}</b> <span class="note" style="margin:0;display:block">${cl.why} (estimate)</span>${cl.tip}</div>`; }
+      el.innerHTML = `<h2>Wind &amp; sea</h2>${status}${head}${strip ? `<div class="lbl" style="margin-top:10px">Hour by hour · wind mph, gusts, rain chance${D.wins.length ? ' · rust = feeding window' : ''}</div><div class="hours">${strip}</div>` : '<p class="note">No forecast for this day yet (forecasts go 7 days ahead).</p>'}${LIVE.err ? `<p class="note">${LIVE.err}</p>` : ''}`;
+    }
+    const b = $('refresh'); if (b) b.addEventListener('click', () => loadLive(true));
+  }
+  function dailyWx(y, m, d) {
+    const W = LIVE.wx; if (!W || !W.daily) return null;
+    const st = ukMidnight(y, m, d), i = W.daily.time.findIndex(x => Math.abs(x * 1000 - st) < 3 * HOUR);
+    if (i < 0) return null;
+    const Dd = W.daily;
+    return { code: Dd.weather_code[i], tmax: Dd.temperature_2m_max[i], tmin: Dd.temperature_2m_min[i], w: Dd.wind_speed_10m_max[i], g: Dd.wind_gusts_10m_max[i], dir: Dd.wind_direction_10m_dominant[i], rain: Dd.precipitation_probability_max[i] };
+  }
+
+  // ---------- water clarity (estimate) ----------
+  function clarityAt(t) {
+    const W = LIVE.wx, S = LIVE.sea; if (!W || !W.hourly) return null;
+    let rain = 0, have = false;
+    W.hourly.time.forEach((x, i) => { const ms = x * 1000; if (ms <= t && ms > t - 48 * HOUR && W.hourly.precipitation) { rain += W.hourly.precipitation[i] || 0; have = true; } });
+    let wave = null;
+    if (S) S.time.forEach((x, i) => { const ms = x * 1000; if (ms <= t && ms > t - 48 * HOUR && S.wh[i] != null) wave = Math.max(wave || 0, S.wh[i]); });
+    if (!have && wave == null) return null;
+    let gust = 0; W.hourly.time.forEach((x, i) => { const ms = x * 1000; if (ms <= t && ms > t - 36 * HOUR) gust = Math.max(gust, W.hourly.wind_gusts_10m[i] || 0); });
+    const p = ukParts(t), sp = springF(t), estuary = inSolent();
+    const score = Math.min(1, (wave == null ? gust / 45 : wave / 1.2)) * 0.45 + Math.min(1, rain / (estuary ? 15 : 25)) * 0.4 + sp * 0.15;
+    const why = `${wave != null ? 'Waves up to ' + wave.toFixed(1) + ' m' : 'Gusts up to ' + Math.round(gust) + ' mph'}, ${rain.toFixed(rain < 10 ? 1 : 0)} mm of rain in the last 2 days${sp > 0.66 ? ', spring tides' : ''}`;
+    if (score < 0.3) return { label: 'Clear', cls: 'ok', why, tip: 'Good for lures, squid, mullet and wrasse. Fish lighter line and natural colours; fish see more, so dawn, dusk and night are best.' };
+    if (score < 0.6) return { label: 'Slightly coloured', cls: 'warn', why, tip: 'Good for most fishing, and often the best water for bass. Bait or lures both work.' };
+    return { label: 'Coloured', cls: 'bad', why, tip: 'Use smelly baits: squid, mackerel, peeler crab, lugworm. Good for cod, rays and bass on bait; poor for squid and lures.' };
+  }
+
+  // ---------- catch log (IndexedDB, falls back to memory) ----------
+  let DB = null, CATCHES = [], logMsg = '', delArm = null;
+  function openDB() {
+    return new Promise(res => {
+      try {
+        const r = indexedDB.open('santoshooked', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('catches', { keyPath: 'id' });
+        r.onsuccess = () => { DB = r.result; res(); };
+        r.onerror = () => res();
+      } catch (err) { res(); }
+    });
+  }
+  function dbAll() {
+    return new Promise(res => {
+      if (!DB) return res(CATCHES);
+      try { const q = DB.transaction('catches').objectStore('catches').getAll(); q.onsuccess = () => res(q.result || []); q.onerror = () => res(CATCHES); } catch (err) { res(CATCHES); }
+    });
+  }
+  function dbPut(o) { return new Promise(res => { if (!DB) { CATCHES.push(o); return res(); } try { const tx = DB.transaction('catches', 'readwrite'); tx.objectStore('catches').put(o); tx.oncomplete = () => res(); tx.onerror = () => res(); } catch (err) { CATCHES.push(o); res(); } }); }
+  function dbDel(id) { return new Promise(res => { if (!DB) { CATCHES = CATCHES.filter(c => c.id !== id); return res(); } try { const tx = DB.transaction('catches', 'readwrite'); tx.objectStore('catches').delete(id); tx.oncomplete = () => res(); tx.onerror = () => res(); } catch (err) { res(); } }); }
+  function shrinkPhoto(file) {
+    return new Promise(res => {
+      if (!file) return res(null);
+      const img = new Image(), url = URL.createObjectURL(file);
+      img.onload = () => {
+        const k = Math.min(1, 900 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', 0.78));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); res(null); };
+      img.src = url;
+    });
+  }
+  function localInputValue(t) { const p = ukParts(t); return `${p.y}-${pad(p.m + 1)}-${pad(p.d)}T${pad(p.hh)}:${pad(p.mm)}`; }
+  function parseLocalInput(v) { const m = v.match(/(\d+)-(\d+)-(\d+)T(\d+):(\d+)/); if (!m) return Date.now(); const guess = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]); return guess - ukOff(guess); }
+  function conditionsAt(t) {
+    const p = ukParts(t), D = computeDay(p.y, p.m, p.d), ph = moonPhase(t), out = { tide: tideState(D.tides, t), moon: phaseName(ph.phase) };
+    const i = wxHourIdx(t);
+    if (i >= 0) { const H = LIVE.wx.hourly; out.wind = `${Math.round(H.wind_speed_10m[i])} mph ${compass(H.wind_direction_10m[i])}`; }
+    const w = D.wins.find(x => t >= x.s && t < x.e); if (w) out.win = w.label;
+    return out;
+  }
+  async function saveCatch(e) {
+    e.preventDefault();
+    const sp = $('l-sp').value, len = parseFloat($('l-len').value), f = FISH.find(x => x.n === sp);
+    const t = parseLocalInput($('l-time').value);
+    const photo = await shrinkPhoto($('l-photo').files[0]);
+    const o = { id: 'c' + Date.now(), t, sp, len: isNaN(len) ? null : len, wt: parseFloat($('l-wt').value) || null, bait: $('l-bait').value.trim(), spot: $('l-spot').value, kept: $('l-kept').value, notes: $('l-notes').value.trim(), photo, cond: conditionsAt(t) };
+    const min = legalCm(f);
+    if (f && f.ret) logMsg = `${sp} must be returned. Logged as a catch-and-release record.`;
+    else if (min && o.len && o.len < min && o.kept === 'Kept') logMsg = `Careful: ${o.len} cm is under the ${f.min} legal size for ${sp}. It has to go back.`;
+    else logMsg = 'Catch saved.';
+    if (f && f.ret) o.kept = 'Released';
+    await dbPut(o);
+    $('logform').reset(); $('l-time').value = localInputValue(Date.now());
+    CATCHES = await dbAll(); renderLog();
+  }
+  function renderLog() {
+    if (!$('loglist')) return;
+    $('logmsg').textContent = logMsg; $('logmsg').style.display = logMsg ? '' : 'none';
+    const list = CATCHES.slice().sort((a, b) => b.t - a.t);
+    const by = k => { const m = {}; list.forEach(c => { if (c[k]) m[c[k]] = (m[c[k]] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1]); };
+    const sps = by('sp'), baits = by('bait'), spots = by('spot');
+    $('logstats').innerHTML = list.length ? `<div class="big"><div class="stat"><b>${list.length}</b><span>fish logged</span></div><div class="stat"><b>${sps.length}</b><span>species</span></div><div class="stat"><b>${baits[0] ? baits[0][0] : '—'}</b><span>best bait</span></div><div class="stat"><b>${spots[0] ? spots[0][0] : '—'}</b><span>best spot</span></div></div>
+      <div class="chips" style="margin-top:8px">${sps.slice(0, 6).map(([s, n]) => `<span class="chip size">${s} × ${n}</span>`).join('')}</div>` : '<p class="note" style="margin:0">No catches yet. Your first one goes here.</p>';
+    $('loglist').innerHTML = list.map(c => {
+      const p = ukParts(c.t), cd = c.cond || {};
+      return `<div class="catch">${c.photo ? `<img src="${c.photo}" alt="${c.sp}">` : ''}<div class="cbody">
+        <div class="fishhead"><div><div class="fishname">${c.sp}</div><div class="latin">${DOW[new Date(Date.UTC(p.y, p.m, p.d)).getUTCDay()]} ${p.d} ${MON[p.m]} ${p.y} · ${pad(p.hh)}:${pad(p.mm)}${c.spot ? ' · ' + c.spot : ''}</div></div><span class="chip${c.kept === 'Kept' ? ' size' : ''}">${c.kept}</span></div>
+        <div class="chips">${c.len ? `<span class="chip size">${c.len} cm</span>` : ''}${c.wt ? `<span class="chip size">${c.wt} kg</span>` : ''}${c.bait ? `<span class="chip bait">${c.bait}</span>` : ''}${cd.tide ? `<span class="chip tide">${cd.tide}</span>` : ''}${cd.moon ? `<span class="chip">${cd.moon}</span>` : ''}${cd.wind ? `<span class="chip">${cd.wind}</span>` : ''}${cd.win ? `<span class="chip prime">${cd.win}</span>` : ''}</div>
+        ${c.notes ? `<p class="note" style="margin:0">${c.notes.replace(/</g, '&lt;')}</p>` : ''}
+        <div><button class="small del" data-id="${c.id}">${delArm === c.id ? 'Tap again to delete' : 'Delete'}</button></div></div></div>`;
+    }).join('');
+    $('loglist').querySelectorAll('.del').forEach(b => b.addEventListener('click', async () => {
+      if (delArm !== b.dataset.id) { delArm = b.dataset.id; renderLog(); return; }
+      delArm = null; await dbDel(b.dataset.id); CATCHES = await dbAll(); logMsg = 'Catch deleted.'; renderLog();
+    }));
+  }
+  function exportCSV() {
+    const rows = [['Date', 'Time', 'Species', 'Length cm', 'Weight kg', 'Kept/Released', 'Bait', 'Spot', 'Tide', 'Moon', 'Wind', 'Notes']];
+    CATCHES.slice().sort((a, b) => a.t - b.t).forEach(c => { const p = ukParts(c.t), cd = c.cond || {}; rows.push([`${p.y}-${pad(p.m + 1)}-${pad(p.d)}`, `${pad(p.hh)}:${pad(p.mm)}`, c.sp, c.len || '', c.wt || '', c.kept, c.bait, c.spot, cd.tide || '', cd.moon || '', cd.wind || '', c.notes]); });
+    const csv = rows.map(r => r.map(v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    try {
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'santos-hooked-catches.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+      logMsg = 'CSV saved to your downloads.';
+    } catch (err) { logMsg = 'Download blocked here.'; }
+    renderLog();
+  }
+  function setupLog() {
+    $('l-sp').innerHTML = FISH.map(f => `<option>${f.n}</option>`).join('') + '<option>Other</option>';
+    $('l-spot').innerHTML = '<option value="">Choose a spot</option>' + SPOTS.map(s => `<option>${s.n}</option>`).join('') + '<option>Other</option>';
+    $('l-baits').innerHTML = [...new Set(FISH.flatMap(f => f.bait))].map(b => `<option value="${b}"></option>`).join('');
+    $('l-time').value = localInputValue(Date.now());
+    $('logform').addEventListener('submit', saveCatch);
+    $('l-export').addEventListener('click', exportCSV);
+    $('l-sp').addEventListener('change', () => { const f = FISH.find(x => x.n === $('l-sp').value); $('l-hint').textContent = f ? (f.ret ? 'Must be returned.' : f.min ? `Legal minimum ${f.min}${f.rec ? ' · recommended ' + f.rec : ''}` : `No legal minimum${f.rec ? ' · recommended ' + f.rec : ''}`) : ''; });
+    $('l-sp').dispatchEvent(new Event('change'));
+    openDB().then(dbAll).then(r => { CATCHES = r; renderLog(); });
+  }
+
+  // ---------- spots page ----------
+  let spotMode = 'month';
+  function renderSpots() {
+    $('s-month').setAttribute('aria-pressed', String(spotMode === 'month'));
+    $('s-all').setAttribute('aria-pressed', String(spotMode === 'all'));
+    const inS = n => { const f = FISH.find(x => x.n === n); return f && f.m.includes(sel.m); };
+    let list = SPOTS.map(s => ({ s, k: s.fish.filter(inS).length }));
+    list.forEach(x => { x.d = km(LOC.lat, LOC.lon, x.s.lat, x.s.lon); });
+    if (spotMode === 'month') list = list.filter(x => x.k > 0).sort((a, b) => (b.k - a.k) || (a.d - b.d));
+    else list.sort((a, b) => a.d - b.d);
+    $('spotsub').textContent = spotMode === 'month' ? `Best marks for ${MONTH[sel.m]}, ranked by fish in season` : `${SPOTS.length} marks around Southampton and the Solent`;
+    $('spots').innerHTML = (list.length && list[0].d > 30 ? `<div class="warn">You're ${Math.round(list[0].d)} km from the nearest mark in this list. <a href="https://www.google.com/maps/search/sea+fishing/@${LOC.lat.toFixed(4)},${LOC.lon.toFixed(4)},12z" target="_blank" rel="noopener">Find fishing spots near you in Maps</a></div>` : '') + list.map(({ s, d }) => `<div class="fish">
+      <div class="fishhead"><div><div class="fishname">${s.n}</div><div class="latin" style="font-style:normal">${s.a} · ${s.type}</div></div><span class="chip">${d < 1 ? 'here' : Math.round(d) + ' km'}</span></div>
+      <div class="chips">${s.fish.map(n => `<span class="chip${inS(n) ? ' size' : ''}">${n}</span>`).join('')}</div>
+      <div class="lbl">Best tide</div><div>${s.tide}</div>
+      <p class="note">${s.note}</p>
+      <div class="chips"><a class="btnlink" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.q)}" target="_blank" rel="noopener">Open in Maps</a><button class="small logat" data-n="${s.n}">Log a catch here</button></div>
+    </div>`).join('');
+    $('spots').querySelectorAll('.logat').forEach(b => b.addEventListener('click', () => { $('l-spot').value = b.dataset.n; location.hash = 'log'; }));
+  }
+
+  // ---------- state ----------
+  const now = Date.now(), tp = ukParts(now);
+  let sel = { y: tp.y, m: tp.m, d: tp.d };
+  let fishMode = 'season', fishQ = '';
+  const isToday = s => s.y === tp.y && s.m === tp.m && s.d === tp.d;
+  const addDays = (s, n) => { const x = new Date(Date.UTC(s.y, s.m, s.d + n)); return { y: x.getUTCFullYear(), m: x.getUTCMonth(), d: x.getUTCDate(), dow: x.getUTCDay() }; };
+  const $ = id => document.getElementById(id);
+
+  // ---------- TODAY ----------
+  function renderWeek() {
+    let html = '';
+    for (let i = -1; i < 6; i++) {
+      const x = addDays(sel, i), day = computeDay(x.y, x.m, x.d);
+      let dots = ''; for (let k = 1; k <= 5; k++) dots += `<i class="${k <= day.stars ? 'on' : ''}"></i>`;
+      html += `<button class="day${i === 0 ? ' sel' : ''}" data-y="${x.y}" data-m="${x.m}" data-d="${x.d}" aria-label="${DOW[x.dow]} ${x.d} ${MON[x.m]}, ${RATING[day.stars]}">
+        <span class="dn">${isToday(x) ? 'Today' : DOW[x.dow]}</span><span class="dd">${x.d}</span><span class="dots">${dots}</span></button>`;
+    }
+    const w = $('week'); w.innerHTML = html;
+    w.querySelectorAll('.day').forEach(b => b.addEventListener('click', () => { sel = { y: +b.dataset.y, m: +b.dataset.m, d: +b.dataset.d }; renderAll(); }));
+  }
+
+  function renderTimeline(D) {
+    const W = 1000, span = D.end - D.start, X = t => ((t - D.start) / span) * W;
+    const yT = h => 236 - (h / 5) * 120;
+    let sky = '';
+    for (let t = D.start; t < D.end; t += 15 * MIN) {
+      const a = sunAlt(t + 7.5 * MIN);
+      const col = a > 6 ? '#56676b' : a > 0 ? '#c27a54' : a > -6 ? '#4d4038' : a > -12 ? '#272522' : '#1b1a19';
+      sky += `<rect x="${X(t).toFixed(1)}" y="0" width="${(W * 15 * MIN / span + 0.6).toFixed(1)}" height="30" fill="${col}"/>`;
+    }
+    let bars = '';
+    D.wins.forEach(w => {
+      if (w.kind !== 'major' && w.kind !== 'minor') return;
+      const x1 = Math.max(0, X(w.s)), x2 = Math.min(W, X(w.e)); if (x2 <= x1) return;
+      const y = w.kind === 'major' ? 42 : 72, h = w.kind === 'major' ? 22 : 16, col = w.kind === 'major' ? 'var(--rust)' : '#A8A29A';
+      bars += `<rect x="${x1.toFixed(1)}" y="${y}" width="${(x2 - x1).toFixed(1)}" height="${h}" rx="4" fill="${col}"/>`;
+      if (x2 - x1 > 50) bars += `<text x="${((x1 + x2) / 2).toFixed(1)}" y="${y + h - 5}" text-anchor="middle" font-size="12" fill="${w.kind === 'major' ? '#EDE8DF' : '#1C1C1C'}" font-weight="600">${w.kind === 'major' ? 'Major' : 'Minor'}</text>`;
+    });
+    let grid = '';
+    for (let h = 0; h <= 5; h++) grid += `<line x1="0" x2="${W}" y1="${yT(h)}" y2="${yT(h)}" stroke="var(--line)" stroke-width="${h === 0 ? 1 : 0.5}"/>` + (h > 0 ? `<text x="4" y="${yT(h) - 3}" font-size="11" fill="var(--muted)">${h}m</text>` : '');
+    const pts = [];
+    for (let t = D.start; t <= D.end; t += 10 * MIN) pts.push(X(t).toFixed(1) + ',' + yT(tideAt(D.tides, t)).toFixed(1));
+    const curve = `<polygon points="0,${yT(0)} ${pts.join(' ')} ${W},${yT(0)}" fill="var(--tide)" fill-opacity="0.18"/><polyline points="${pts.join(' ')}" fill="none" stroke="var(--tide)" stroke-width="2.2"/>`;
+    let marks = '';
+    D.tides.filter(q => q.t >= D.start && q.t < D.end).forEach(q => {
+      const x = X(q.t), y = yT(q.h), tx = Math.min(W - 30, Math.max(30, x));
+      marks += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.5" fill="var(--tide)"/><text x="${tx.toFixed(1)}" y="${(q.type === 'HW' ? y - 8 : y + 16).toFixed(1)}" text-anchor="middle" font-size="11.5" fill="var(--ink)">${q.type} ${fmt(q.t)}</text>`;
+    });
+    let ticks = '';
+    for (let k = 0; k <= 8; k++) {
+      const t = D.start + k * 3 * HOUR; if (t > D.end) break;
+      const x = X(t);
+      ticks += `<line x1="${x}" x2="${x}" y1="0" y2="236" stroke="var(--line)" stroke-width="0.5"/><text x="${Math.min(W - 16, Math.max(16, x))}" y="254" text-anchor="middle" font-size="12" fill="var(--muted)">${fmt(t)}</text>`;
+    }
+    let nowLine = '';
+    if (isToday(sel) && now >= D.start && now < D.end) { const x = X(now); nowLine = `<line x1="${x}" x2="${x}" y1="0" y2="236" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${Math.min(W - 20, x + 4)}" y="104" font-size="11" fill="var(--ink)">now</text>`; }
+    $('timeline').innerHTML = `<svg viewBox="0 0 ${W} 262" role="img" aria-label="Daylight, feeding windows and tide curve for the day">${sky}${ticks}${grid}${curve}${marks}${bars}${nowLine}</svg>`;
+  }
+
+  function renderToday() {
+    const D = computeDay(sel.y, sel.m, sel.d), x = addDays(sel, 0);
+    $('datelabel').textContent = `${DOW[x.dow]} ${sel.d} ${MON[sel.m]} ${sel.y}`;
+    renderWeek();
+    let nextTxt = '';
+    if (isToday(sel)) {
+      const cur = D.wins.find(w => now >= w.s && now < w.e), nx = D.wins.find(w => w.s > now);
+      if (cur) nextTxt = `On now: <b>${cur.label}</b> until ${fmt(cur.e)}`;
+      else if (nx) nextTxt = `Next: <b>${nx.label}</b> at ${fmt(nx.s)}${nx.prime ? ' · prime time' : ''}`;
+      else nextTxt = 'No more windows today. Check tomorrow.';
+    } else {
+      const best = D.wins.find(w => w.prime) || D.wins.find(w => w.kind === 'major');
+      if (best) nextTxt = `Best bet: <b>${best.label}</b> at ${fmt(best.s)}–${fmt(best.e)}`;
+    }
+    const mr = D.moon.find(q => q.type === 'rise'), ms = D.moon.find(q => q.type === 'set');
+    $('hero').innerHTML = `${moonSVG(D.ph.phase, D.ph.frac, 76)}
+      <div><div class="rating">${RATING[D.stars]} day</div><div class="stars" aria-label="${D.stars} out of 5">${starStr(D.stars)}</div><div class="next">${nextTxt}</div>
+      <div class="chips" style="margin-top:8px"><span class="chip">Sun ${D.sunrise ? fmt(D.sunrise) : '—'}–${D.sunset ? fmt(D.sunset) : '—'}</span><span class="chip">${phaseName(D.ph.phase)} ${Math.round(D.ph.frac * 100)}%</span><span class="chip tide">${D.sp > 0.66 ? 'Springs' : D.sp < 0.33 ? 'Neaps' : 'Mid tides'}</span></div></div>`;
+    renderTimeline(D);
+    $('windows').innerHTML = D.wins.map(w => {
+      const tag = { major: 'Major', minor: 'Minor', dawn: 'Low light', dusk: 'Low light' }[w.kind];
+      return `<div class="row ${w.kind}${w.prime ? ' prime' : ''}"><div class="mono">${fmt(w.s)}–${fmt(w.e)}</div>
+        <div><div class="what">${w.label}</div><div class="chips"><span class="chip">${tag}</span>${w.tide ? `<span class="chip tide">${w.tide}</span>` : ''}${w.prime ? '<span class="chip prime">Prime time</span>' : ''}</div></div></div>`;
+    }).join('') || '<p class="note">No feeding windows found for this day.</p>';
+
+    const sq = $('squid'), inSeason = [8, 9, 10, 11, 0].includes(sel.m);
+    if (D.sunset && inSeason) {
+      const s0 = D.sunset + 15 * MIN, s1 = D.sunset + 4 * HOUR, mAlt = moonState(D.sunset + 2 * HOUR).alt;
+      const hwEve = D.tides.find(q => q.type === 'HW' && q.t >= D.sunset - HOUR && q.t <= D.sunset + 6 * HOUR);
+      const dark = mAlt < 0 || D.ph.frac < 0.35;
+      const sky = dark ? 'Dark sky tonight, so pier and harbour lights will pull the baitfish and squid in. A strong night.' : `The moon is up and ${Math.round(D.ph.frac * 100)}% lit, so squid can spread out. Fish the shadow line under the brightest lights and go a bit deeper.`;
+      sq.style.display = '';
+      sq.innerHTML = `<h2>Squid tonight</h2><div class="kv mono" style="margin-bottom:8px"><span>Squid window</span><span>${fmt(s0)}–${fmt(s1)}</span><span>Evening high water</span><span>${hwEve ? fmt(hwEve.t) : 'none in window'}</span></div>
+        <p class="note" style="margin:0">${sky}${hwEve ? ' Be on the spot an hour or so either side of high water.' : ''} Clear, calm water helps. Small 2.0–2.5 egi jigs, slow lifts and long pauses.</p>`;
+    } else sq.style.display = 'none';
+
+    const top = FISH.filter(f => f.p.includes(sel.m) && !f.ret && !f.warn);
+    $('topfish').innerHTML = top.map(f => `<span class="chip size">${f.n}</span>`).join('') || '<span class="note">Quiet month.</span>';
+  }
+
+  // ---------- TIDES ----------
+  function renderTides() {
+    $('tidesub').textContent = `7 days from ${sel.d} ${MON[sel.m]} · times are UK time`;
+    $('tidetitle').textContent = 'Tides · ' + (tunedPort() || LOC.name);
+    $('hwlabel').textContent = inSolent() ? 'Today\'s first low water:' : 'Today\'s first high water:';
+    const D0 = computeDay(sel.y, sel.m, sel.d);
+    $('tidesrc').textContent = inWeymouth() ? 'Weymouth tide times, tuned to Weymouth tables (usually within 15 min). Note the double low water.' : inSolent() ? (LOC.mode === 'home' || km(LOC.lat, LOC.lon, 50.90, -1.40) < 6 ? 'Southampton tide times, tuned to the official tables' : `Southampton tide times (${LOC.name} may differ by up to ~30 min)`)
+      : D0.tides.length ? `Ocean model for ${LOC.name} · approximate (can be up to 1 h out) · check local tide tables` : 'No tide data for this place yet. It loads when you\'re online.';
+    let html = '';
+    for (let i = 0; i < 7; i++) {
+      const x = addDays(sel, i), D = computeDay(x.y, x.m, x.d);
+      const tt = D.tides.filter(q => q.t >= D.start && q.t < D.end);
+      html += `<div class="tideday${isToday(x) ? ' today' : ''}"><div class="tdh"><b>${isToday(x) ? 'Today' : DOW[x.dow]} ${x.d} ${MON[x.m]}</b><span class="chip tide">${D.sp > 0.66 ? 'Springs' : D.sp < 0.33 ? 'Neaps' : 'Mid tides'}</span></div>
+        ${(w => w ? `<div class="tdwx">${arrow(w.dir, 16)}<span>${compass(w.dir)} ${Math.round(w.w)} mph, gusts ${Math.round(w.g)}</span><span>${wcode(w.code)} · ${Math.round(w.tmin)}–${Math.round(w.tmax)}°C${w.rain != null ? ' · rain ' + w.rain + '%' : ''}</span></div>` : '')(dailyWx(x.y, x.m, x.d))}${tt.length ? '' : '<p class="note" style="margin:0">No tide data for this day.</p>'}<table><tbody>${tt.map(q => `<tr><td class="${q.type === 'HW' ? 'hw' : ''}">${q.type === 'HW' ? (q.n === 2 ? 'High (2nd)' : inSolent() ? 'High (1st)' : 'High') : (q.n === 2 ? 'Low (2nd)' : inWeymouth() ? 'Low (1st)' : 'Low')}</td><td class="mono">${fmt(q.t)}</td><td class="mono r">${q.h.toFixed(1)} m</td></tr>`).join('')}</tbody></table></div>`;
+    }
+    $('tidedays').innerHTML = html;
+    $('offsetnote').textContent = offsetMin ? `Tides moved ${offsetMin > 0 ? '+' : ''}${Math.round(offsetMin)} min to match your check.` : '';
+  }
+
+  // ---------- MOON ----------
+  function phaseEvents(start, days) {
+    const out = [], step = 3 * HOUR, Q = [[0, 'New moon'], [0.25, 'First quarter'], [0.5, 'Full moon'], [0.75, 'Last quarter']];
+    let pv = moonPhase(start).phase;
+    for (let t = start + step; t < start + days * dayMs; t += step) {
+      const cv = moonPhase(t).phase;
+      Q.forEach(([q, name]) => {
+        let hit = false, f = 0;
+        if (q === 0) { if (pv > 0.9 && cv < 0.1) { hit = true; f = (1 - pv) / (cv + 1 - pv); } }
+        else if (pv < q && cv >= q) { hit = true; f = (q - pv) / (cv - pv); }
+        if (hit) out.push({ t: t - step + f * step, name, q });
+      });
+      pv = cv;
+    }
+    return out;
+  }
+  function renderMoon() {
+    const base = tp, D = computeDay(base.y, base.m, base.d);
+    const mr = D.moon.find(q => q.type === 'rise'), ms = D.moon.find(q => q.type === 'set');
+    $('moonnow').innerHTML = `<div class="moonrow">${moonSVG(D.ph.phase, D.ph.frac, 64)}<div><div class="moonname">${phaseName(D.ph.phase)}</div><div class="note" style="margin:0">${Math.round(D.ph.frac * 100)}% lit today</div></div></div>
+      <div class="kv mono"><span>Moonrise</span><span>${mr ? fmt(mr.t) : 'none today'}</span><span>Moonset</span><span>${ms ? fmt(ms.t) : 'none today'}</span><span>Sunrise</span><span>${D.sunrise ? fmt(D.sunrise) : '—'}</span><span>Sunset</span><span>${D.sunset ? fmt(D.sunset) : '—'}</span></div>`;
+    // calendar: 28 days from today, Monday-first
+    const first = addDays(base, 0), lead = (first.dow + 6) % 7;
+    let cal = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => `<div class="dh">${d}</div>`).join('');
+    for (let i = 0; i < lead; i++) cal += '<button class="blank" tabindex="-1" aria-hidden="true"></button>';
+    for (let i = 0; i < 28; i++) {
+      const x = addDays(base, i), dd = computeDay(x.y, x.m, x.d);
+      let dots = ''; for (let k = 1; k <= 5; k++) dots += `<i class="${k <= dd.stars ? 'on' : ''}"></i>`;
+      cal += `<button class="${i === 0 ? 'today' : ''}" data-y="${x.y}" data-m="${x.m}" data-d="${x.d}" aria-label="${x.d} ${MON[x.m]}, ${RATING[dd.stars]}">${moonSVG(dd.ph.phase, dd.ph.frac, 18)}<span class="num">${x.d}</span><span class="dots">${dots}</span></button>`;
+    }
+    const c = $('cal'); c.innerHTML = cal;
+    c.querySelectorAll('button[data-y]').forEach(b => b.addEventListener('click', () => { sel = { y: +b.dataset.y, m: +b.dataset.m, d: +b.dataset.d }; location.hash = 'today'; renderAll(); }));
+    // events
+    const ev = phaseEvents(ukMidnight(base.y, base.m, base.d), 35);
+    let rows = [];
+    ev.forEach(e => {
+      const p = ukParts(e.t), x = addDays({ y: p.y, m: p.m, d: p.d }, 0);
+      rows.push(`<div class="event">${moonSVG(e.q, e.q === 0 ? 0 : e.q === 0.5 ? 1 : 0.5, 30)}<div><b>${e.name}</b>${e.q === 0 || e.q === 0.5 ? '<div class="note" style="margin:0">Strong fishing days · spring tides follow</div>' : '<div class="note" style="margin:0">Neap tides around now</div>'}</div><span class="mono">${DOW[x.dow]} ${p.d} ${MON[p.m]}</span></div>`);
+      if (e.q === 0 || e.q === 0.5) {
+        const sp = ukParts(e.t + 1.5 * dayMs), sx = addDays({ y: sp.y, m: sp.m, d: sp.d }, 0);
+        rows.push(`<div class="event"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--tide)" stroke-width="1.8"><path d="M2 9c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2M2 15c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2"/></svg><div><b>Biggest spring tides</b><div class="note" style="margin:0">Best for bass, rays and cod</div></div><span class="mono">${DOW[sx.dow]} ${sp.d} ${MON[sp.m]}</span></div>`);
+      }
+    });
+    $('events').innerHTML = rows.join('');
+  }
+
+  // ---------- FISH ----------
+  function renderFish() {
+    $('f-season').setAttribute('aria-pressed', String(fishMode === 'season'));
+    $('f-all').setAttribute('aria-pressed', String(fishMode === 'all'));
+    const q = fishQ.trim().toLowerCase();
+    let list = FISH.filter(f => fishMode === 'all' || f.m.includes(sel.m));
+    if (q) list = list.filter(f => (f.n + ' ' + f.l + ' ' + f.bait.join(' ') + ' ' + f.where).toLowerCase().includes(q));
+    list = list.slice().sort((a, b) => (b.p.includes(sel.m) - a.p.includes(sel.m)) || (a.ret || a.warn ? 1 : 0) - (b.ret || b.warn ? 1 : 0));
+    $('fishsub').textContent = fishMode === 'season' ? `${list.length} species about in ${MONTH[sel.m]}` : `All ${list.length} species · ${MONTH[sel.m]} highlighted`;
+    $('species').innerHTML = list.map(f => {
+      const peak = f.p.includes(sel.m), inS = f.m.includes(sel.m);
+      const status = f.ret ? '<span class="chip ret">Must return</span>' : f.warn ? '<span class="chip ret">Venomous</span>' : peak ? '<span class="chip prime">Peak</span>' : inS ? '<span class="chip">In season</span>' : '<span class="chip">Out of season</span>';
+      const rules = f.ret ? '' : `<span class="chip size">${f.min ? 'Min ' + f.min : 'No min size'}</span>${f.bag ? `<span class="chip size">Bag ${f.bag}</span>` : ''}${f.rec ? `<span class="chip">Rec. ${f.rec}</span>` : ''}`;
+      return `<div class="fish${peak && !f.ret && !f.warn ? ' peak' : ''}">
+        <div class="fishhead"><div><div class="fishname">${f.n}</div><div class="latin">${f.l}</div></div>${status}</div>
+        <div class="season mono">${MON.map((mn, i) => `<i class="${f.p.includes(i) ? 'pk' : f.m.includes(i) ? 'on' : ''}${i === sel.m ? ' cur' : ''}" title="${mn}">${mn[0]}</i>`).join('')}</div>
+        <div class="chips">${rules}<span class="chip">${f.where}</span></div>
+        <div class="lbl">Bait</div>
+        <div class="chips">${f.bait.map(b => `<span class="chip bait">${b}</span>`).join('')}</div>
+        <p class="note">${f.tip}</p>
+      </div>`;
+    }).join('') || '<p class="note">No fish match that search.</p>';
+  }
+
+  // ---------- RULES ----------
+  function renderRules() {
+    const rg = region();
+    $('rulesregion').innerHTML = rg === 'southern' ? '' : rg === 'uk'
+      ? `<div class="warn">You're outside the Southern IFCA area (${LOC.name}). The bass and pollack rules below apply across England, but minimum sizes can differ locally. Check the local IFCA (search "IFCA" plus the county) before keeping fish.</div>`
+      : `<div class="warn">You're outside the UK (${LOC.name}), so these rules don't apply. Check the local fishing rules for this country before keeping anything.</div>`;
+    const rows = FISH.filter(f => !f.ret && !f.warn).slice().sort((a, b) => a.n.localeCompare(b.n));
+    $('sizetable').innerHTML = rows.map(f => `<tr><td>${f.n}${f.bag ? `<div class="note" style="margin:0">Bag: ${f.bag}</div>` : ''}</td><td class="r mono">${f.min || '—'}</td><td class="r mono">${f.rec || '—'}</td></tr>`).join('');
+  }
+
+  // ---------- routing ----------
+  const PAGES = ['today', 'tides', 'moon', 'fish', 'rules', 'spots', 'log', 'rigs', 'more'];
+  const TABOF = { moon: 'more', rules: 'more', rigs: 'more' };
+  function route() {
+    const h = (location.hash || '').replace('#', '');
+    const p = PAGES.includes(h) ? h : 'today';
+    PAGES.forEach(k => $('p-' + k).classList.toggle('on', k === p));
+    document.querySelectorAll('nav.tabs a').forEach(a => { const on = a.dataset.p === (TABOF[p] || p); a.classList.toggle('on', on); if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+    window.scrollTo(0, 0);
+  }
+  function renderAll() { renderLocBar(); renderToday(); renderLiveBits(); renderTides(); renderMoon(); renderFish(); renderRules(); renderSpots(); }
+
+  $('prev').addEventListener('click', () => { sel = addDays(sel, -1); renderAll(); });
+  $('next').addEventListener('click', () => { sel = addDays(sel, 1); renderAll(); });
+  $('today').addEventListener('click', () => { sel = { y: tp.y, m: tp.m, d: tp.d }; renderAll(); });
+  $('f-season').addEventListener('click', () => { fishMode = 'season'; renderFish(); });
+  $('f-all').addEventListener('click', () => { fishMode = 'all'; renderFish(); });
+  $('f-q').addEventListener('input', e => { fishQ = e.target.value; renderFish(); });
+  $('calib').addEventListener('click', () => {
+    const v = $('hwinput').value; if (!v) return;
+    const [hh, mm] = v.split(':').map(Number);
+    const D = computeDay(tp.y, tp.m, tp.d), target = D.start + (hh * 60 + mm) * MIN;
+    const hws = D.tides.filter(q => q.type === (inSolent() ? 'LW' : 'HW')); if (!hws.length) return;
+    const near = hws.reduce((a, b) => Math.abs(b.t - target) < Math.abs(a.t - target) ? b : a);
+    offsetMin = Math.max(-180, Math.min(180, offsetMin + (target - near.t) / MIN));
+    saveOffset(); renderAll();
+  });
+  $('reset').addEventListener('click', () => { offsetMin = 0; saveOffset(); renderAll(); });
+  $('s-month').addEventListener('click', () => { spotMode = 'month'; renderSpots(); });
+  $('s-all').addEventListener('click', () => { spotMode = 'all'; renderSpots(); });
+  window.addEventListener('hashchange', route);
+  setupLog();
+  setGeo(LOC.lat, LOC.lon);
+  renderAll(); route();
+  loadLive(false);
+  setInterval(() => { if (document.visibilityState === 'visible') loadLive(false); renderLiveBits(); }, 5 * MIN);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') loadLive(false); });
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); }); }
+</script>
+</body>
+</html>
