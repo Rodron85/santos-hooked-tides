@@ -545,7 +545,7 @@ ol.steps li { margin: 4px 0; }
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Wind, weather, waves and tides away from the Solent: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Made for Santos Hooked. App version 12 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Wind, weather, waves and tides away from the Solent: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 13 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -695,7 +695,7 @@ ol.steps li { margin: 4px 0; }
     const sunrise = (sun.find(s => s.type === 'rise') || {}).t, sunset = (sun.find(s => s.type === 'set') || {}).t;
     const moon = crossings(start, end, t => moonState(t).alt, 0.125, step);
     const trs = transits(start - 30 * HOUR, end + 20 * HOUR);
-    const liveT = liveTidesFor(start, end, trs), tides = liveT || (inSolent() ? buildTides(trs) : inWeymouth() ? buildWeymouth(trs) : []);
+    const admT = admTidesFor(start, end), liveT = admT ? null : liveTidesFor(start, end, trs), tides = admT || liveT || (inSolent() ? buildTides(trs) : inWeymouth() ? buildWeymouth(trs) : []);
     const ph = moonPhase(start + 12 * HOUR);
     const wins = [];
     trs.filter(x => x.t >= start && x.t < end).forEach(x => wins.push({ kind: 'major', label: x.type === 'upper' ? 'Moon overhead' : 'Moon underfoot', s: x.t - HOUR, e: x.t + HOUR }));
@@ -714,7 +714,7 @@ ol.steps li { margin: 4px 0; }
     const phaseF = (1 + Math.cos(4 * Math.PI * ph.phase)) / 2, sp = springF(start + 12 * HOUR);
     const score = 15 + 35 * phaseF + 20 * sp + 30 * Math.min(1, overlap / (90 * MIN));
     const stars = Math.max(1, Math.min(5, Math.round(score / 20)));
-    const res = { y, m, d, start, end, sunrise, sunset, moon, tides, ph, wins: all, stars, sp, live: !!liveT };
+    const res = { y, m, d, start, end, sunrise, sunset, moon, tides, ph, wins: all, stars, sp, live: !!liveT, adm: !!admT };
     cache[key] = res; return res;
   }
 
@@ -832,7 +832,7 @@ ol.steps li { margin: 4px 0; }
   function setLoc(l) {
     LOC = l; try { localStorage.setItem('sh-loc', JSON.stringify(l)); } catch (err) {}
     setGeo(l.lat, l.lon);
-    LIVE.wx = null; LIVE.sea = null; LIVE.tide = null; LIVE.wxAt = 0; LIVE.ver++;
+    LIVE.wx = null; LIVE.sea = null; LIVE.tide = null; LIVE.adm = null; LIVE.wxAt = 0; LIVE.ver++;
     renderAll(); loadLive(true);
   }
   async function useGPS() {
@@ -862,10 +862,10 @@ ol.steps li { margin: 4px 0; }
 
   // ---------- live data (Open-Meteo) ----------
   const DATUM = 2.9; // approx. mean sea level above chart datum at Southampton, m
-  const LIVE = { wx: null, wxAt: 0, tide: null, tideAt: 0, tideKey: '', sea: null, err: '', loading: false, ver: 0 };
+  const LIVE = { wx: null, wxAt: 0, tide: null, tideAt: 0, tideKey: '', sea: null, adm: null, err: '', loading: false, ver: 0 };
   try {
     const c = JSON.parse(localStorage.getItem('sh-live') || 'null');
-    if (c && Date.now() - c.at < 2 * dayMs && c.key === (LOC.lat.toFixed(3) + ',' + LOC.lon.toFixed(3))) { LIVE.wx = c.wx; LIVE.wxAt = c.wxAt; LIVE.tide = c.tide; LIVE.tideAt = c.tideAt; LIVE.tideKey = c.key; LIVE.sea = c.sea; LIVE.ver = 1; }
+    if (c && Date.now() - c.at < 2 * dayMs && c.key === (LOC.lat.toFixed(3) + ',' + LOC.lon.toFixed(3))) { LIVE.wx = c.wx; LIVE.wxAt = c.wxAt; LIVE.tide = c.tide; LIVE.tideAt = c.tideAt; LIVE.tideKey = c.key; LIVE.sea = c.sea; LIVE.adm = c.adm || null; LIVE.ver = 1; }
   } catch (err) {}
   function liveVer() { return LIVE.ver; }
   // Live model low waters, used only if they agree with the tuned Southampton calculation to within 20 min (the coarse model ran ~1 h early in testing)
@@ -882,6 +882,21 @@ ol.steps li { margin: 4px 0; }
       if (!diffs.length || Math.abs(diffs[Math.floor(diffs.length / 2)]) > 20 * MIN) return null;
     }
     return shapeFromLW(lws.map(t => t + offsetMin * MIN));
+  }
+  // Official ADMIRALTY tide times via the app's own Netlify Function (only works on the Netlify site)
+  function admTidesFor(start, end) {
+    const A = LIVE.adm; if (!A || A.key !== locKey() || !A.events || A.events.length < 4) return null;
+    const ev = A.events; if (ev[0].t > start + 8 * HOUR || ev[ev.length - 1].t < end) return null;
+    return ev.map((q, i) => ({ t: q.t, type: q.type, h: q.h == null ? (q.type === 'HW' ? 4 : 1) : q.h, n: (i > 0 && ev[i - 1].type === q.type) ? 2 : (ev[i + 1] && ev[i + 1].type === q.type ? 1 : undefined) }));
+  }
+  async function loadAdmiralty(key) {
+    if (!/^https?:/.test(location.protocol) || /claude\.ai|claudeusercontent/.test(location.hostname)) return;
+    try {
+      const r = await fetch(`/.netlify/functions/tides?lat=${LOC.lat.toFixed(2)}&lon=${LOC.lon.toFixed(2)}`);
+      if (!r.ok) { const j = await r.json().catch(() => ({})); LIVE.admErr = j.error || ('HTTP ' + r.status); return; }
+      const j = await r.json();
+      if (j.events && j.events.length) { LIVE.adm = { key, station: j.station, events: j.events, at: Date.now() }; LIVE.admErr = ''; }
+    } catch (err) { LIVE.admErr = 'offline'; }
   }
   function extremesFrom(ts, hs) {
     const raw = [];
@@ -909,6 +924,7 @@ ol.steps li { margin: 4px 0; }
     if (!force && Date.now() - LIVE.wxAt < 20 * MIN && LIVE.wx) return;
     LIVE.loading = true; LIVE.err = ''; renderLiveBits();
     const key = locKey(), wxUrl = `https://api.open-meteo.com/v1/forecast?latitude=${LOC.lat.toFixed(4)}&longitude=${LOC.lon.toFixed(4)}&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code,precipitation&hourly=temperature_2m,precipitation,precipitation_probability,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,precipitation_probability_max&wind_speed_unit=mph&timezone=Europe%2FLondon&timeformat=unixtime&past_days=2&forecast_days=7`;
+    if (!LIVE.adm || LIVE.adm.key !== key || Date.now() - LIVE.adm.at > 6 * HOUR) await loadAdmiralty(key);
     const L0 = LOC.lat, G0 = LOC.lon, pts = inSolent() ? [[50.79, -1.30], [50.77, -1.22], [50.74, -1.12]] : [[L0, G0], [L0 - 0.06, G0], [L0 - 0.12, G0], [L0, G0 - 0.1], [L0, G0 + 0.1], [L0 + 0.06, G0]];
     try {
       const wx = await getJSON(wxUrl);
@@ -929,7 +945,7 @@ ol.steps li { margin: 4px 0; }
     }
     LIVE.ver++; LIVE.loading = false;
     if (key !== locKey()) { LIVE.loading = false; return; }
-    try { localStorage.setItem('sh-live', JSON.stringify({ at: Date.now(), key, wx: LIVE.wx, wxAt: LIVE.wxAt, tide: LIVE.tide, tideAt: LIVE.tideAt, sea: LIVE.sea })); } catch (err) {}
+    try { localStorage.setItem('sh-live', JSON.stringify({ at: Date.now(), key, wx: LIVE.wx, wxAt: LIVE.wxAt, tide: LIVE.tide, tideAt: LIVE.tideAt, sea: LIVE.sea, adm: LIVE.adm })); } catch (err) {}
     renderAll();
   }
   const COMPASS = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
@@ -1239,7 +1255,7 @@ ol.steps li { margin: 4px 0; }
     $('tidetitle').textContent = 'Tides · ' + (tunedPort() || LOC.name);
     $('hwlabel').textContent = inSolent() ? 'Today\'s first low water:' : 'Today\'s first high water:';
     const D0 = computeDay(sel.y, sel.m, sel.d);
-    $('tidesrc').textContent = inWeymouth() ? 'Weymouth tide times, tuned to Weymouth tables (usually within 15 min). Note the double low water.' : inSolent() ? (LOC.mode === 'home' || km(LOC.lat, LOC.lon, 50.90, -1.40) < 6 ? 'Southampton tide times, tuned to the official tables' : `Southampton tide times (${LOC.name} may differ by up to ~30 min)`)
+    $('tidesrc').textContent = D0.adm ? `Official Admiralty tide times · ${LIVE.adm.station.name} (${LIVE.adm.station.km} km away). Contains ADMIRALTY® tidal data: © Crown Copyright and database right.` : inWeymouth() ? 'Weymouth tide times, tuned to Weymouth tables (usually within 15 min). Note the double low water.' : inSolent() ? (LOC.mode === 'home' || km(LOC.lat, LOC.lon, 50.90, -1.40) < 6 ? 'Southampton tide times, tuned to the official tables' : `Southampton tide times (${LOC.name} may differ by up to ~30 min)`)
       : D0.tides.length ? `Ocean model for ${LOC.name} · approximate (can be up to 1 h out) · check local tide tables` : 'No tide data for this place yet. It loads when you\'re online.';
     let html = '';
     for (let i = 0; i < 7; i++) {
