@@ -195,6 +195,8 @@ button.primary { background: var(--rust); border-color: var(--rust); font-weight
 ol.steps { margin: 4px 0 0; padding-left: 20px; }
 ol.steps li { margin: 4px 0; }
 .back { font-size: .85rem; }
+.leaflet-container { font: inherit; }
+.leaflet-popup-content a { color: #1a6f6a; }
 .scrub { margin-top: 6px; font-size: .88rem; color: var(--muted); min-height: 1.4em; }
 .scrub b { color: var(--ink); }
 .timeline svg { touch-action: pan-x pan-y; cursor: crosshair; }
@@ -416,6 +418,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       <button id="s-month" aria-pressed="true">Good this month</button>
       <button id="s-all" aria-pressed="false">All spots</button>
     </div>
+    <div class="panel" style="padding:0;overflow:hidden"><div id="map" style="height:340px;background:#1f1e1d"></div><div class="note" id="mapnote" style="margin:0;padding:8px 12px">Tap a mark to see what's in season and fish there. Rust = good this month · ★ = your spots · blue = selected place.</div></div>
     <div class="panel" id="myspots"></div>
     <div class="species" id="spots"></div>
     <p class="note">Access, parking and fishing rules can change. Follow local signs, and check tide times before walking out on spits or mud.</p>
@@ -558,7 +561,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Weather warnings: Met Office. Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 18 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Weather warnings: Met Office. Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 19 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -1228,7 +1231,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     el.querySelectorAll('.ms-del').forEach(b => b.addEventListener('click', () => { const s = MYSPOTS[+b.dataset.i]; if (mySpotDel !== s.id) { mySpotDel = s.id; renderMySpots(); return; } MYSPOTS.splice(+b.dataset.i, 1); mySpotDel = null; saveMySpots(); mySpotMsg = 'Spot deleted.'; renderMySpots(); renderLocBar(); }));
   }
   function renderSpots() {
-    renderMySpots();
+    renderMySpots(); renderMap();
     $('s-month').setAttribute('aria-pressed', String(spotMode === 'month'));
     $('s-all').setAttribute('aria-pressed', String(spotMode === 'all'));
     const inS = n => { const f = FISH.find(x => x.n === n); return f && f.m.includes(sel.m); };
@@ -1393,6 +1396,54 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     } catch (err) { if (err && err.name === 'AbortError') logMsg = ''; else { saveBlob(blob, name); logMsg = 'Picture saved to your downloads.'; } }
     renderLog();
   }
+
+  // ---------- interactive map (Leaflet + OpenStreetMap, OpenSeaMap seamarks) ----------
+  let MAP = null, mapLayer = null, mapLoading = false;
+  function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = () => res(); s.onerror = () => { s.remove(); rej(new Error(src)); }; document.head.appendChild(s); }); }
+  async function loadLeaflet() {
+    if (window.L) return;
+    const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'; document.head.appendChild(css);
+    try { await loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'); }
+    catch (err) {
+      css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css';
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js');
+    }
+  }
+  async function renderMap() {
+    const el = $('map'); if (!el || !$('p-spots').classList.contains('on')) return;
+    if (!window.L) {
+      if (mapLoading) return; mapLoading = true;
+      try { await loadLeaflet(); } catch (err) { $('mapnote').textContent = 'The map needs an internet connection.'; mapLoading = false; return; }
+      mapLoading = false;
+    }
+    if (!MAP) {
+      MAP = L.map(el, { zoomControl: true, attributionControl: true }).setView([LOC.lat, LOC.lon], 10);
+      const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap contributors' }).addTo(MAP);
+      const sea = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', { maxZoom: 18, attribution: 'Seamarks © OpenSeaMap' }).addTo(MAP);
+      L.control.layers(null, { 'Buoys & seamarks': sea }, { collapsed: true }).addTo(MAP);
+      mapLayer = L.layerGroup().addTo(MAP);
+    }
+    mapLayer.clearLayers();
+    const inS = n => { const f = FISH.find(x => x.n === n); return f && f.m.includes(sel.m); };
+    const pop = (name, sub, fish, lat, lon, kind, idx) => `<div style="font-family:var(--font-body);min-width:180px"><b style="font-size:15px">${name.replace(/</g, '&lt;')}</b>${sub ? `<div style="color:#666;font-size:12px">${sub.replace(/</g, '&lt;')}</div>` : ''}${fish ? `<div style="margin:6px 0;font-size:12px">${fish}</div>` : ''}<div style="display:flex;gap:6px;margin-top:6px"><button class="mapfish" data-k="${kind}" data-i="${idx}" style="background:#C4552B;color:#EDE8DF;border:0;border-radius:6px;padding:5px 9px;font-weight:600">Fish here</button><a href="https://www.google.com/maps/search/?api=1&query=${lat},${lon}" target="_blank" rel="noopener" style="padding:5px 9px">Directions</a></div></div>`;
+    SPOTS.forEach((s, i) => {
+      const k = s.fish.filter(inS);
+      L.circleMarker([s.lat, s.lon], { radius: k.length ? 9 : 7, color: '#EDE8DF', weight: 2, fillColor: k.length ? '#C4552B' : '#7a6e66', fillOpacity: 1 })
+        .bindPopup(pop(s.n, s.a + ' · ' + s.type, k.length ? 'In season: ' + k.join(', ') : 'Quiet this month', s.lat, s.lon, 's', i)).addTo(mapLayer);
+    });
+    MYSPOTS.forEach((s, i) => {
+      L.marker([s.lat, s.lon], { icon: L.divIcon({ className: '', html: '<div style="font-size:24px;line-height:24px;color:#F0CD78;text-shadow:0 0 3px #000">★</div>', iconSize: [24, 24], iconAnchor: [12, 12] }) })
+        .bindPopup(pop(s.n, 'My spot', s.notes ? s.notes.replace(/</g, '&lt;') : '', s.lat, s.lon, 'm', i)).addTo(mapLayer);
+    });
+    L.circleMarker([LOC.lat, LOC.lon], { radius: 7, color: '#fff', weight: 3, fillColor: '#3b82f6', fillOpacity: 1 }).bindPopup(`<b>${LOC.name.replace(/</g, '&lt;')}</b><div style="font-size:12px;color:#666">Selected in Fishing at</div>`).addTo(mapLayer);
+    setTimeout(() => MAP.invalidateSize(), 50);
+  }
+  function mapFocus() { if (MAP) MAP.setView([LOC.lat, LOC.lon], 11); }
+  document.addEventListener('click', ev => {
+    const b = ev.target.closest && ev.target.closest('.mapfish'); if (!b) return;
+    const i = +b.dataset.i, s = b.dataset.k === 'm' ? MYSPOTS[i] : SPOTS[i]; if (!s) return;
+    setLoc({ mode: b.dataset.k === 'm' ? 'my' : 'spot', lat: s.lat, lon: s.lon, name: s.n }); location.hash = 'today';
+  });
 
   // ---------- state ----------
   const now = Date.now(), tp = ukParts(now);
@@ -1626,6 +1677,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     const h = (location.hash || '').replace('#', '');
     const p = PAGES.includes(h) ? h : 'today';
     PAGES.forEach(k => $('p-' + k).classList.toggle('on', k === p));
+    if (p === 'spots') { renderMap(); setTimeout(mapFocus, 120); }
     document.querySelectorAll('nav.tabs a').forEach(a => { const on = a.dataset.p === (TABOF[p] || p); a.classList.toggle('on', on); if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     window.scrollTo(0, 0);
   }
