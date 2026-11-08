@@ -102,7 +102,6 @@ th { font-family: var(--font-label); font-weight: 600; letter-spacing: .06em; te
 td.r, th.r { text-align: right; }
 .hw { color: var(--tide); font-weight: 600; }
 .note { color: var(--muted); font-size: .84rem; margin: 10px 0 0; max-width: 65ch; }
-.squid { border-color: #4a2e22; background: linear-gradient(160deg, #2a1f1a, var(--panel)); }
 .calib { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
 input[type="time"], input[type="search"] { font: inherit; color: var(--ink); background: var(--deep); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; color-scheme: dark; }
 input[type="search"] { width: 100%; }
@@ -253,12 +252,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       <h2>Best times to fish</h2>
       <div class="list" id="windows"></div>
     </div>
-    <div class="panel squid" id="squid"></div>
-    <div class="panel">
-      <h2>Bite now</h2>
-      <div class="chips" id="topfish"></div>
-      <p class="note"><a href="#fish">All fish, baits and sizes →</a></p>
-    </div>
+    <div class="panel" id="target"></div>
   </section>
 
   <!-- TIDES -->
@@ -561,7 +555,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Weather warnings: Met Office. Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 19 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Weather warnings: Met Office. Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 20 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -1403,10 +1397,11 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   async function loadLeaflet() {
     if (window.L) return;
     const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'; document.head.appendChild(css);
-    try { await loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'); }
+    try { await loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'); if (!window.L) throw new Error('no L'); }
     catch (err) {
       css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css';
       await loadScript('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js');
+      if (!window.L) throw new Error('no L');
     }
   }
   async function renderMap() {
@@ -1444,6 +1439,114 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     const i = +b.dataset.i, s = b.dataset.k === 'm' ? MYSPOTS[i] : SPOTS[i]; if (!s) return;
     setLoc({ mode: b.dataset.k === 'm' ? 'my' : 'spot', lat: s.lat, lon: s.lon, name: s.n }); location.hash = 'today';
   });
+
+  // ---------- target species ----------
+  // light: night | dusk-night | dawn-dusk | day | any ; tide: flood | hw | ebb | any ; clarity: clear | slight | coloured | any
+  const TGT = {
+    'Squid': { light: 'night', tide: 'hw', clarity: 'clear', wind: 15, dark: true, dusk: true, rig: 'Float rig', tip: 'Under pier and harbour lights after dark. A dark sky (moon down or new) makes the lights work best. Small 2.0–2.5 egi jigs, slow lifts and long pauses.' },
+    'Cuttlefish': { light: 'dawn-dusk', tide: 'hw', clarity: 'clear', wind: 15, rig: 'Float rig', tip: 'Spring visitors to the shallows. Egi jigs fished slowly near weed, or a mackerel strip under a float.' },
+    'Bass': { light: 'dawn-dusk', tide: 'flood', clarity: 'slight', wind: 22, springs: true, rig: 'Running ledger', tip: 'The first light and last light on a flooding tide. A little colour and surf after a blow is ideal. Peeler crab on the ledger, or lures over rough ground.' },
+    'Whiting': { light: 'night', tide: 'any', clarity: 'any', wind: 25, rig: 'Two-hook flapper', tip: 'After dark on any tide. Mackerel or squid strip on size 1–2 hooks.' },
+    'Cod': { light: 'night', tide: 'flood', clarity: 'coloured', wind: 25, springs: true, rig: 'Pulley pennel', tip: 'Big spring tides at night with coloured water after a blow. Black lug and squid cocktails.' },
+    'Pouting': { light: 'any', tide: 'any', clarity: 'any', wind: 22, rig: 'Two-hook flapper', tip: 'Around piers, wrecks and rough ground, any time. Ragworm or squid strip.' },
+    'Dogfish': { light: 'night', tide: 'any', clarity: 'any', wind: 25, rig: 'Two-hook flapper', tip: 'Mostly at night. Any fish bait on the bottom.' },
+    'Flounder': { light: 'any', tide: 'flood', clarity: 'any', wind: 22, rig: 'Running ledger', tip: 'Estuaries on the flood. Peeler crab or ragworm with beads, and let the bait roll.' },
+    'Smoothhound': { light: 'dusk-night', tide: 'flood', clarity: 'any', wind: 20, springs: true, rig: 'Pulley pennel', tip: 'Evening into dark on the flood, bigger tides best. Peeler or hardback crab, and a strong drag.' },
+    'Thornback ray': { light: 'night', tide: 'flood', clarity: 'any', wind: 22, rig: 'Pulley pennel', tip: 'Night on the flood. A big mackerel or sandeel bait.' },
+    'Small-eyed ray': { light: 'night', tide: 'flood', clarity: 'any', wind: 20, rig: 'Pulley pennel', tip: 'Sandy beaches at night. Sandeel is the bait.' },
+    'Plaice': { light: 'day', tide: 'flood', clarity: 'clear', wind: 18, rig: 'Two-hook flapper', tip: 'Daylight over sand and shell. Ragworm with beads and sequins, fished slowly.' },
+    'Sole': { light: 'night', tide: 'any', clarity: 'any', wind: 15, rig: 'Two-hook flapper', tip: 'Warm, calm nights close in. Small hooks and ragworm.' },
+    'Mackerel': { light: 'day', tide: 'hw', clarity: 'clear', wind: 18, rig: 'Float rig', tip: 'Daylight around high water. Feathers, small spinners or a strip under a float.' },
+    'Scad (horse mackerel)': { light: 'night', tide: 'hw', clarity: 'clear', wind: 18, rig: 'Float rig', tip: 'Under lights at night. Sabikis or a strip under a float.' },
+    'Garfish': { light: 'day', tide: 'any', clarity: 'clear', wind: 12, rig: 'Float rig', tip: 'Calm, bright days. Fish shallow under a float with a mackerel strip.' },
+    'Pollack': { light: 'dawn-dusk', tide: 'any', clarity: 'clear', wind: 18, rig: 'Float rig', tip: 'Dawn and dusk over rocks. Soft plastic eels just off the bottom, or a float.' },
+    'Black bream': { light: 'day', tide: 'any', clarity: 'clear', wind: 15, rig: 'Two-hook flapper', tip: 'Near rough ground in daylight. Small hooks (size 4–6) with ragworm or squid strips.' },
+    'Thick-lipped mullet': { light: 'day', tide: 'hw', clarity: 'clear', wind: 12, rig: 'Float rig', tip: 'Calm harbours around high water. Bread flake with mashed-bread groundbait, tiny hooks.' },
+    'Thin-lipped mullet': { light: 'day', tide: 'flood', clarity: 'any', wind: 15, rig: 'Running ledger', tip: 'Up the estuaries on the flood. A small spinner tipped with ragworm.' },
+    'Ballan wrasse': { light: 'day', tide: 'any', clarity: 'clear', wind: 15, neaps: true, rig: 'Float rig', tip: 'Rocky marks in daylight, gentle neap tides. Crab or ragworm, strong line.' },
+    'Conger': { light: 'night', tide: 'any', clarity: 'any', wind: 25, rig: 'Pulley pennel', tip: 'Pier legs and walls at night. Mackerel fillet or whole squid on heavy gear.' },
+    'Bull huss': { light: 'night', tide: 'any', clarity: 'any', wind: 22, rig: 'Pulley pennel', tip: 'Rough ground at night with a fish bait.' },
+    'Gilthead bream': { light: 'day', tide: 'flood', clarity: 'clear', wind: 15, rig: 'Running ledger', tip: 'Warm estuaries on the flood. Crab or mussel, and give shy bites time.' }
+  };
+  let TARGET = '';
+  try { TARGET = localStorage.getItem('sh-target') || ''; } catch (err) {}
+  function targetHours(name) {
+    const P = TGT[name] || { light: 'any', tide: 'any', clarity: 'any', wind: 20 }, f = FISH.find(x => x.n === name);
+    const slots = [], startDay = { y: tp.y, m: tp.m, d: tp.d };
+    for (let i = 0; i < 7; i++) {
+      const x = addDays(startDay, i), D = computeDay(x.y, x.m, x.d);
+      for (let t = D.start + 30 * MIN; t < D.end; t += HOUR) {
+        if (t < now - 30 * MIN) continue;
+        let sc = 0; const why = [];
+        const sa = sunAlt(t), nearRise = D.sunrise && Math.abs(t - D.sunrise) <= 90 * MIN, nearSet = D.sunset && Math.abs(t - D.sunset) <= 90 * MIN;
+        if (P.light === 'night') { if (sa < -6) { sc += 3; if (!why.length) why.push('after dark'); } else if (sa < 0) sc += 1; else sc -= 2; }
+        if (P.dusk && nearSet) { sc += 2; why.push('dusk'); }
+        if (P.light === 'dusk-night') { if (nearSet || (sa < -6 && t > D.start + 12 * HOUR)) { sc += 3; why.push(nearSet ? 'dusk' : 'after dark'); } else if (sa < 0) sc += 1; else sc -= 1; }
+        else if (P.light === 'dawn-dusk') { if (nearRise || nearSet) { sc += 3; why.push(nearRise ? 'dawn' : 'dusk'); } else if (sa < 0) sc += 1; }
+        else if (P.light === 'day') { if (sa > 5) { sc += 2; why.push('daylight'); } else sc -= 3; }
+        const st = tideState(D.tides, t);
+        if (D.tides.length) {
+          if (P.tide === 'flood' && /Flooding/.test(st)) { sc += 2; why.push('flooding tide'); }
+          else if (P.tide === 'hw' && /High water/.test(st)) { sc += 2; why.push(st.toLowerCase()); }
+          else if (P.tide === 'ebb' && /Ebbing/.test(st)) { sc += 2; why.push('ebbing tide'); }
+          else if (P.tide !== 'any' && /Low water/.test(st)) sc -= 1;
+        }
+        if (P.springs && D.sp > 0.66) { sc += 1; why.push('spring tides'); }
+        if (P.neaps && D.sp < 0.33) { sc += 1; why.push('neap tides'); }
+        const w = D.wins.find(w => t >= w.s && t < w.e);
+        if (w) { sc += w.kind === 'major' ? 2 : 1; why.push(w.label.toLowerCase()); }
+        if (P.dark) { const ma = moonState(t).alt; if (ma < 0 || D.ph.frac < 0.3) { sc += 2; why.push('dark sky'); } }
+        const hi = wxHourIdx(t); let wind = null;
+        if (hi >= 0) {
+          const H = LIVE.wx.hourly, ws = H.wind_speed_10m[hi], g = H.wind_gusts_10m[hi];
+          wind = `${compass(H.wind_direction_10m[hi])} ${Math.round(ws)} mph`;
+          if (ws > P.wind + 8 || g > 45) sc -= 5; else if (ws > P.wind) sc -= 2; else if (ws <= P.wind * 0.6) sc += 1;
+          const rp = H.precipitation_probability[hi]; if (rp != null && rp > 70) sc -= 1;
+        }
+        if (P.clarity !== 'any') { const cl = clarityAt(t); if (cl) { const ok = (P.clarity === 'clear' && cl.label === 'Clear') || (P.clarity === 'slight' && cl.label !== 'Clear') || (P.clarity === 'coloured' && cl.label === 'Coloured'); if (ok) { sc += 1; why.push(cl.label.toLowerCase() + ' water'); } } }
+        slots.push({ t, x, sc, why: why.map(w => w.toLowerCase()).filter((w, i, A) => A.indexOf(w) === i), wind, st });
+      }
+    }
+    return { slots, P, f };
+  }
+  function targetBest(name) {
+    const { slots, P, f } = targetHours(name);
+    const sorted = slots.slice().sort((a, b) => b.sc - a.sc), pick = [];
+    for (const s of sorted) {
+      if (pick.length >= 3) break;
+      if (pick.some(p => Math.abs(p.t - s.t) < 4 * HOUR)) continue;
+      if (pick.filter(p => p.x.d === s.x.d).length >= 2) continue;
+      pick.push(s);
+    }
+    return { pick: pick.sort((a, b) => a.t - b.t), P, f };
+  }
+  function renderTarget() {
+    const el = $('target'); if (!el) return;
+    const opts = ['<option value="">Choose a fish…</option>'].concat(FISH.filter(f => !f.ret && !f.warn).map(f => `<option${f.n === TARGET ? ' selected' : ''}>${f.n}</option>`));
+    let body = '';
+    if (!TARGET) {
+      const top = FISH.filter(f => f.p.includes(tp.m) && !f.ret && !f.warn);
+      body = `<p class="note" style="margin:4px 0 8px">Pick what you're after and the app finds the best times this week, the bait, the rig and the nearest marks.</p><div class="lbl">Biting well in ${MONTH[tp.m]}</div><div class="chips" style="margin-top:4px">${top.map(f => `<button class="small tgtpick" data-n="${f.n}">${f.n}</button>`).join('') || '<span class="note">Quiet month.</span>'}</div>`;
+    } else {
+      const { pick, P, f } = targetBest(TARGET);
+      const inS = f && f.m.includes(tp.m), peak = f && f.p.includes(tp.m);
+      const marks = SPOTS.filter(s => s.fish.includes(TARGET)).map(s => ({ s, d: km(LOC.lat, LOC.lon, s.lat, s.lon) })).sort((a, b) => a.d - b.d).slice(0, 3);
+      body = `<div class="chips" style="margin:6px 0 10px">${f && f.ret ? '<span class="chip ret">Must return</span>' : peak ? '<span class="chip prime">Peak season</span>' : inS ? '<span class="chip">In season</span>' : '<span class="chip ret">Out of season now</span>'}${f && f.min ? `<span class="chip size">Min ${f.min}</span>` : '<span class="chip size">No min size</span>'}${f && f.bag ? `<span class="chip size">Bag ${f.bag}</span>` : ''}</div>
+        ${!inS ? `<p class="note" style="margin:0 0 8px">${TARGET} isn't usually about in ${MONTH[tp.m]}. These are still the best conditions for it this week.</p>` : ''}
+        <div class="lbl">Best times this week · 📍 ${LOC.name.replace(/</g, '&lt;')}</div>
+        <div class="list" style="margin-top:6px">${pick.map(s => `<button class="row bestrow${s.sc >= 6 ? ' prime' : ''}" data-y="${s.x.y}" data-m="${s.x.m}" data-d="${s.x.d}"><div class="mono">${isToday(s.x) ? 'Today' : DOW[s.x.dow] + ' ' + s.x.d}<br>${fmt(s.t - HOUR)}–${fmt(s.t + HOUR)}</div><div><div class="what">${s.why.length ? s.why.slice(0, 3).join(' · ').replace(/^./, c => c.toUpperCase()) : 'Best of a quiet week'}</div><div class="chips">${s.st && !s.why.slice(0, 3).includes(s.st.toLowerCase()) ? `<span class="chip tide">${s.st}</span>` : ''}${s.wind ? `<span class="chip">${s.wind}</span>` : ''}</div></div></button>`).join('') || '<p class="note">No suitable times left this week.</p>'}</div>
+        <p class="note" style="margin-top:10px">${P.tip || (f ? f.tip : '')}</p>
+        ${f ? `<div class="lbl">Bait</div><div class="chips" style="margin-top:4px">${f.bait.map(b => `<span class="chip bait">${b}</span>`).join('')}</div>` : ''}
+        ${P.rig ? `<p class="note">Rig: <a href="#rigs">${P.rig}</a></p>` : ''}
+        ${marks.length ? `<div class="lbl" style="margin-top:8px">Nearest marks for ${TARGET.toLowerCase()}</div><div class="chips" style="margin-top:4px">${marks.map(({ s, d }) => `<button class="small tgtspot" data-n="${s.n}">${s.n} · ${Math.round(d)} km</button>`).join('')}</div>` : ''}`;
+    }
+    el.innerHTML = `<h2>🎯 Target</h2><div class="field"><label for="tgtsel">What are you fishing for?</label><select id="tgtsel">${opts.join('')}</select></div>${body}`;
+    const setT = n => { TARGET = n; try { localStorage.setItem('sh-target', n); } catch (err) {} renderTarget(); };
+    $('tgtsel').addEventListener('change', e => setT(e.target.value));
+    el.querySelectorAll('.tgtpick').forEach(b => b.addEventListener('click', () => setT(b.dataset.n)));
+    el.querySelectorAll('.bestrow').forEach(bt => bt.addEventListener('click', () => { sel = { y: +bt.dataset.y, m: +bt.dataset.m, d: +bt.dataset.d }; renderAll(); window.scrollTo(0, 0); }));
+    el.querySelectorAll('.tgtspot').forEach(b => b.addEventListener('click', () => { const s = SPOTS.find(x => x.n === b.dataset.n); if (s) setLoc({ mode: 'spot', lat: s.lat, lon: s.lon, name: s.n }); }));
+  }
 
   // ---------- state ----------
   const now = Date.now(), tp = ukParts(now);
@@ -1555,19 +1658,6 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
         <div><div class="what">${w.label}</div><div class="chips"><span class="chip">${tag}</span>${w.tide ? `<span class="chip tide">${w.tide}</span>` : ''}${w.prime ? '<span class="chip prime">Prime time</span>' : ''}</div></div></div>`;
     }).join('') || '<p class="note">No feeding windows found for this day.</p>';
 
-    const sq = $('squid'), inSeason = [8, 9, 10, 11, 0].includes(sel.m);
-    if (D.sunset && inSeason) {
-      const s0 = D.sunset + 15 * MIN, s1 = D.sunset + 4 * HOUR, mAlt = moonState(D.sunset + 2 * HOUR).alt;
-      const hwEve = D.tides.find(q => q.type === 'HW' && q.t >= D.sunset - HOUR && q.t <= D.sunset + 6 * HOUR);
-      const dark = mAlt < 0 || D.ph.frac < 0.35;
-      const sky = dark ? 'Dark sky tonight, so pier and harbour lights will pull the baitfish and squid in. A strong night.' : `The moon is up and ${Math.round(D.ph.frac * 100)}% lit, so squid can spread out. Fish the shadow line under the brightest lights and go a bit deeper.`;
-      sq.style.display = '';
-      sq.innerHTML = `<h2>Squid tonight</h2><div class="kv mono" style="margin-bottom:8px"><span>Squid window</span><span>${fmt(s0)}–${fmt(s1)}</span><span>Evening high water</span><span>${hwEve ? fmt(hwEve.t) : 'none in window'}</span></div>
-        <p class="note" style="margin:0">${sky}${hwEve ? ' Be on the spot an hour or so either side of high water.' : ''} Clear, calm water helps. Small 2.0–2.5 egi jigs, slow lifts and long pauses.</p>`;
-    } else sq.style.display = 'none';
-
-    const top = FISH.filter(f => f.p.includes(sel.m) && !f.ret && !f.warn);
-    $('topfish').innerHTML = top.map(f => `<span class="chip size">${f.n}</span>`).join('') || '<span class="note">Quiet month.</span>';
   }
 
   // ---------- TIDES ----------
@@ -1681,7 +1771,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     document.querySelectorAll('nav.tabs a').forEach(a => { const on = a.dataset.p === (TABOF[p] || p); a.classList.toggle('on', on); if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     window.scrollTo(0, 0);
   }
-  function renderAll() { renderLocBar(); renderWarnings(); renderToday(); renderBest(); renderLiveBits(); renderTides(); renderMoon(); renderFish(); renderRules(); renderSpots(); }
+  function renderAll() { renderLocBar(); renderWarnings(); renderToday(); renderBest(); renderTarget(); renderLiveBits(); renderTides(); renderMoon(); renderFish(); renderRules(); renderSpots(); }
 
   $('prev').addEventListener('click', () => { sel = addDays(sel, -1); renderAll(); });
   $('next').addEventListener('click', () => { sel = addDays(sel, 1); renderAll(); });
