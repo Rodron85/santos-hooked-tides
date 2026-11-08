@@ -195,6 +195,10 @@ button.primary { background: var(--rust); border-color: var(--rust); font-weight
 ol.steps { margin: 4px 0 0; padding-left: 20px; }
 ol.steps li { margin: 4px 0; }
 .back { font-size: .85rem; }
+label.btnlike { font: inherit; color: var(--ink); background: #292623; border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+details.more { margin-top: 10px; }
+details.more > summary { cursor: pointer; font-family: var(--font-label); font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 6px 0; }
+.bestrow { width: 100%; text-align: left; font: inherit; color: var(--ink); cursor: pointer; }
 .locbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .locbar select { flex: 1; min-width: 0; font: inherit; font-weight: 600; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; color-scheme: dark; }
 
@@ -227,6 +231,7 @@ ol.steps li { margin: 4px 0; }
     </div>
     <div class="week" id="week"></div>
     <div class="panel hero" id="hero"></div>
+    <div class="panel" id="best"></div>
     <div class="panel" id="wx"></div>
     <div class="panel">
       <h2>Day at a glance</h2>
@@ -253,7 +258,7 @@ ol.steps li { margin: 4px 0; }
   <section class="page" id="p-tides">
     <div><div class="pagetitle" id="tidetitle">Tides · Southampton</div><p class="pagesub" id="tidesub"></p><p class="srcline" id="tidesrc"></p></div>
     <div class="tidedays" id="tidedays"></div>
-    <div class="panel">
+    <div class="panel" id="calibpanel">
       <h2>Line up the tides</h2>
       <p class="note" style="margin-top:0">Southampton has a double high water: the tide rises to a 1st high, stays high for 2–3 hours, then makes a 2nd high before a quick ebb. Low water is the sharpest point, so the app times everything from it. Low waters are worked out from the moon and tuned to Southampton tide tables (usually within 10 min); a live ocean model is only used if it agrees to within 20 min, because in the Solent it runs about an hour early. The two highs are less exact (within about 30 min). Check <a href="https://easytide.admiralty.co.uk/" target="_blank" rel="noopener">Admiralty EasyTide</a> (easytide.admiralty.co.uk) once, type today's first low water here (Southampton) or first high water (elsewhere), and the app lines itself up.</p>
       <div class="calib">
@@ -433,6 +438,8 @@ ol.steps li { margin: 4px 0; }
         <div class="field"><label for="l-photo">Photo</label><input id="l-photo" type="file" accept="image/*"></div>
         <div class="field"><label for="l-notes">Notes</label><textarea id="l-notes" placeholder="Who caught it, the rig, anything worth remembering"></textarea></div>
         <div class="chips"><button type="submit" class="primary">Save catch</button><button type="button" id="l-export">Export CSV</button></div>
+        <div class="chips"><button type="button" id="l-backup">Back up catches</button><label class="btnlike" for="l-restore">Restore backup</label><input type="file" id="l-restore" accept="application/json,.json" style="display:none"></div>
+        <p class="note" style="margin:0">Catches are saved on this phone only. Back up now and then, and keep the file in Google Drive or your email.</p>
       </form>
       <div class="okmsg" id="logmsg" style="display:none;margin-top:10px"></div>
     </div>
@@ -545,7 +552,7 @@ ol.steps li { margin: 4px 0; }
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Wind, weather, waves and tides away from the Solent: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 14 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Wind, weather, waves and tides away from the Solent: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 15 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -866,7 +873,7 @@ ol.steps li { margin: 4px 0; }
   const LIVE = { wx: null, wxAt: 0, tide: null, tideAt: 0, tideKey: '', sea: null, adm: null, err: '', loading: false, ver: 0 };
   try {
     const c = JSON.parse(localStorage.getItem('sh-live') || 'null');
-    if (c && Date.now() - c.at < 2 * dayMs && c.key === (LOC.lat.toFixed(3) + ',' + LOC.lon.toFixed(3))) { LIVE.wx = c.wx; LIVE.wxAt = c.wxAt; LIVE.tide = c.tide; LIVE.tideAt = c.tideAt; LIVE.tideKey = c.key; LIVE.sea = c.sea; LIVE.adm = c.adm || null; LIVE.ver = 1; }
+    if (c && Date.now() - c.at < 2 * dayMs && c.key === (LOC.lat.toFixed(3) + ',' + LOC.lon.toFixed(3))) { LIVE.wx = c.wx; LIVE.wxAt = c.wxAt; LIVE.tide = c.tide; LIVE.tideAt = c.tideAt; LIVE.tideKey = c.key; LIVE.sea = c.sea; LIVE.ver = 1; }
   } catch (err) {}
   function liveVer() { return LIVE.ver; }
   // Live model low waters, used only if they agree with the tuned Southampton calculation to within 20 min (the coarse model ran ~1 h early in testing)
@@ -888,7 +895,7 @@ ol.steps li { margin: 4px 0; }
   function admTidesFor(start, end) {
     const A = LIVE.adm; if (!A || A.key !== locKey() || !A.events || A.events.length < 4) return null;
     const ev = A.events; if (ev[0].t > end || ev[ev.length - 1].t < start) return null;
-    return ev.map((q, i) => ({ t: q.t, type: q.type, h: q.h == null ? (q.type === 'HW' ? 4 : 1) : q.h, n: (i > 0 && ev[i - 1].type === q.type) ? 2 : (ev[i + 1] && ev[i + 1].type === q.type ? 1 : undefined) }));
+    return ev.map((q, i) => ({ t: q.t, type: q.type, hNull: q.h == null, h: q.h == null ? (q.type === 'HW' ? 3 : 1) : q.h, n: (i > 0 && ev[i - 1].type === q.type) ? 2 : (ev[i + 1] && ev[i + 1].type === q.type ? 1 : undefined) }));
   }
   async function loadAdmiralty(key) {
     if (!/^https?:/.test(location.protocol) || /claude\.ai|claudeusercontent/.test(location.hostname)) return;
@@ -949,7 +956,7 @@ ol.steps li { margin: 4px 0; }
     }
     LIVE.ver++; LIVE.loading = false;
     if (key !== locKey()) { LIVE.loading = false; return; }
-    try { localStorage.setItem('sh-live', JSON.stringify({ at: Date.now(), key, wx: LIVE.wx, wxAt: LIVE.wxAt, tide: LIVE.tide, tideAt: LIVE.tideAt, sea: LIVE.sea, adm: LIVE.adm })); } catch (err) {}
+    try { localStorage.setItem('sh-live', JSON.stringify({ at: Date.now(), key, wx: LIVE.wx, wxAt: LIVE.wxAt, tide: LIVE.tide, tideAt: LIVE.tideAt, sea: LIVE.sea })); } catch (err) {}
     renderAll();
   }
   const COMPASS = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
@@ -993,7 +1000,7 @@ ol.steps li { margin: 4px 0; }
         head = `<div class="wxnow"><div class="wxdir">${arrow(c.wind_direction_10m, 40)}<span class="mono">${compass(c.wind_direction_10m)}</span></div>
           <div><div class="wxbig">${Math.round(c.wind_speed_10m)} <small>mph</small></div><div class="note" style="margin:0">Gusts ${Math.round(c.wind_gusts_10m)} mph · ${wcode(c.weather_code)} · ${Math.round(c.temperature_2m)}°C</div></div></div>
           <div class="chips" style="margin:8px 0">${sea && sea.wh != null ? `<span class="chip tide">Waves ${sea.wh.toFixed(1)} m${sea.wp ? ' · ' + Math.round(sea.wp) + ' s' : ''}</span>` : ''}${sea && sea.sst != null ? `<span class="chip tide">Sea ${sea.sst.toFixed(1)}°C</span>` : ''}</div>
-          <div class="wxmsg ${ww.c}">${ww.t}</div>${(cl => cl ? `<div class="wxmsg ${cl.cls}" style="margin-top:8px"><b>Water: ${cl.label}</b> <span class="note" style="margin:0;display:block">${cl.why} (estimate)</span>${cl.tip}</div>` : '')(clarityAt(Date.now()))}`;
+          <div class="wxmsg ${ww.c}">${ww.t}</div>${(s => { if (!s || FACE[s.n] == null) return ''; const r = windRel(FACE[s.n], c.wind_direction_10m, c.wind_speed_10m); return `<div class="wxmsg ${r.cls}" style="margin-top:8px"><b>${r.t} at ${s.n}</b> <span class="note" style="margin:0;display:block">${r.tip}</span></div>`; })(spotHere())}${(cl => cl ? `<div class="wxmsg ${cl.cls}" style="margin-top:8px"><b>Water: ${cl.label}</b> <span class="note" style="margin:0;display:block">${cl.why} (estimate)</span>${cl.tip}</div>` : '')(clarityAt(Date.now()))}`;
       }
       let strip = '';
       for (let t = D.start; t < D.end; t += HOUR) {
@@ -1002,7 +1009,7 @@ ol.steps li { margin: 4px 0; }
         strip += `<div class="hr${inWin ? ' good' : ''}${isToday(sel) && now >= t && now < t + HOUR ? ' nowh' : ''}"><span class="mono">${fmt(t)}</span>${arrow(H.wind_direction_10m[i], 18)}<b>${Math.round(H.wind_speed_10m[i])}</b><span class="g">${Math.round(H.wind_gusts_10m[i])}</span><span class="rp">${H.precipitation_probability[i] == null ? '' : H.precipitation_probability[i] + '%'}</span></div>`;
       }
       if (!isToday(sel)) { const cl = clarityAt(D.start + 12 * HOUR); if (cl) head = `<div class="wxmsg ${cl.cls}"><b>Water: ${cl.label}</b> <span class="note" style="margin:0;display:block">${cl.why} (estimate)</span>${cl.tip}</div>`; }
-      el.innerHTML = `<h2>Wind &amp; sea</h2>${status}${head}${strip ? `<div class="lbl" style="margin-top:10px">Hour by hour · wind mph, gusts, rain chance${D.wins.length ? ' · rust = feeding window' : ''}</div><div class="hours">${strip}</div>` : '<p class="note">No forecast for this day yet (forecasts go 7 days ahead).</p>'}${LIVE.err ? `<p class="note">${LIVE.err}</p>` : ''}`;
+      el.innerHTML = `<h2>Wind &amp; sea</h2>${status}${head}${strip ? `<details class="more"${isToday(sel) ? '' : ' open'}><summary>Hour by hour · wind mph, gusts, rain chance${D.wins.length ? ' · rust = feeding window' : ''}</summary><div class="hours">${strip}</div></details>` : '<p class="note">No forecast for this day yet (forecasts go 7 days ahead).</p>'}${LIVE.err ? `<p class="note">${LIVE.err}</p>` : ''}`;
     }
     const b = $('refresh'); if (b) b.addEventListener('click', () => loadLive(true));
   }
@@ -1103,8 +1110,9 @@ ol.steps li { margin: 4px 0; }
         <div class="fishhead"><div><div class="fishname">${c.sp}</div><div class="latin">${DOW[new Date(Date.UTC(p.y, p.m, p.d)).getUTCDay()]} ${p.d} ${MON[p.m]} ${p.y} · ${pad(p.hh)}:${pad(p.mm)}${c.spot ? ' · ' + c.spot : ''}</div></div><span class="chip${c.kept === 'Kept' ? ' size' : ''}">${c.kept}</span></div>
         <div class="chips">${c.len ? `<span class="chip size">${c.len} cm</span>` : ''}${c.wt ? `<span class="chip size">${c.wt} kg</span>` : ''}${c.bait ? `<span class="chip bait">${c.bait}</span>` : ''}${cd.tide ? `<span class="chip tide">${cd.tide}</span>` : ''}${cd.moon ? `<span class="chip">${cd.moon}</span>` : ''}${cd.wind ? `<span class="chip">${cd.wind}</span>` : ''}${cd.win ? `<span class="chip prime">${cd.win}</span>` : ''}</div>
         ${c.notes ? `<p class="note" style="margin:0">${c.notes.replace(/</g, '&lt;')}</p>` : ''}
-        <div><button class="small del" data-id="${c.id}">${delArm === c.id ? 'Tap again to delete' : 'Delete'}</button></div></div></div>`;
+        <div class="chips"><button class="small share" data-id="${c.id}">Share picture</button><button class="small del" data-id="${c.id}">${delArm === c.id ? 'Tap again to delete' : 'Delete'}</button></div></div></div>`;
     }).join('');
+    $('loglist').querySelectorAll('.share').forEach(b => b.addEventListener('click', () => { const c = CATCHES.find(x => x.id === b.dataset.id); if (c) shareCatch(c); }));
     $('loglist').querySelectorAll('.del').forEach(b => b.addEventListener('click', async () => {
       if (delArm !== b.dataset.id) { delArm = b.dataset.id; renderLog(); return; }
       delArm = null; await dbDel(b.dataset.id); CATCHES = await dbAll(); logMsg = 'Catch deleted.'; renderLog();
@@ -1128,6 +1136,8 @@ ol.steps li { margin: 4px 0; }
     $('l-time').value = localInputValue(Date.now());
     $('logform').addEventListener('submit', saveCatch);
     $('l-export').addEventListener('click', exportCSV);
+    $('l-backup').addEventListener('click', backupLog);
+    $('l-restore').addEventListener('change', e => { restoreLog(e.target.files[0]); e.target.value = ''; });
     $('l-sp').addEventListener('change', () => { const f = FISH.find(x => x.n === $('l-sp').value); $('l-hint').textContent = f ? (f.ret ? 'Must be returned.' : f.min ? `Legal minimum ${f.min}${f.rec ? ' · recommended ' + f.rec : ''}` : `No legal minimum${f.rec ? ' · recommended ' + f.rec : ''}`) : ''; });
     $('l-sp').dispatchEvent(new Event('change'));
     openDB().then(dbAll).then(r => { CATCHES = r; renderLog(); });
@@ -1147,11 +1157,151 @@ ol.steps li { margin: 4px 0; }
     $('spots').innerHTML = (list.length && list[0].d > 30 ? `<div class="warn">You're ${Math.round(list[0].d)} km from the nearest mark in this list. <a href="https://www.google.com/maps/search/sea+fishing/@${LOC.lat.toFixed(4)},${LOC.lon.toFixed(4)},12z" target="_blank" rel="noopener">Find fishing spots near you in Maps</a></div>` : '') + list.map(({ s, d }) => `<div class="fish">
       <div class="fishhead"><div><div class="fishname">${s.n}</div><div class="latin" style="font-style:normal">${s.a} · ${s.type}</div></div><span class="chip">${d < 1 ? 'here' : Math.round(d) + ' km'}</span></div>
       <div class="chips">${s.fish.map(n => `<span class="chip${inS(n) ? ' size' : ''}">${n}</span>`).join('')}</div>
+      ${(() => { const C = LIVE.wx && LIVE.wx.current; if (!C || FACE[s.n] == null || km(LOC.lat, LOC.lon, s.lat, s.lon) > 40) return ''; const r = windRel(FACE[s.n], C.wind_direction_10m, C.wind_speed_10m); return `<div class="wxmsg ${r.cls}"><b>Now: ${r.t}</b> (${compass(C.wind_direction_10m)} ${Math.round(C.wind_speed_10m)} mph) <span class="note" style="margin:0;display:block">${r.tip}</span></div>`; })()}
       <div class="lbl">Best tide</div><div>${s.tide}</div>
       <p class="note">${s.note}</p>
       <div class="chips"><a class="btnlink" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.q)}" target="_blank" rel="noopener">Open in Maps</a><button class="small logat" data-n="${s.n}">Log a catch here</button></div>
     </div>`).join('');
     $('spots').querySelectorAll('.logat').forEach(b => b.addEventListener('click', () => { $('l-spot').value = b.dataset.n; location.hash = 'log'; }));
+  }
+
+  // ---------- day rating with weather ----------
+  function dayRating(D) {
+    let s = D.stars; const notes = [];
+    const w = dailyWx(D.y, D.m, D.d);
+    if (w) {
+      if (w.g >= 45 || w.w >= 30) { s = 1; notes.push('Gale: stay off exposed marks'); }
+      else if (w.g >= 35 || w.w >= 22) { s -= 2; notes.push('Strong wind'); }
+      else if (w.g >= 28 || w.w >= 17) { s -= 1; notes.push('Fresh wind'); }
+      if (w.rain != null && w.rain >= 80) { s -= 1; notes.push('Heavy rain likely'); }
+    }
+    const cl = clarityAt(D.start + 12 * HOUR);
+    if (cl && cl.label === 'Coloured') notes.push('Coloured water: fish bait');
+    return { s: Math.max(1, Math.min(5, s)), notes, wx: !!w };
+  }
+
+  // ---------- wind direction vs the way a mark faces ----------
+  const FACE = { 'Weston Shore': 225, 'Netley · Royal Victoria Country Park': 225, 'Mayflower Park': 200, 'Woolston & the Itchen': 270, 'Warsash & Hamble': 250, 'Lepe Country Park': 180, 'Stokes Bay': 190, 'Round Tower & Hot Walls': 260, 'Hurst Spit & Castle': 220, 'Milford on Sea': 200, 'Yarmouth Pier': 0, 'Weymouth Stone Pier': 90 };
+  function windRel(face, from, mph) {
+    const d = Math.abs(((from - face) % 360 + 540) % 360 - 180);
+    if (d <= 55) return { t: 'Wind in your face', tip: mph >= 15 ? 'onshore: rougher, coloured water, can be good for bass and cod on bait; casting is harder' : 'light onshore breeze: fine for most fishing', cls: mph >= 18 ? 'warn' : 'ok' };
+    if (d >= 125) return { t: 'Wind at your back', tip: 'offshore: calmer water and easy casting; take care with floats and light gear drifting out', cls: 'ok' };
+    return { t: 'Crosswind', tip: 'side-on: line bows in the wind, so fish heavier leads or keep the rod tip low', cls: mph >= 18 ? 'warn' : 'ok' };
+  }
+  function spotHere() { const n = SPOTS.map(s => ({ s, d: km(LOC.lat, LOC.lon, s.lat, s.lon) })).sort((a, b) => a.d - b.d)[0]; return n && n.d < 3 ? n.s : null; }
+
+  // ---------- best fishing windows in the next 7 days ----------
+  function bestWindows() {
+    const out = [];
+    for (let i = 0; i < 7; i++) {
+      const x = addDays({ y: tp.y, m: tp.m, d: tp.d }, i), D = computeDay(x.y, x.m, x.d), base = dayRating(D).s;
+      D.wins.forEach(w => {
+        if (w.e < now) return;
+        const mid = (w.s + w.e) / 2;
+        let sc = base + (w.kind === 'major' ? 2 : 1) + (w.prime ? 2 : 0), wind = null;
+        if (/Flooding|High water/.test(w.tide || '')) sc += 1;
+        const hi = wxHourIdx(mid);
+        if (hi >= 0) {
+          const H = LIVE.wx.hourly, ws = H.wind_speed_10m[hi], g = H.wind_gusts_10m[hi], rp = H.precipitation_probability[hi];
+          wind = `${compass(H.wind_direction_10m[hi])} ${Math.round(ws)} mph`;
+          if (ws > 28 || g > 40) sc -= 4; else if (ws > 20) sc -= 2; else if (ws <= 12) sc += 1;
+          if (rp != null && rp > 70) sc -= 1;
+        }
+        out.push({ x, w, sc, wind });
+      });
+    }
+    out.sort((a, b) => b.sc - a.sc);
+    const pick = [];
+    out.forEach(o => { if (pick.length < 3 && pick.filter(p => p.x.d === o.x.d).length < 2 && !pick.some(p => p.x.d === o.x.d && Math.min(p.w.e, o.w.e) > Math.max(p.w.s, o.w.s))) pick.push(o); });
+    return pick.sort((a, b) => a.w.s - b.w.s);
+  }
+  function renderBest() {
+    const el = $('best'); if (!el) return;
+    const b = bestWindows();
+    el.innerHTML = `<h2>Best times this week</h2><p class="note" style="margin:-4px 0 8px">📍 ${LOC.name} · moon, tide, light${LIVE.wx ? ' and wind' : ''} combined</p>` + (b.length ? '<div class="list">' + b.map(o => {
+      const lowlight = o.w.prime ? (o.w.kind === 'dawn' || o.w.kind === 'dusk' ? '' : ' at ' + (Math.abs(o.w.s - (computeDay(o.x.y, o.x.m, o.x.d).sunset || 0)) < 3 * HOUR ? 'dusk' : 'dawn')) : '';
+      return `<button class="row bestrow ${o.w.kind}${o.w.prime ? ' prime' : ''}" data-y="${o.x.y}" data-m="${o.x.m}" data-d="${o.x.d}"><div class="mono">${isToday(o.x) ? 'Today' : DOW[o.x.dow] + ' ' + o.x.d}<br>${fmt(o.w.s)}–${fmt(o.w.e)}</div>
+        <div><div class="what">${o.w.label}${lowlight}</div><div class="chips">${o.w.tide ? `<span class="chip tide">${o.w.tide}</span>` : ''}${o.wind ? `<span class="chip">${o.wind}</span>` : ''}${o.w.prime ? '<span class="chip prime">Prime time</span>' : ''}</div></div></button>`;
+    }).join('') + '</div>' : '<p class="note">No windows left this week.</p>');
+    el.querySelectorAll('.bestrow').forEach(bt => bt.addEventListener('click', () => { sel = { y: +bt.dataset.y, m: +bt.dataset.m, d: +bt.dataset.d }; renderAll(); window.scrollTo(0, 0); }));
+  }
+
+  // ---------- backup and restore of the catch log ----------
+  function saveBlob(blob, name) {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  function backupLog() {
+    try {
+      const p = ukParts(Date.now());
+      saveBlob(new Blob([JSON.stringify({ app: 'santos-hooked-tides', version: 1, saved: Date.now(), catches: CATCHES })], { type: 'application/json' }), `santos-hooked-backup-${p.y}-${pad(p.m + 1)}-${pad(p.d)}.json`);
+      logMsg = `Backup saved to your downloads (${CATCHES.length} catches, with photos). Keep it in Google Drive or email it to yourself.`;
+    } catch (err) { logMsg = 'Couldn\'t save the backup here.'; }
+    renderLog();
+  }
+  async function restoreLog(file) {
+    if (!file) return;
+    try {
+      const j = JSON.parse(await file.text()), list = Array.isArray(j) ? j : j.catches;
+      if (!Array.isArray(list)) throw new Error('bad');
+      const have = new Set(CATCHES.map(c => c.id)); let added = 0;
+      for (const c of list) { if (c && c.id && c.sp && c.t && !have.has(c.id)) { await dbPut(c); added++; } }
+      CATCHES = await dbAll(); logMsg = added ? `Restored ${added} catch${added === 1 ? '' : 'es'} from the backup.` : 'Nothing new in that backup: those catches are already here.';
+    } catch (err) { logMsg = 'That file isn\'t a Santos Hooked backup.'; }
+    renderLog();
+  }
+
+  // ---------- share a catch as a branded picture ----------
+  function loadImg(src) { return new Promise(res => { if (!src) return res(null); const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; }); }
+  async function catchCard(c) {
+    try { await Promise.all([document.fonts.load('120px "Bebas Neue"'), document.fonts.load('40px "IBM Plex Sans"')]); } catch (err) {}
+    const W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const g = cv.getContext('2d'), BG = '#161616', BONE = '#EDE8DF', RUST = '#C4552B', GREY = '#A8A29A';
+    g.fillStyle = BG; g.fillRect(0, 0, W, H);
+    const img = await loadImg(c.photo), ph = 860;
+    if (img) {
+      const k = Math.max(W / img.width, ph / img.height), w = img.width * k, h = img.height * k;
+      g.save(); g.beginPath(); g.rect(0, 0, W, ph); g.clip(); g.drawImage(img, (W - w) / 2, (ph - h) / 2, w, h); g.restore();
+      const gr = g.createLinearGradient(0, ph - 260, 0, ph); gr.addColorStop(0, 'rgba(22,22,22,0)'); gr.addColorStop(1, 'rgba(22,22,22,1)');
+      g.fillStyle = gr; g.fillRect(0, ph - 260, W, 260);
+    } else {
+      g.fillStyle = '#1f1e1d'; g.fillRect(0, 0, W, ph);
+      g.strokeStyle = RUST; g.lineWidth = 34; g.lineCap = 'butt';
+      g.save(); g.translate(W / 2 - 150, 180); g.scale(3, 3);
+      g.beginPath(); g.arc(80, 8, 8, 0, Math.PI * 2); g.lineWidth = 5; g.stroke();
+      g.beginPath(); g.moveTo(80, 24); g.bezierCurveTo(30, 24, 22, 44, 26, 64); g.bezierCurveTo(32, 92, 98, 84, 98, 120); g.bezierCurveTo(98, 156, 44, 162, 28, 134); g.lineWidth = 18; g.stroke();
+      g.beginPath(); g.moveTo(28, 134); g.lineTo(52, 122); g.lineWidth = 13; g.stroke(); g.restore();
+    }
+    // brand bar
+    g.fillStyle = 'rgba(22,22,22,.72)'; g.fillRect(0, 0, W, 120);
+    g.font = '400 76px "Bebas Neue", "Arial Narrow", sans-serif'; g.textBaseline = 'alphabetic';
+    let x = 48; const sp = 8;
+    'SANTOS HOOKED'.split('').forEach((ch, i) => { g.fillStyle = i === 0 ? RUST : BONE; g.fillText(ch, x, 90); x += g.measureText(ch).width + sp; });
+    // text block
+    const p = ukParts(c.t), cd = c.cond || {};
+    g.fillStyle = BONE; g.font = '400 150px "Bebas Neue", "Arial Narrow", sans-serif';
+    g.fillText(c.sp.toUpperCase(), 48, 1010);
+    const size = [c.len ? c.len + ' cm' : '', c.wt ? c.wt + ' kg' : ''].filter(Boolean).join(' · ');
+    g.fillStyle = RUST; g.font = '400 84px "Bebas Neue", "Arial Narrow", sans-serif';
+    if (size) g.fillText(size, 48, 1100);
+    g.fillStyle = BONE; g.font = '500 38px "IBM Plex Sans", system-ui, sans-serif';
+    g.fillText(`${c.spot || LOC.name} · ${p.d} ${MON[p.m]} ${p.y}, ${pad(p.hh)}:${pad(p.mm)}`, 48, 1170);
+    g.fillStyle = GREY; g.font = '400 34px "IBM Plex Sans", system-ui, sans-serif';
+    g.fillText([cd.tide, cd.moon, c.bait ? 'on ' + c.bait : ''].filter(Boolean).join(' · '), 48, 1225);
+    g.fillStyle = RUST; g.fillRect(48, 1265, 70, 4);
+    g.fillStyle = GREY; g.font = '400 30px "IBM Plex Sans", system-ui, sans-serif';
+    g.fillText('santoshookedtides.netlify.app', 136, 1279);
+    return new Promise(res => cv.toBlob(b => res(b), 'image/jpeg', 0.9));
+  }
+  async function shareCatch(c) {
+    logMsg = 'Making the picture…'; renderLog();
+    const blob = await catchCard(c); if (!blob) { logMsg = 'Couldn\'t make the picture.'; renderLog(); return; }
+    const name = `santos-hooked-${c.sp.toLowerCase().replace(/[^a-z]+/g, '-')}.jpg`, file = new File([blob], name, { type: 'image/jpeg' });
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Santos Hooked', text: `${c.sp}${c.len ? ' · ' + c.len + ' cm' : ''} 🎣 #SantosHooked` }); logMsg = 'Shared.'; }
+      else { saveBlob(blob, name); logMsg = 'Picture saved to your downloads.'; }
+    } catch (err) { if (err && err.name === 'AbortError') logMsg = ''; else { saveBlob(blob, name); logMsg = 'Picture saved to your downloads.'; } }
+    renderLog();
   }
 
   // ---------- state ----------
@@ -1167,8 +1317,8 @@ ol.steps li { margin: 4px 0; }
     let html = '';
     for (let i = -1; i < 6; i++) {
       const x = addDays(sel, i), day = computeDay(x.y, x.m, x.d);
-      let dots = ''; for (let k = 1; k <= 5; k++) dots += `<i class="${k <= day.stars ? 'on' : ''}"></i>`;
-      html += `<button class="day${i === 0 ? ' sel' : ''}" data-y="${x.y}" data-m="${x.m}" data-d="${x.d}" aria-label="${DOW[x.dow]} ${x.d} ${MON[x.m]}, ${RATING[day.stars]}">
+      const dr = dayRating(day); let dots = ''; for (let k = 1; k <= 5; k++) dots += `<i class="${k <= dr.s ? 'on' : ''}"></i>`;
+      html += `<button class="day${i === 0 ? ' sel' : ''}" data-y="${x.y}" data-m="${x.m}" data-d="${x.d}" aria-label="${DOW[x.dow]} ${x.d} ${MON[x.m]}, ${RATING[dr.s]}">
         <span class="dn">${isToday(x) ? 'Today' : DOW[x.dow]}</span><span class="dd">${x.d}</span><span class="dots">${dots}</span></button>`;
     }
     const w = $('week'); w.innerHTML = html;
@@ -1193,7 +1343,7 @@ ol.steps li { margin: 4px 0; }
       if (x2 - x1 > 50) bars += `<text x="${((x1 + x2) / 2).toFixed(1)}" y="${y + h - 5}" text-anchor="middle" font-size="12" fill="${w.kind === 'major' ? '#EDE8DF' : '#1C1C1C'}" font-weight="600">${w.kind === 'major' ? 'Major' : 'Minor'}</text>`;
     });
     let grid = '';
-    for (let h = 0; h <= 5; h++) grid += `<line x1="0" x2="${W}" y1="${yT(h)}" y2="${yT(h)}" stroke="var(--line)" stroke-width="${h === 0 ? 1 : 0.5}"/>` + (h > 0 ? `<text x="4" y="${yT(h) - 3}" font-size="11" fill="var(--muted)">${h}m</text>` : '');
+    for (let h = 0; h <= 5; h++) grid += `<line x1="0" x2="${W}" y1="${yT(h)}" y2="${yT(h)}" stroke="var(--line)" stroke-width="${h === 0 ? 1 : 0.5}"/>` + (h > 0 && !D.tides.some(q => q.hNull) ? `<text x="4" y="${yT(h) - 3}" font-size="11" fill="var(--muted)">${h}m</text>` : '');
     const pts = [];
     for (let t = D.start; t <= D.end; t += 10 * MIN) pts.push(X(t).toFixed(1) + ',' + yT(tideAt(D.tides, t)).toFixed(1));
     const curve = `<polygon points="0,${yT(0)} ${pts.join(' ')} ${W},${yT(0)}" fill="var(--tide)" fill-opacity="0.18"/><polyline points="${pts.join(' ')}" fill="none" stroke="var(--tide)" stroke-width="2.2"/>`;
@@ -1227,10 +1377,19 @@ ol.steps li { margin: 4px 0; }
       const best = D.wins.find(w => w.prime) || D.wins.find(w => w.kind === 'major');
       if (best) nextTxt = `Best bet: <b>${best.label}</b> at ${fmt(best.s)}–${fmt(best.e)}`;
     }
+    const DR = dayRating(D);
+    let tideNow = '', windNow = '', clNow = '';
+    if (isToday(sel)) {
+      const st = tideState(D.tides, now), nx = D.tides.find(q => q.t > now) || computeDay(addDays(sel, 1).y, addDays(sel, 1).m, addDays(sel, 1).d).tides.find(q => q.t > now);
+      if (st || nx) tideNow = `Tide: <b>${st || '—'}</b>${nx ? ` · next ${nx.type === 'HW' ? 'high' : 'low'} ${fmt(nx.t)}` : ''}`;
+      const C = LIVE.wx && LIVE.wx.current; if (C) windNow = `<span class="chip">${compass(C.wind_direction_10m)} ${Math.round(C.wind_speed_10m)} mph</span>`;
+      const cl = clarityAt(now); if (cl) clNow = `<span class="chip tide">Water ${cl.label.toLowerCase()}</span>`;
+    }
     const mr = D.moon.find(q => q.type === 'rise'), ms = D.moon.find(q => q.type === 'set');
     $('hero').innerHTML = `${moonSVG(D.ph.phase, D.ph.frac, 76)}
-      <div><div class="rating">${RATING[D.stars]} day</div><div class="stars" aria-label="${D.stars} out of 5">${starStr(D.stars)}</div><div class="next">${nextTxt}</div>
-      <div class="chips" style="margin-top:8px"><span class="chip">Sun ${D.sunrise ? fmt(D.sunrise) : '—'}–${D.sunset ? fmt(D.sunset) : '—'}</span><span class="chip">${phaseName(D.ph.phase)} ${Math.round(D.ph.frac * 100)}%</span><span class="chip tide">${D.sp > 0.66 ? 'Springs' : D.sp < 0.33 ? 'Neaps' : 'Mid tides'}</span></div></div>`;
+      <div><div class="rating">${RATING[DR.s]} day</div><div class="stars" aria-label="${DR.s} out of 5">${starStr(DR.s)}</div><div class="next">${nextTxt}</div>
+      ${tideNow ? `<div class="next">${tideNow}</div>` : ''}
+      <div class="chips" style="margin-top:8px">${windNow}${clNow}<span class="chip">Sun ${D.sunrise ? fmt(D.sunrise) : '—'}–${D.sunset ? fmt(D.sunset) : '—'}</span><span class="chip">${phaseName(D.ph.phase)} ${Math.round(D.ph.frac * 100)}%</span><span class="chip tide">${D.sp > 0.66 ? 'Springs' : D.sp < 0.33 ? 'Neaps' : 'Mid tides'}</span>${DR.notes.map(n => `<span class="chip ret">${n}</span>`).join('')}</div></div>`;
     renderTimeline(D);
     $('windows').innerHTML = D.wins.map(w => {
       const tag = { major: 'Major', minor: 'Minor', dawn: 'Low light', dusk: 'Low light' }[w.kind];
@@ -1266,9 +1425,10 @@ ol.steps li { margin: 4px 0; }
       const x = addDays(sel, i), D = computeDay(x.y, x.m, x.d);
       const tt = D.tides.filter(q => q.t >= D.start && q.t < D.end);
       html += `<div class="tideday${isToday(x) ? ' today' : ''}"><div class="tdh"><b>${isToday(x) ? 'Today' : DOW[x.dow]} ${x.d} ${MON[x.m]}</b><span class="chip tide">${D.sp > 0.66 ? 'Springs' : D.sp < 0.33 ? 'Neaps' : 'Mid tides'}</span></div>
-        ${(w => w ? `<div class="tdwx">${arrow(w.dir, 16)}<span>${compass(w.dir)} ${Math.round(w.w)} mph, gusts ${Math.round(w.g)}</span><span>${wcode(w.code)} · ${Math.round(w.tmin)}–${Math.round(w.tmax)}°C${w.rain != null ? ' · rain ' + w.rain + '%' : ''}</span></div>` : '')(dailyWx(x.y, x.m, x.d))}${tt.length ? '' : '<p class="note" style="margin:0">No tide data for this day.</p>'}<table><tbody>${tt.map(q => `<tr><td class="${q.type === 'HW' ? 'hw' : ''}">${q.type === 'HW' ? (q.n === 2 ? 'High (2nd)' : inSolent() ? 'High (1st)' : 'High') : (q.n === 2 ? 'Low (2nd)' : inWeymouth() ? 'Low (1st)' : 'Low')}</td><td class="mono">${fmt(q.t)}</td><td class="mono r">${q.h.toFixed(1)} m</td></tr>`).join('')}</tbody></table></div>`;
+        ${(w => w ? `<div class="tdwx">${arrow(w.dir, 16)}<span>${compass(w.dir)} ${Math.round(w.w)} mph, gusts ${Math.round(w.g)}</span><span>${wcode(w.code)} · ${Math.round(w.tmin)}–${Math.round(w.tmax)}°C${w.rain != null ? ' · rain ' + w.rain + '%' : ''}</span></div>` : '')(dailyWx(x.y, x.m, x.d))}${tt.length ? '' : '<p class="note" style="margin:0">No tide data for this day.</p>'}<table><tbody>${tt.map(q => `<tr><td class="${q.type === 'HW' ? 'hw' : ''}">${q.type === 'HW' ? (q.n === 2 ? 'High (2nd)' : inSolent() ? 'High (1st)' : 'High') : (q.n === 2 ? 'Low (2nd)' : inWeymouth() ? 'Low (1st)' : 'Low')}</td><td class="mono">${fmt(q.t)}</td><td class="mono r">${q.hNull ? '—' : q.h.toFixed(1) + ' m'}</td></tr>`).join('')}</tbody></table></div>`;
     }
     $('tidedays').innerHTML = html;
+    $('calibpanel').style.display = computeDay(tp.y, tp.m, tp.d).adm ? 'none' : '';
     $('offsetnote').textContent = offsetMin ? `Tides moved ${offsetMin > 0 ? '+' : ''}${Math.round(offsetMin)} min to match your check.` : '';
   }
 
@@ -1299,8 +1459,8 @@ ol.steps li { margin: 4px 0; }
     for (let i = 0; i < lead; i++) cal += '<button class="blank" tabindex="-1" aria-hidden="true"></button>';
     for (let i = 0; i < 28; i++) {
       const x = addDays(base, i), dd = computeDay(x.y, x.m, x.d);
-      let dots = ''; for (let k = 1; k <= 5; k++) dots += `<i class="${k <= dd.stars ? 'on' : ''}"></i>`;
-      cal += `<button class="${i === 0 ? 'today' : ''}" data-y="${x.y}" data-m="${x.m}" data-d="${x.d}" aria-label="${x.d} ${MON[x.m]}, ${RATING[dd.stars]}">${moonSVG(dd.ph.phase, dd.ph.frac, 18)}<span class="num">${x.d}</span><span class="dots">${dots}</span></button>`;
+      const ddr = dayRating(dd); let dots = ''; for (let k = 1; k <= 5; k++) dots += `<i class="${k <= ddr.s ? 'on' : ''}"></i>`;
+      cal += `<button class="${i === 0 ? 'today' : ''}" data-y="${x.y}" data-m="${x.m}" data-d="${x.d}" aria-label="${x.d} ${MON[x.m]}, ${RATING[ddr.s]}">${moonSVG(dd.ph.phase, dd.ph.frac, 18)}<span class="num">${x.d}</span><span class="dots">${dots}</span></button>`;
     }
     const c = $('cal'); c.innerHTML = cal;
     c.querySelectorAll('button[data-y]').forEach(b => b.addEventListener('click', () => { sel = { y: +b.dataset.y, m: +b.dataset.m, d: +b.dataset.d }; location.hash = 'today'; renderAll(); }));
@@ -1362,7 +1522,7 @@ ol.steps li { margin: 4px 0; }
     document.querySelectorAll('nav.tabs a').forEach(a => { const on = a.dataset.p === (TABOF[p] || p); a.classList.toggle('on', on); if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     window.scrollTo(0, 0);
   }
-  function renderAll() { renderLocBar(); renderToday(); renderLiveBits(); renderTides(); renderMoon(); renderFish(); renderRules(); renderSpots(); }
+  function renderAll() { renderLocBar(); renderToday(); renderBest(); renderLiveBits(); renderTides(); renderMoon(); renderFish(); renderRules(); renderSpots(); }
 
   $('prev').addEventListener('click', () => { sel = addDays(sel, -1); renderAll(); });
   $('next').addEventListener('click', () => { sel = addDays(sel, 1); renderAll(); });
