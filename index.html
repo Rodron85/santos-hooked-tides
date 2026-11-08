@@ -41,10 +41,11 @@
 html, body { overflow-x: clip; margin: 0; background: var(--sea); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45; }
 .wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; max-width: 860px; margin: 0 auto; padding: calc(16px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(96px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left)); }
 .wrap > *, .page > * { min-width: 0; }
-header.brand { display: grid; gap: 6px; }
+header.brand { display: grid; gap: 8px; justify-items: center; text-align: center; }
+header.brand h1 { display: inline-block; padding-left: .1em; }
 h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(2rem, 10vw, 2.6rem); line-height: .9; margin: 0; letter-spacing: .1em; white-space: nowrap; }
 h1 .hookS { height: .8em; width: auto; vertical-align: baseline; margin-right: .06em; overflow: visible; }
-.tagline { display: flex; align-items: center; gap: 10px; font-family: var(--font-label); font-weight: 500; font-size: .8rem; letter-spacing: .3em; color: var(--muted); text-transform: uppercase; }
+.tagline { display: flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--font-label); font-weight: 500; font-size: .8rem; letter-spacing: .3em; color: var(--muted); text-transform: uppercase; }
 .tagline i { display: block; width: 28px; height: 1px; background: var(--muted); }
 .pagetitle { font-family: var(--font-display); font-weight: 400; font-size: 2rem; letter-spacing: .06em; margin: 4px 0 0; line-height: 1; }
 .pagesub { color: var(--muted); margin: 4px 0 0; font-size: .9rem; }
@@ -309,21 +310,23 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
 
   <!-- FISH -->
   <section class="page" id="p-fish">
-    <div><div class="pagetitle">Fish of the Solent</div><p class="pagesub" id="fishsub"></p></div>
+    <div><div class="pagetitle" id="fishtitle">Fish of the Solent</div><p class="pagesub" id="fishsub"></p></div>
     <div class="filters">
       <button id="f-season" aria-pressed="true">In season</button>
       <button id="f-all" aria-pressed="false">All species</button>
       <input type="search" id="f-q" placeholder="Search fish or bait" aria-label="Search fish or bait">
     </div>
     <div class="species" id="species"></div>
-    <p class="note">Species and seasons are for the Solent and the south coast. Sizes are the legal minimum to keep a fish in the Southern IFCA area (Hampshire, Dorset and the Isle of Wight), measured from the tip of the snout to the end of the tail. See Rules for details.</p>
+    <p class="note" id="fishnote">Species and seasons are for the Solent and the south coast. Sizes are the legal minimum to keep a fish in the Southern IFCA area (Hampshire, Dorset and the Isle of Wight), measured from the tip of the snout to the end of the tail. See Rules for details.</p>
   </section>
 
   <!-- RULES -->
   <section class="page" id="p-rules">
     <a class="back" href="#more">‹ More</a>
-    <div><div class="pagetitle">Rules · what you can keep</div><p class="pagesub">Recreational sea angling, Southern IFCA area. Checked 7 Nov 2026.</p></div>
+    <div><div class="pagetitle">Rules · what you can keep</div><p class="pagesub" id="rulessub">Recreational sea angling, Southern IFCA area. Checked 7 Nov 2026.</p></div>
     <div id="rulesregion"></div>
+    <div id="rules-pt" style="display:none"></div>
+    <div id="rules-uk" style="display:contents">
 
     <div class="panel rulebox">
       <h2>Bass</h2>
@@ -402,6 +405,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
         <li><a href="https://anglingtrust.net/minimum-conservation-reference-sizes-mcrss/" target="_blank" rel="noopener">Angling Trust · recommended sizes</a></li>
       </ul>
       <p class="note">Rules change. If in doubt, call Southern IFCA on 01202 721373. You can also ask them for a free fish measuring sticker.</p>
+    </div>
     </div>
   </section>
 
@@ -555,7 +559,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Weather warnings: Met Office. Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 20 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 21 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -759,7 +763,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
 
   // ---------- fish data (Solent and nearby) ----------
   // m = months caught (0 = Jan), p = peak, min = legal minimum (Southern IFCA / UK), bag = legal daily limit, where = shore/boat, ret = must return
-  const FISH = [
+  const FISH_UK = [
     { n: 'Bass', l: 'Dicentrarchus labrax', m: [0,3,4,5,6,7,8,9,10,11], p: [5,6,7,8,9], min: '42 cm', bag: '3 a day · Feb–Mar release only', where: 'Shore & boat', bait: ['Peeler crab', 'Ragworm', 'Live or frozen sandeel', 'Soft plastics & surface lures'], tip: 'Dawn and dusk on the flood and first of the ebb, in the surf line or around structure. Shown in season Apr–Jan because Feb–Mar is release only.' },
     { n: 'Squid', l: 'Loligo vulgaris', m: [8,9,10,11,0], p: [9,10,11], min: null, where: 'Shore & boat', bait: ['Egi jigs 2.0–2.5', 'Squid jig under a float', 'Mackerel strip on a jig'], tip: 'After dark under pier and harbour lights, around high water. Slow lifts and long pauses.' },
     { n: 'Cuttlefish', l: 'Sepia officinalis', m: [3,4,5,8,9], p: [4], min: null, where: 'Shore & boat', bait: ['Egi jigs', 'Mackerel strip under a float', 'Prawn'], tip: 'They come into the Solent shallows to breed in spring. Fish slowly near weed and structure.' },
@@ -799,12 +803,13 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     { n: 'European eel', l: 'Anguilla anguilla', m: [3,4,5,6,7,8,9], p: [5,6,7], min: null, ret: true, where: 'Estuaries', bait: ['Ragworm', 'Small fish strip'], tip: 'Caught in estuaries in warm months. Protected, so it must be returned.' },
     { n: 'Lesser weever', l: 'Echiichthys vipera', m: [5,6,7,8], p: [6,7], min: null, warn: true, where: 'Sandy beaches', bait: ['Takes ragworm meant for other fish'], tip: 'Venomous spines on its back. Don\'t touch it with bare hands, and wear shoes when wading. If stung, put the area in hot water and get medical help.' }
   ];
+  let FISH = FISH_UK;
 
 
   // ---------- recommended (Angling Trust size-at-maturity guidance) ----------
   const REC = { 'Bass': '48 cm', 'Whiting': '30 cm', 'Cod': '60 cm', 'Pouting': '25 cm', 'Poor cod': '25 cm', 'Rockling': '20 cm', 'Pollack': '50 cm', 'Dogfish': '60 cm', 'Bull huss': '80 cm', 'Smoothhound': '85 cm', 'Flounder': '30 cm', 'Dab': '25 cm', 'Plaice': '35 cm', 'Sole': '35 cm', 'Turbot & brill': 'Turbot 46 · Brill 41 cm', 'Mackerel': '34 cm', 'Scad (horse mackerel)': '30 cm', 'Garfish': '45 cm', 'Black bream': '24 cm', 'Gilthead bream': '40 cm', 'Thick-lipped mullet': '47 cm', 'Thin-lipped mullet': '47 cm', 'Golden grey mullet': '47 cm', 'Red mullet': '24 cm', 'Ballan wrasse': '30 cm', 'Corkwing & small wrasse': '14 cm', 'Triggerfish': '20 cm', 'Gurnard': '25–30 cm', 'Conger': '100 cm', 'Thornback ray': '85 cm nose–tail', 'Small-eyed ray': '77 cm nose–tail', 'Spotted & blonde ray': 'Spotted 55 · Blonde 100 cm' };
   FISH.forEach(f => { if (REC[f.n]) f.rec = REC[f.n]; });
-  const legalCm = f => { if (!f || !f.min) return null; const m = f.min.match(/(\d+(?:\.\d+)?)/); return m ? +m[1] : null; };
+  const legalCm = f => { if (!f || !f.min || !/cm/.test(f.min) || /mantle/.test(f.min)) return null; const m = f.min.match(/(\d+(?:\.\d+)?)/); return m ? +m[1] : null; };
 
   // ---------- spots ----------
   const SPOTS = [
@@ -836,13 +841,15 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   const locKey = () => LOC.lat.toFixed(3) + ',' + LOC.lon.toFixed(3);
   function region() {
     const inUK = LOC.lat > 49.8 && LOC.lat < 61 && LOC.lon > -8.7 && LOC.lon < 1.9;
+    if (LOC.lat > 36.8 && LOC.lat < 42.2 && LOC.lon > -9.8 && LOC.lon < -6.1) return 'pt';
+    if (LOC.lat > 32.3 && LOC.lat < 33.3 && LOC.lon > -17.5 && LOC.lon < -16.1) return 'mad';
     if (!inUK) return 'abroad';
     return (LOC.lon > -2.95 && LOC.lon < -0.93 && LOC.lat > 50.45 && LOC.lat < 51.05) ? 'southern' : 'uk';
   }
   let gpsMsg = '';
   function setLoc(l) {
     LOC = l; try { localStorage.setItem('sh-loc', JSON.stringify(l)); } catch (err) {}
-    setGeo(l.lat, l.lon);
+    setGeo(l.lat, l.lon); applyPack();
     LIVE.wx = null; LIVE.sea = null; LIVE.tide = null; LIVE.adm = null; LIVE.wxAt = 0; LIVE.ver++;
     renderAll(); loadLive(true);
   }
@@ -873,12 +880,13 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     const el = $('locbar'); if (!el) return;
     const opts = [`<option value="gps">📍 Use my location</option>`, `<option value="home"${LOC.mode === 'home' ? ' selected' : ''}>Southampton (home)</option>`]
       .concat(MYSPOTS.map((s, i) => `<option value="m${i}"${LOC.mode === 'my' && LOC.name === s.n ? ' selected' : ''}>★ ${s.n}</option>`))
-      .concat(SPOTS.map((s, i) => `<option value="s${i}"${LOC.mode === 'spot' && LOC.name === s.n ? ' selected' : ''}>${s.n}</option>`));
+      .concat(['<optgroup label="Marks · Solent & Dorset">'], SPOTS.map((s, i) => `<option value="s${i}"${LOC.mode === 'spot' && LOC.name === s.n ? ' selected' : ''}>${s.n}</option>`), ['</optgroup><optgroup label="Portugal & Madeira">'], PLACES.map((s, i) => `<option value="p${i}"${LOC.mode === 'place' && LOC.name === s.n ? ' selected' : ''}>${s.n}</option>`), ['</optgroup>']);
     if (LOC.mode === 'gps') opts.splice(1, 0, `<option value="cur" selected>📍 ${LOC.name}</option>`);
     el.innerHTML = `<label for="locsel" class="lbl">Fishing at</label><select id="locsel">${opts.join('')}</select>${gpsMsg ? `<span class="note" style="margin:0">${gpsMsg}</span>` : ''}`;
     $('locsel').addEventListener('change', ev => {
       const v = ev.target.value;
       if (v === 'gps') useGPS(); else if (v === 'home') setLoc(HOME); else if (v[0] === 's') { const s = SPOTS[+v.slice(1)]; setLoc({ mode: 'spot', lat: s.lat, lon: s.lon, name: s.n }); }
+      else if (v[0] === 'p') { const s = PLACES[+v.slice(1)]; if (s) setLoc({ mode: 'place', lat: s.lat, lon: s.lon, name: s.n }); }
       else if (v[0] === 'm') { const s = MYSPOTS[+v.slice(1)]; if (s) setLoc({ mode: 'my', lat: s.lat, lon: s.lon, name: s.n }); }
     });
   }
@@ -946,7 +954,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     if (LIVE.loading) return;
     if (!force && Date.now() - LIVE.wxAt < 20 * MIN && LIVE.wx) {
       if (!LIVE.adm || LIVE.adm.key !== locKey()) { await loadAdmiralty(locKey()); LIVE.ver++; renderAll(); }
-      if (!LIVE.warn || Date.now() - LIVE.warn.at > 30 * MIN) { await loadWarnings(); renderAll(); }
+      if (!LIVE.warn || LIVE.warn.region !== warnRegion() || Date.now() - LIVE.warn.at > 30 * MIN) { await loadWarnings(); renderAll(); }
       return;
     }
     LIVE.loading = true; LIVE.err = ''; renderLiveBits();
@@ -1054,22 +1062,28 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   }
 
   // ---------- Met Office warnings (via the app's Netlify Function) ----------
+  const IPMA_D = { AVR: [40.64, -8.65], BJA: [38.02, -7.86], BRG: [41.55, -8.42], BGC: [41.81, -6.76], CBO: [39.82, -7.49], CBR: [40.21, -8.43], EVR: [38.57, -7.91], FAR: [37.02, -7.93], GDA: [40.54, -7.27], LRA: [39.74, -8.81], LSB: [38.72, -9.14], PTG: [39.29, -7.43], PTO: [41.15, -8.61], STM: [39.24, -8.69], STB: [38.52, -8.89], VCT: [41.69, -8.83], VRL: [41.30, -7.74], VIS: [40.66, -7.91] };
   function warnRegion() {
-    if (region() === 'abroad') return null;
+    const rg = region();
+    if (rg === 'pt') return 'ipma-' + Object.keys(IPMA_D).map(k => [k, km(LOC.lat, LOC.lon, IPMA_D[k][0], IPMA_D[k][1])]).sort((a, b) => a[1] - b[1])[0][0];
+    if (rg === 'mad') return 'ipma-' + (LOC.lon > -16.5 && LOC.lat > 32.95 ? 'MPS' : LOC.lat > 32.76 ? 'MCN' : 'MCS');
+    if (rg === 'abroad') return null;
     if (LOC.lat < 51.3 && LOC.lon < -1.8) return 'sw';
     if (LOC.lat < 51.6 && LOC.lon >= -1.8 && LOC.lon < 1.5) return 'se';
     return 'UK';
   }
+  const warnSrc = () => LIVE.warn && /^ipma/.test(LIVE.warn.region) ? 'IPMA' : 'Met Office';
   async function loadWarnings() {
-    const rg = warnRegion(); if (!rg || !/^https?:/.test(location.protocol) || /claude\.ai|claudeusercontent/.test(location.hostname)) return;
-    try { const r = await fetch(`/.netlify/functions/warnings?region=${rg}`); if (!r.ok) return; const j = await r.json(); LIVE.warn = { region: rg, items: j.items || [], at: Date.now() }; } catch (err) {}
+    const rg = warnRegion(); if (!rg || !/^https?:/.test(location.protocol) || /claude\.ai|claudeusercontent/.test(location.hostname)) { LIVE.warn = null; return; }
+    const q = rg.startsWith('ipma-') ? `src=ipma&area=${rg.slice(5)}` : `region=${rg}`;
+    try { const r = await fetch(`/.netlify/functions/warnings?${q}`); if (!r.ok) return; const j = await r.json(); LIVE.warn = { region: rg, items: j.items || [], at: Date.now() }; } catch (err) {}
   }
   function renderWarnings() {
     const el = $('warnings'); if (!el) return;
     const W = LIVE.warn;
     if (!W || !W.items.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
     el.style.display = '';
-    el.innerHTML = `<h2>⚠️ Met Office warnings</h2>` + W.items.slice(0, 4).map(i => { let d = (i.desc || '').trim(); if (d.toLowerCase().startsWith(i.title.toLowerCase())) d = d.slice(i.title.length).replace(/^[\s:,.-]+/, ''); const v = d.match(/valid from .*$/i); i = { title: i.title, desc: v ? v[0].charAt(0).toUpperCase() + v[0].slice(1) : d }; return i; }).map(i => `<div class="wxmsg bad" style="margin-top:8px"><b>${i.title.replace(/</g, '&lt;')}</b>${i.desc ? `<span class="note" style="margin:0;display:block">${i.desc.replace(/</g, '&lt;')}</span>` : ''}</div>`).join('') + `<p class="note"><a href="https://www.metoffice.gov.uk/weather/warnings-and-advice/uk-warnings" target="_blank" rel="noopener">Full details on the Met Office site</a></p>`;
+    el.innerHTML = `<h2>⚠️ ${warnSrc()} warnings</h2>` + W.items.slice(0, 4).map(i => { let d = (i.desc || '').trim(); if (d.toLowerCase().startsWith(i.title.toLowerCase())) d = d.slice(i.title.length).replace(/^[\s:,.-]+/, ''); const v = d.match(/valid from .*$/i); i = { title: i.title, desc: v ? v[0].charAt(0).toUpperCase() + v[0].slice(1) : d }; return i; }).map(i => `<div class="wxmsg bad" style="margin-top:8px"><b>${i.title.replace(/</g, '&lt;')}</b>${i.desc ? `<span class="note" style="margin:0;display:block">${i.desc.replace(/</g, '&lt;')}</span>` : ''}</div>`).join('') + (warnSrc() === 'IPMA' ? `<p class="note"><a href="https://www.ipma.pt/en/otempo/prev-sam/" target="_blank" rel="noopener">Full details on the IPMA site</a></p>` : `<p class="note"><a href="https://www.metoffice.gov.uk/weather/warnings-and-advice/uk-warnings" target="_blank" rel="noopener">Full details on the Met Office site</a></p>`);
   }
 
   // ---------- water clarity (estimate) ----------
@@ -1233,7 +1247,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     list.forEach(x => { x.d = km(LOC.lat, LOC.lon, x.s.lat, x.s.lon); });
     if (spotMode === 'month') list = list.filter(x => x.k > 0).sort((a, b) => (b.k - a.k) || (a.d - b.d));
     else list.sort((a, b) => a.d - b.d);
-    $('spotsub').textContent = spotMode === 'month' ? `Best marks for ${MONTH[sel.m]}, ranked by fish in season` : `${SPOTS.length} marks around Southampton and the Solent`;
+    $('spotsub').textContent = PACK !== 'uk' ? 'These marks are in the Solent and Dorset. Save your own Portuguese marks with ★ My spots.' : spotMode === 'month' ? `Best marks for ${MONTH[sel.m]}, ranked by fish in season` : `${SPOTS.length} marks around Southampton and the Solent`;
     $('spots').innerHTML = (list.length && list[0].d > 30 ? `<div class="warn">You're ${Math.round(list[0].d)} km from the nearest mark in this list. <a href="https://www.google.com/maps/search/sea+fishing/@${LOC.lat.toFixed(4)},${LOC.lon.toFixed(4)},12z" target="_blank" rel="noopener">Find fishing spots near you in Maps</a></div>` : '') + list.map(({ s, d }) => `<div class="fish">
       <div class="fishhead"><div><div class="fishname">${s.n}</div><div class="latin" style="font-style:normal">${s.a} · ${s.type}</div></div><span class="chip">${d < 1 ? 'here' : Math.round(d) + ' km'}</span></div>
       <div class="chips">${s.fish.map(n => `<span class="chip${inS(n) ? ' size' : ''}">${n}</span>`).join('')}</div>
@@ -1259,7 +1273,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     if (cl && cl.label === 'Coloured') notes.push('Coloured water: fish bait');
     if (LIVE.warn && LIVE.warn.items.length && (isToday(D) || isToday(addDays(D, -1)))) {
       const kinds = [...new Set(LIVE.warn.items.map(i => (i.title.match(/warning of ([a-z, ]+?) affecting/i) || [])[1]).filter(Boolean).map(k => k.trim()))];
-      notes.push('Met Office warning' + (kinds.length ? ': ' + kinds.join(', ') : ''));
+      notes.push(warnSrc() + ' warning' + (kinds.length ? ': ' + kinds.join(', ') : ''));
       if (LIVE.warn.items.some(i => /amber|red/i.test(i.title))) s -= 2;
     }
     return { s: Math.max(1, Math.min(5, s)), notes, wx: !!w };
@@ -1471,7 +1485,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   let TARGET = '';
   try { TARGET = localStorage.getItem('sh-target') || ''; } catch (err) {}
   function targetHours(name) {
-    const P = TGT[name] || { light: 'any', tide: 'any', clarity: 'any', wind: 20 }, f = FISH.find(x => x.n === name);
+    const f = FISH.find(x => x.n === name), P = TGT[name] || (f && TGT[f.k]) || { light: 'any', tide: 'any', clarity: 'any', wind: 20 };
     const slots = [], startDay = { y: tp.y, m: tp.m, d: tp.d };
     for (let i = 0; i < 7; i++) {
       const x = addDays(startDay, i), D = computeDay(x.y, x.m, x.d);
@@ -1535,7 +1549,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
         ${!inS ? `<p class="note" style="margin:0 0 8px">${TARGET} isn't usually about in ${MONTH[tp.m]}. These are still the best conditions for it this week.</p>` : ''}
         <div class="lbl">Best times this week · 📍 ${LOC.name.replace(/</g, '&lt;')}</div>
         <div class="list" style="margin-top:6px">${pick.map(s => `<button class="row bestrow${s.sc >= 6 ? ' prime' : ''}" data-y="${s.x.y}" data-m="${s.x.m}" data-d="${s.x.d}"><div class="mono">${isToday(s.x) ? 'Today' : DOW[s.x.dow] + ' ' + s.x.d}<br>${fmt(s.t - HOUR)}–${fmt(s.t + HOUR)}</div><div><div class="what">${s.why.length ? s.why.slice(0, 3).join(' · ').replace(/^./, c => c.toUpperCase()) : 'Best of a quiet week'}</div><div class="chips">${s.st && !s.why.slice(0, 3).includes(s.st.toLowerCase()) ? `<span class="chip tide">${s.st}</span>` : ''}${s.wind ? `<span class="chip">${s.wind}</span>` : ''}</div></div></button>`).join('') || '<p class="note">No suitable times left this week.</p>'}</div>
-        <p class="note" style="margin-top:10px">${P.tip || (f ? f.tip : '')}</p>
+        <p class="note" style="margin-top:10px">${(TGT[TARGET] && TGT[TARGET].tip) || (f && f.k && f.tip) || P.tip || (f ? f.tip : '')}</p>
         ${f ? `<div class="lbl">Bait</div><div class="chips" style="margin-top:4px">${f.bait.map(b => `<span class="chip bait">${b}</span>`).join('')}</div>` : ''}
         ${P.rig ? `<p class="note">Rig: <a href="#rigs">${P.rig}</a></p>` : ''}
         ${marks.length ? `<div class="lbl" style="margin-top:8px">Nearest marks for ${TARGET.toLowerCase()}</div><div class="chips" style="margin-top:4px">${marks.map(({ s, d }) => `<button class="small tgtspot" data-n="${s.n}">${s.n} · ${Math.round(d)} km</button>`).join('')}</div>` : ''}`;
@@ -1546,6 +1560,103 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     el.querySelectorAll('.tgtpick').forEach(b => b.addEventListener('click', () => setT(b.dataset.n)));
     el.querySelectorAll('.bestrow').forEach(bt => bt.addEventListener('click', () => { sel = { y: +bt.dataset.y, m: +bt.dataset.m, d: +bt.dataset.d }; renderAll(); window.scrollTo(0, 0); }));
     el.querySelectorAll('.tgtspot').forEach(b => b.addEventListener('click', () => { const s = SPOTS.find(x => x.n === b.dataset.n); if (s) setLoc({ mode: 'spot', lat: s.lat, lon: s.lon, name: s.n }); }));
+  }
+
+  // ---------- Portugal & Madeira pack ----------
+  // Sizes: mainland = DGRM minimum sizes table (30 Oct 2025) + Portaria 14/2014; Madeira = Portaria 484/2016 (JORAM), amended 2019.
+  const A = [0,1,2,3,4,5,6,7,8,9,10,11];
+  const FISH_PT = [
+    { n: 'Sea bass (Robalo)', k: 'Bass', l: 'Dicentrarchus labrax', m: A, p: [10,11,0,1,2], min: '36 cm', where: 'Shore & estuary', bait: ['Casulo (ragworm)', 'Sardine', 'Live shrimp', 'Lures at dawn'], tip: 'Surf and coloured water after a winter blow. Beaches and rocky points at dawn and dusk, estuary mouths on the flood.' },
+    { n: 'White seabream (Sargo)', k: 'Sargo', l: 'Diplodus sargus', m: A, p: [9,10,11,0,1,2], min: '17 cm', where: 'Rocks & breakwaters', bait: ['Casulo', 'Mussel', 'Crab', 'Ganso worm', 'Prawn'], tip: 'White water around rocks and breakwaters. Fish close in on a light running ledger. In the Costa Vicentina park, sargo are closed 1 Feb–15 Mar.' },
+    { n: 'Two-banded bream (Safia)', k: 'Sargo', l: 'Diplodus vulgaris', m: A, p: [9,10,11,0,1,2,3], min: '17 cm', where: 'Rocks & breakwaters', bait: ['Casulo', 'Mussel', 'Prawn', 'Sardine strip'], tip: 'Often mixed in with sargo. Smaller hooks and small baits.' },
+    { n: 'Zebra seabream (Sargo-veado)', k: 'Sargo', l: 'Diplodus cervinus', m: [3,4,5,6,7,8,9,10], p: [5,6,7,8], min: '27 cm', where: 'Deep rocky marks', bait: ['Crab', 'Prawn', 'Mussel'], tip: 'A big, strong bream from deeper rocks. Use heavier line.' },
+    { n: 'Sharpsnout bream (Sargo-bicudo)', k: 'Sargo', l: 'Diplodus puntazzo', m: A, p: [9,10,11,0], min: '22 cm', where: 'Rocks & harbours', bait: ['Mussel', 'Casulo', 'Bread'], tip: 'Harbours and rocky ground. Fussy feeder: light line, small hooks.' },
+    { n: 'Gilthead bream (Dourada)', k: 'Gilthead bream', l: 'Sparus aurata', m: [3,4,5,6,7,8,9,10], p: [5,6,7,8,9], min: '19 cm', where: 'Estuaries & lagoons', bait: ['Crab', 'Mussel', 'Ganso worm', 'Clam'], tip: 'Tejo, Sado, Ria Formosa and Ria de Aveiro on the flood in warm months. Shy bites: give it time.' },
+    { n: 'Meagre (Corvina)', k: 'Corvina', l: 'Argyrosomus regius', m: [3,4,5,6,7,8,9], p: [4,5,6,7], min: '42 cm', where: 'Estuaries & beaches', bait: ['Live bait', 'Whole squid or cuttlefish', 'Ganso worm', 'Big lures'], tip: 'Big estuary fish (Tejo, Sado, Guadiana). Night on big spring tides, especially the end of the flood. Strong gear.' },
+    { n: 'Sand steenbras (Ferreira)', k: 'Ferreira', l: 'Lithognathus mormyrus', m: [4,5,6,7,8,9], p: [5,6,7,8], min: '15 cm', where: 'Sandy beaches', bait: ['Casulo', 'Ganso worm', 'Clam'], tip: 'Sandy beaches in summer, in the gutters close in. Long thin worm baits on small hooks.' },
+    { n: 'Black seabream (Choupa)', k: 'Black bream', l: 'Spondyliosoma cantharus', m: [3,4,5,6,7,8,9,10], p: [5,6,7,8], min: '23 cm', where: 'Rocks & boat', bait: ['Casulo', 'Squid strip', 'Mussel'], tip: 'Rocky ground in daylight. Small hooks.' },
+    { n: 'Pandora (Bica)', k: 'Black bream', l: 'Pagellus erythrinus', m: A, p: [4,5,6,7,8], min: '15 cm', where: 'Boat & deep rocks', bait: ['Casulo', 'Squid strip', 'Prawn'], tip: 'Mixed ground in deeper water.' },
+    { n: 'Salema', k: 'Thick-lipped mullet', l: 'Sarpa salpa', m: [4,5,6,7,8,9,10], p: [6,7,8], min: '18 cm', where: 'Rocks & harbours', bait: ['Bread', 'Green weed', 'Prawn'], tip: 'Shoals over rocks and in harbours in summer. Float-fished bread or weed.' },
+    { n: 'Mullet (Tainha)', k: 'Thick-lipped mullet', l: 'Mugilidae', m: A, p: [4,5,6,7,8,9], min: '20 cm', where: 'Harbours & rivers', bait: ['Bread', 'Bread paste', 'Small worm'], tip: 'Harbours, rivers and outfalls. Groundbait with bread and fish a light float.' },
+    { n: 'Chub mackerel (Cavala)', k: 'Mackerel', l: 'Scomber colias', m: [5,6,7,8,9,10], p: [7,8,9], min: '20 cm', where: 'Piers & breakwaters', bait: ['Sabikis', 'Small spinners', 'Sardine strip'], tip: 'Shoals come close in late summer and autumn. Dawn and dusk off piers and breakwaters.' },
+    { n: 'Horse mackerel (Carapau)', k: 'Scad (horse mackerel)', l: 'Trachurus trachurus', m: [5,6,7,8,9,10], p: [7,8,9], min: '15 cm', where: 'Harbours & piers', bait: ['Sabikis', 'Small strip baits'], tip: 'Harbours and piers, often after dark.' },
+    { n: 'Bogue (Boga)', k: 'Mackerel', l: 'Boops boops', m: A, p: [5,6,7,8,9], min: '15 cm', where: 'Harbours & rocks', bait: ['Bread', 'Small strips', 'Sabikis'], tip: 'Shoals around harbours and rocks. Fun on light gear and a good live bait.' },
+    { n: 'Pouting (Faneca)', k: 'Pouting', l: 'Trisopterus luscus', m: [9,10,11,0,1,2,3], p: [11,0,1], min: '17 cm', where: 'Rocks & piers', bait: ['Casulo', 'Squid strip', 'Sardine'], tip: 'Winter fish around rough ground and piers, best at night.' },
+    { n: 'Sole (Linguado)', k: 'Sole', l: 'Solea spp.', m: A, p: [2,3,4,9,10], min: '24 cm', where: 'Beaches & estuaries', bait: ['Casulo', 'Ganso worm'], tip: 'Calm nights on sandy beaches and estuaries. Small hooks.' },
+    { n: 'Red mullet (Salmonete)', k: 'Plaice', l: 'Mullus surmuletus', m: [3,4,5,6,7,8,9], p: [5,6,7,8], min: '18 cm', where: 'Sand & mixed ground', bait: ['Casulo', 'Small worm baits'], tip: 'Sand and mixed ground in daylight, small hooks.' },
+    { n: 'Bluefish (Anchova)', k: 'Bluefish', l: 'Pomatomus saltatrix', m: [6,7,8,9,10,11], p: [8,9,10], min: null, where: 'Beaches & river mouths', bait: ['Metal lures', 'Sardine', 'Live bait'], tip: 'Fast hunters along beaches and river mouths in late summer and autumn. Sharp teeth: use a wire or heavy trace.' },
+    { n: 'Pollack (Juliana)', k: 'Pollack', l: 'Pollachius pollachius', m: [4,5,6,7,8,9,10,11], p: [5,6,7,8,9], min: '46 cm', bag: '2 a day · none kept 1 Jan–30 Apr', where: 'Rocky coast (north)', bait: ['Soft plastics', 'Casulo'], tip: 'Mostly the rocky north coast. Lures at dawn and dusk.' },
+    { n: 'Conger (Congro)', k: 'Conger', l: 'Conger conger', m: A, p: [5,6,7,8,9], min: '58 cm', where: 'Harbour walls & rocks', bait: ['Sardine', 'Squid', 'Fish fillet'], tip: 'Harbour walls and rocks at night. Heavy gear.' },
+    { n: 'Squid (Lula)', k: 'Squid', l: 'Loligo vulgaris', m: [9,10,11,0,1,2], p: [10,11,0], min: '10 cm mantle', where: 'Harbours & breakwaters', bait: ['Egi jigs 2.5–3.0', 'Toneira under a float'], tip: 'Harbours and breakwaters after dark. A light to attract squid is only allowed when fishing toneiras (squid jigs).' },
+    { n: 'Cuttlefish (Choco)', k: 'Cuttlefish', l: 'Sepia officinalis', m: [1,2,3,4,5], p: [2,3,4], min: '10 cm mantle', where: 'Harbours & estuaries', bait: ['Egi jigs', 'Toneira', 'Sardine under a float'], tip: 'Spring in harbours, rias and estuaries. Fish slowly near weed.' },
+    { n: 'Octopus (Polvo)', k: 'Octopus', l: 'Octopus vulgaris', m: A, p: [9,10,11,0,1,2], min: '750 g', where: 'Rocks & harbour walls', bait: ['Octopus jig', 'Crab tied to a jig'], tip: 'Drag an octopus jig slowly over rocks and along harbour walls. Weigh it: under 750 g goes back.' },
+    { n: 'Undulate ray (Raia-curva)', l: 'Raja undulata', m: A, p: [], min: null, ret: true, where: 'Shore & boat', bait: ['Takes fish and worm baits'], tip: 'Banned: you can\'t keep it in Portugal. Release it carefully.' },
+    { n: 'European eel (Enguia)', l: 'Anguilla anguilla', m: A, p: [], min: null, ret: true, where: 'Estuaries', bait: ['Takes worm baits'], tip: 'Banned: you can\'t keep it. Release it.' },
+    { n: 'Groupers (Mero)', l: 'Epinephelus spp.', m: A, p: [], min: null, ret: true, where: 'Rocks', bait: ['Takes fish baits'], tip: 'Banned: all groupers go back.' },
+    { n: 'Greater weever (Peixe-aranha)', l: 'Trachinus draco', m: [4,5,6,7,8,9], p: [6,7], min: null, warn: true, where: 'Sandy beaches', bait: ['Takes worm baits'], tip: 'Venomous spines on its back and gills. Unhook with pliers and a cloth. If stung, put the wound in hot water (as hot as you can bear) and get help.' }
+  ];
+  const FISH_MAD = [
+    { n: 'White seabream (Sargo)', k: 'Sargo', l: 'Diplodus sargus', m: A, p: [10,11,0,1,2,3], min: '15 cm', where: 'Rocks & breakwaters', bait: ['Prawn', 'Limpet', 'Crab', 'Bread'], tip: 'White water around rocks and breakwaters. Fish close in, light gear.' },
+    { n: 'Two-banded bream (Seifia)', k: 'Sargo', l: 'Diplodus vulgaris', m: A, p: [10,11,0,1,2,3], min: '15 cm', where: 'Rocks & harbours', bait: ['Prawn', 'Limpet', 'Bread', 'Squid strip'], tip: 'Common around harbours and rocks. Small hooks.' },
+    { n: 'Zebra seabream (Sargo-veado)', k: 'Sargo', l: 'Diplodus cervinus', m: A, p: [4,5,6,7,8], min: '15 cm', where: 'Rocky marks', bait: ['Crab', 'Prawn', 'Limpet'], tip: 'Strong fish from deeper rocks. Heavier line.' },
+    { n: 'Parrotfish (Bodião)', k: 'Ballan wrasse', l: 'Sparisoma cretense', m: A, p: [4,5,6,7,8,9], min: null, where: 'Rocky shores', bait: ['Prawn', 'Crab', 'Limpet', 'Green weed'], tip: 'Rocky shores in daylight, close in.' },
+    { n: 'Salema', k: 'Thick-lipped mullet', l: 'Sarpa salpa', m: A, p: [5,6,7,8,9], min: '18 cm', where: 'Rocks & harbours', bait: ['Bread', 'Green weed'], tip: 'Shoals over rocks and in harbours. Float-fished bread or weed.' },
+    { n: 'Blue jack mackerel (Chicharro)', k: 'Scad (horse mackerel)', l: 'Trachurus picturatus', m: A, p: [5,6,7,8,9,10], min: '15 cm', where: 'Harbours & piers', bait: ['Sabikis', 'Small strip baits', 'Bread'], tip: 'Harbours and piers (Funchal, Caniçal), at dusk and into the night.' },
+    { n: 'Chub mackerel (Cavala)', k: 'Mackerel', l: 'Scomber colias', m: A, p: [5,6,7,8,9], min: '20 cm', where: 'Harbours & piers', bait: ['Sabikis', 'Small spinners', 'Fish strip'], tip: 'Shoals off harbours and piers, best at dawn and dusk.' },
+    { n: 'Bogue (Boga)', k: 'Mackerel', l: 'Boops boops', m: A, p: [4,5,6,7,8,9], min: '15 cm', where: 'Harbours & rocks', bait: ['Bread', 'Small strips'], tip: 'Shoals around harbours. Good live bait.' },
+    { n: 'Mullet (Tainha)', k: 'Thick-lipped mullet', l: 'Mugilidae', m: A, p: [4,5,6,7,8,9], min: '20 cm', where: 'Harbours', bait: ['Bread', 'Bread paste'], tip: 'Harbours and outfalls. Groundbait with bread and fish a light float.' },
+    { n: 'Forkbeard (Abrótea)', k: 'Abrotea', l: 'Phycis phycis', m: A, p: [10,11,0,1,2], min: '37 cm', where: 'Rocks & harbour walls', bait: ['Squid', 'Fish strip', 'Crab'], tip: 'Night over rocks and along harbour walls.' },
+    { n: 'Red porgy (Pargo)', k: 'Black bream', l: 'Pagrus pagrus', m: A, p: [3,4,5,6,7,8], min: '20 cm', where: 'Deep rocks & boat', bait: ['Squid', 'Prawn', 'Fish strip'], tip: 'Deeper water off the rocks and from boats.' },
+    { n: 'Red mullet (Salmonete)', k: 'Plaice', l: 'Mullus surmuletus', m: A, p: [4,5,6,7,8], min: '15 cm', where: 'Sand & mixed ground', bait: ['Prawn', 'Small worm baits'], tip: 'Sandy patches between rocks in daylight.' },
+    { n: 'Grey triggerfish (Peixe-porco)', k: 'Black bream', l: 'Balistes capriscus', m: [4,5,6,7,8,9,10], p: [6,7,8,9], min: null, where: 'Harbour walls & rocks', bait: ['Squid', 'Prawn', 'Crab'], tip: 'Around harbour walls in summer. Small strong hooks; it steals baits.' },
+    { n: 'Barracuda (Bicuda)', k: 'Bluefish', l: 'Sphyraena viridensis', m: [4,5,6,7,8,9,10,11], p: [6,7,8,9,10], min: null, where: 'Harbours & breakwaters', bait: ['Metal lures', 'Minnow lures', 'Live chicharro'], tip: 'Dawn and dusk along harbours and breakwaters. Wire trace.' },
+    { n: 'Amberjack (Charuteiro)', k: 'Bluefish', l: 'Seriola spp.', m: [4,5,6,7,8,9,10], p: [6,7,8,9], min: null, bag: 'Over 10 kg must go back', where: 'Rocks & piers', bait: ['Live chicharro', 'Big lures'], tip: 'Powerful hunters off rocks and piers. Heavy gear.' },
+    { n: 'Moray (Moreia)', k: 'Conger', l: 'Muraenidae', m: A, p: [5,6,7,8,9], min: null, where: 'Rocks', bait: ['Fish bait', 'Squid'], tip: 'Night among rocks. Wire trace, and mind the teeth when unhooking.' },
+    { n: 'Conger (Congro)', k: 'Conger', l: 'Conger conger', m: A, p: [5,6,7,8,9], min: '58 cm', where: 'Harbour walls & rocks', bait: ['Squid', 'Fish fillet'], tip: 'Harbour walls and rocks at night. Heavy gear.' },
+    { n: 'Squid (Lula)', k: 'Squid', l: 'Loligo vulgaris', m: [10,11,0,1,2,3], p: [11,0,1], min: '10 cm mantle', where: 'Harbours', bait: ['Egi jigs 2.5–3.0', 'Toneira under a float'], tip: 'Harbours and piers after dark, under the lights.' },
+    { n: 'Octopus (Polvo)', k: 'Octopus', l: 'Octopus vulgaris', m: A, p: [9,10,11,0,1,2], min: '750 g', where: 'Rocks & harbour walls', bait: ['Octopus jig', 'Crab tied to a jig'], tip: 'Drag an octopus jig slowly over rocks. Weigh it: under 750 g goes back.' },
+    { n: 'Groupers (Mero, Badejo)', l: 'Epinephelus marginatus, Mycteroperca fusca', m: A, p: [], min: null, ret: true, where: 'Rocks', bait: ['Takes fish baits'], tip: 'Banned in Madeira: release them.' },
+    { n: 'Common dentex (Capatão)', l: 'Dentex dentex', m: A, p: [], min: null, ret: true, where: 'Rocks & boat', bait: ['Takes live bait'], tip: 'Banned in Madeira: release it.' },
+    { n: 'Barred hogfish (Peixe-cão)', l: 'Bodianus scrofa', m: A, p: [], min: null, ret: true, where: 'Rocks', bait: ['Takes crab and prawn'], tip: 'Banned in Madeira: release it.' },
+    { n: 'European eel (Enguia)', l: 'Anguilla anguilla', m: A, p: [], min: null, ret: true, where: 'Harbours', bait: ['Takes fish baits'], tip: 'Banned: release it.' }
+  ];
+  Object.assign(TGT, {
+    'Sargo': { light: 'dawn-dusk', tide: 'flood', clarity: 'slight', wind: 20, rig: 'Running ledger', tip: 'White water around rocks and breakwaters, best with a little swell and colour. Dawn, dusk and into dark on the flood.' },
+    'Corvina': { light: 'night', tide: 'flood', clarity: 'coloured', wind: 22, springs: true, rig: 'Pulley pennel', tip: 'Estuaries at night on big spring tides, the end of the flood best. Live bait, squid or cuttlefish on strong gear.' },
+    'Ferreira': { light: 'dawn-dusk', tide: 'flood', clarity: 'any', wind: 18, rig: 'Two-hook flapper', tip: 'Sandy beaches, in the gutters close in. Long thin worm baits on small hooks.' },
+    'Octopus': { light: 'day', tide: 'any', clarity: 'clear', wind: 15, tip: 'Calm, clear water in daylight. Drag the jig slowly over rocks and along walls.' },
+    'Bluefish': { light: 'dawn-dusk', tide: 'flood', clarity: 'clear', wind: 20, tip: 'Dawn and dusk with clear water. Fast-retrieved metal lures, and a wire or heavy trace.' },
+    'Abrotea': { light: 'night', tide: 'any', clarity: 'any', wind: 20, rig: 'Two-hook flapper', tip: 'After dark over rocks and along harbour walls. Squid or fish strip on the bottom.' }
+  });
+  let PACK = 'uk';
+  function applyPack() {
+    const rg = region(), p = rg === 'pt' ? 'pt' : rg === 'mad' ? 'mad' : 'uk';
+    PACK = p; FISH = p === 'pt' ? FISH_PT : p === 'mad' ? FISH_MAD : FISH_UK;
+    if (TARGET && !FISH.some(f => f.n === TARGET)) { const old = FISH_UK.concat(FISH_PT, FISH_MAD).find(f => f.n === TARGET), key = old ? (old.k || old.n) : TARGET, t = FISH.find(f => (f.k || f.n) === key); TARGET = t ? t.n : ''; }
+    if ($('l-sp')) { const cur = $('l-sp').value; $('l-sp').innerHTML = FISH.map(f => `<option>${f.n}</option>`).join('') + '<option>Other</option>'; if ([...$('l-sp').options].some(o => o.value === cur)) $('l-sp').value = cur; $('l-baits').innerHTML = [...new Set(FISH.flatMap(f => f.bait))].map(b => `<option value="${b}"></option>`).join(''); }
+  }
+  const PLACES = [
+    { n: 'Funchal (Madeira)', lat: 32.643, lon: -16.913 }, { n: 'Caniçal (Madeira)', lat: 32.739, lon: -16.737 }, { n: 'Porto Moniz (Madeira)', lat: 32.867, lon: -17.170 },
+    { n: 'Porto · Matosinhos', lat: 41.183, lon: -8.703 }, { n: 'Aveiro · Barra', lat: 40.643, lon: -8.747 }, { n: 'Peniche', lat: 39.355, lon: -9.381 },
+    { n: 'Lisboa · Cascais', lat: 38.692, lon: -9.420 }, { n: 'Setúbal · Tróia', lat: 38.490, lon: -8.900 }, { n: 'Sines', lat: 37.950, lon: -8.870 }, { n: 'Faro · Ria Formosa', lat: 37.006, lon: -7.930 }
+  ];
+
+  function rulesPT(pk) {
+    const mad = pk === 'mad';
+    const rows = FISH.filter(f => !f.ret && !f.warn).slice().sort((a, b) => a.n.localeCompare(b.n));
+    const box = (h, body) => `<div class="panel rulebox"><h2>${h}</h2>${body}</div>`;
+    const banned = FISH.filter(f => f.ret).map(f => f.n);
+    return box('Daily limit', `<div class="big"><div class="stat"><b>10 kg</b><span>fish & squid / octopus per angler a day</span></div><div class="stat"><b>3 rods</b><span>lines, 9 hooks in total</span></div></div>
+      <ul class="tight">${mad ? `<li>Squid, cuttlefish and octopus count towards the 10 kg. The heaviest fish of the day aren't counted; check the current Portaria for how many.</li><li>Limpets 3 kg a day. Spiny lobster, slipper lobster (cavaco) and spider crab: 2 of each a day.</li><li>Other marine animals: up to 5 kg per species a day.</li>`
+        : `<li>The largest fish of the day isn't counted. Once you reach the limit, stop fishing.</li><li>Mussels 3 kg, oysters 5 kg, other shellfish and crabs 2 kg in total, bait worms 0.5 litre.</li><li><b>Pollack (juliana)</b>: 2 a day, and none kept from 1 Jan to 30 Apr.</li>`}</ul>`)
+      + box('Licence', `<ul class="tight">${mad ? `<li>You need a <b>licença de pesca lúdica</b> (monthly or annual) from the Direção Regional de Pescas: online, at their offices or by Multibanco.</li><li>Under-16s can fish without one when they're with a licence holder.</li>`
+        : `<li>You need a <b>licença de pesca lúdica apeada</b> for shore fishing: daily, monthly or annual. Get it from DGRM online, at a regional fisheries office, or at a Multibanco with a Portuguese ID.</li><li>Under-16s can fish without one when they're with a licence holder.</li>`}</ul>`)
+      + box('Where and how', `<ul class="tight">${mad ? `<li>Lures are allowed, with up to 3 hooks each. No fish roe or harmful substances in groundbait.</li><li>Harbours and marinas can have their own bans: check the signs and the Capitania do Porto do Funchal.</li>`
+        : `<li>Not within 100 m of harbours, docks, boatyards, fish farms or marked sewage outfalls, and not in the swimming areas of lifeguarded beaches in the bathing season.</li><li>Keep at least 5 m from other anglers unless they agree.</li><li>Lights to attract fish are only allowed when fishing toneiras (squid jigs).</li><li><b>Costa Vicentina natural park</b> (Sines to Burgau): 2 rods at most; sargo closed 1 Feb–15 Mar, bodião 1 Mar–31 May.</li><li>Harbour breakwaters can have local bans: check the Capitania notices.</li>`}</ul>`)
+      + box('Must go back', `<ul class="tight">${banned.map(n => `<li>${n}</li>`).join('')}${mad ? '<li>Many sharks and rays, including tope (cação), smooth-hound (caneja), spurdog, threshers, hammerheads and the Madeiran ray</li><li>Seahorses, turtles and sea birds</li>' : '<li>Spiny lobster and European lobster, flat oyster, salmon, shad and sea lamprey</li><li>Several sharks: spurdog, porbeagle, basking, white, threshers</li><li>Seahorses, turtles, sea mammals and corals</li>'}<li>Any fish under its minimum size, even if it's dead.</li></ul>`)
+      + box('Minimum sizes', `<div class="tablewrap"><table><thead><tr><th>Species</th><th class="r">Legal min</th></tr></thead><tbody>${rows.map(f => `<tr><td>${f.n}${f.bag ? `<div class="note" style="margin:0">${f.bag}</div>` : ''}</td><td class="r mono">${f.min || '—'}</td></tr>`).join('')}</tbody></table></div><p class="note">— means there's no legal minimum. Take only what you'll eat.</p>`)
+      + box('Sources', `<ul class="tight">${mad ? `<li><a href="https://joram.madeira.gov.pt/joram/1serie/Ano%20de%202016/ISerie-199-2016-11-14sup.pdf" target="_blank" rel="noopener">Portaria 484/2016 (JORAM) · gear, limits and sizes</a></li><li><a href="https://www.madeira.gov.pt//Portals/40/documentos/Altera%C3%A7%C3%A3o%20%C3%A0%20Poratria%20484-2016.pdf" target="_blank" rel="noopener">2019 amendment · daily limits</a></li>`
+        : `<li><a href="https://www.dgrm.pt/especies" target="_blank" rel="noopener">DGRM · banned species and daily limits</a></li><li><a href="https://dgrm.pt/documents/20143/121101/Tabela+de+Tamanhos+M%C3%ADnimos+de+Captura+30-10-25.pdf/0395af29-7e6b-8fd8-4b8a-3e29c09226e4" target="_blank" rel="noopener">DGRM · minimum sizes table (30 Oct 2025)</a></li><li><a href="https://www.dgrm.pt/documents/20143/0/FAQ-PescaLudica2018.pdf/730e6d56-1f8c-66a2-a020-aecc016685bb" target="_blank" rel="noopener">DGRM · pesca lúdica questions and answers</a></li>`}</ul><p class="note">Rules change. If in doubt, ask the ${mad ? 'Direção Regional de Pescas' : 'DGRM'} or the local Capitania.</p>`);
   }
 
   // ---------- state ----------
@@ -1667,7 +1778,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     $('hwlabel').textContent = inSolent() ? 'Today\'s first low water:' : 'Today\'s first high water:';
     const D0 = computeDay(sel.y, sel.m, sel.d);
     $('tidesrc').textContent = D0.adm ? `Official Admiralty tide times · ${LIVE.adm.station.name} (${LIVE.adm.station.km} km away). Contains ADMIRALTY® tidal data: © Crown Copyright and database right.` : inWeymouth() ? 'Weymouth tide times, tuned to Weymouth tables (usually within 15 min). Note the double low water.' : inSolent() ? (LOC.mode === 'home' || km(LOC.lat, LOC.lon, 50.90, -1.40) < 6 ? 'Southampton tide times, tuned to the official tables' + (LIVE.admErr ? ` (Admiralty: ${LIVE.admErr})` : '') : `Southampton tide times (${LOC.name} may differ by up to ~30 min)`)
-      : D0.tides.length ? `Ocean model for ${LOC.name} · approximate (can be up to 1 h out) · check local tide tables` : 'No tide data for this place yet. It loads when you\'re online.';
+      : D0.tides.length ? `Ocean model for ${LOC.name} · approximate (can be up to 1 h out) · ${PACK !== 'uk' ? 'check the Instituto Hidrográfico tide tables (hidrografico.pt)' : 'check local tide tables'}` : 'No tide data for this place yet. It loads when you\'re online.';
     let html = '';
     for (let i = 0; i < 7; i++) {
       const x = addDays(sel, i), D = computeDay(x.y, x.m, x.d);
@@ -1734,6 +1845,9 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     let list = FISH.filter(f => fishMode === 'all' || f.m.includes(sel.m));
     if (q) list = list.filter(f => (f.n + ' ' + f.l + ' ' + f.bait.join(' ') + ' ' + f.where).toLowerCase().includes(q));
     list = list.slice().sort((a, b) => (b.p.includes(sel.m) - a.p.includes(sel.m)) || (a.ret || a.warn ? 1 : 0) - (b.ret || b.warn ? 1 : 0));
+    $('fishtitle').textContent = PACK === 'pt' ? 'Fish of Portugal' : PACK === 'mad' ? 'Fish of Madeira' : 'Fish of the Solent';
+    $('fishnote').textContent = PACK === 'uk' ? 'Species and seasons are for the Solent and the south coast. Sizes are the legal minimum to keep a fish in the Southern IFCA area (Hampshire, Dorset and the Isle of Wight), measured from the tip of the snout to the end of the tail. See Rules for details.'
+      : `Portuguese names in brackets. Seasons are a guide for the ${PACK === 'mad' ? 'Madeira coast' : 'Portuguese coast'}. Sizes are the legal minimum to keep a fish (${PACK === 'mad' ? 'Madeira regional rules' : 'DGRM'}), measured from snout to tail; squid and cuttlefish by mantle length, octopus by weight. See Rules for details.`;
     $('fishsub').textContent = fishMode === 'season' ? `${list.length} species about in ${MONTH[sel.m]}` : `All ${list.length} species · ${MONTH[sel.m]} highlighted`;
     $('species').innerHTML = list.map(f => {
       const peak = f.p.includes(sel.m), inS = f.m.includes(sel.m);
@@ -1752,7 +1866,10 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
 
   // ---------- RULES ----------
   function renderRules() {
-    const rg = region();
+    const rg = region(), pt = PACK !== 'uk';
+    $('rules-uk').style.display = pt ? 'none' : 'contents'; $('rules-pt').style.display = pt ? 'contents' : 'none';
+    $('rulessub').textContent = pt ? (PACK === 'mad' ? 'Pesca lúdica, Madeira (Região Autónoma). Checked 8 Nov 2026.' : 'Pesca lúdica, mainland Portugal. Checked 8 Nov 2026.') : 'Recreational sea angling, Southern IFCA area. Checked 7 Nov 2026.';
+    if (pt) { $('rulesregion').innerHTML = ''; $('rules-pt').innerHTML = rulesPT(PACK); return; }
     $('rulesregion').innerHTML = rg === 'southern' ? '' : rg === 'uk'
       ? `<div class="warn">You're outside the Southern IFCA area (${LOC.name}). The bass and pollack rules below apply across England, but minimum sizes can differ locally. Check the local IFCA (search "IFCA" plus the county) before keeping fish.</div>`
       : `<div class="warn">You're outside the UK (${LOC.name}), so these rules don't apply. Check the local fishing rules for this country before keeping anything.</div>`;
@@ -1792,7 +1909,15 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   $('s-month').addEventListener('click', () => { spotMode = 'month'; renderSpots(); });
   $('s-all').addEventListener('click', () => { spotMode = 'all'; renderSpots(); });
   window.addEventListener('hashchange', route);
-  setupLog();
+  setupLog(); applyPack();
+  // make the SANTOS HOOKED title fill the width of the screen
+  function fitTitle() {
+    const h = document.querySelector('header.brand h1'), box = document.querySelector('header.brand'); if (!h || !box) return;
+    h.style.fontSize = '100px'; const w = h.getBoundingClientRect().width, avail = box.clientWidth;
+    if (w > 0 && avail > 0) h.style.fontSize = Math.min(120, Math.floor(100 * avail * 0.98 / w)) + 'px';
+  }
+  fitTitle(); window.addEventListener('resize', fitTitle);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTitle);
   setGeo(LOC.lat, LOC.lon);
   renderAll(); route();
   loadLive(false);
