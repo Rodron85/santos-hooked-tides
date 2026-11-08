@@ -558,7 +558,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Weather warnings: Met Office. Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 16 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Weather warnings: Met Office. Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 17 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -1072,7 +1072,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     const W = LIVE.warn;
     if (!W || !W.items.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
     el.style.display = '';
-    el.innerHTML = `<h2>⚠️ Met Office warnings</h2>` + W.items.slice(0, 4).map(i => `<div class="wxmsg bad" style="margin-top:8px"><b>${i.title.replace(/</g, '&lt;')}</b>${i.desc ? `<span class="note" style="margin:0;display:block">${i.desc.replace(/</g, '&lt;')}</span>` : ''}</div>`).join('') + `<p class="note"><a href="https://www.metoffice.gov.uk/weather/warnings-and-advice/uk-warnings" target="_blank" rel="noopener">Full details on the Met Office site</a></p>`;
+    el.innerHTML = `<h2>⚠️ Met Office warnings</h2>` + W.items.slice(0, 4).map(i => { let d = (i.desc || '').trim(); if (d.toLowerCase().startsWith(i.title.toLowerCase())) d = d.slice(i.title.length).replace(/^[\s:,.-]+/, ''); const v = d.match(/valid from .*$/i); i = { title: i.title, desc: v ? v[0].charAt(0).toUpperCase() + v[0].slice(1) : d }; return i; }).map(i => `<div class="wxmsg bad" style="margin-top:8px"><b>${i.title.replace(/</g, '&lt;')}</b>${i.desc ? `<span class="note" style="margin:0;display:block">${i.desc.replace(/</g, '&lt;')}</span>` : ''}</div>`).join('') + `<p class="note"><a href="https://www.metoffice.gov.uk/weather/warnings-and-advice/uk-warnings" target="_blank" rel="noopener">Full details on the Met Office site</a></p>`;
   }
 
   // ---------- water clarity (estimate) ----------
@@ -1260,6 +1260,11 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     }
     const cl = clarityAt(D.start + 12 * HOUR);
     if (cl && cl.label === 'Coloured') notes.push('Coloured water: fish bait');
+    if (LIVE.warn && LIVE.warn.items.length && (isToday(D) || isToday(addDays(D, -1)))) {
+      const kinds = [...new Set(LIVE.warn.items.map(i => (i.title.match(/warning of ([a-z, ]+?) affecting/i) || [])[1]).filter(Boolean).map(k => k.trim()))];
+      notes.push('Met Office warning' + (kinds.length ? ': ' + kinds.join(', ') : ''));
+      if (LIVE.warn.items.some(i => /amber|red/i.test(i.title))) s -= 2;
+    }
     return { s: Math.max(1, Math.min(5, s)), notes, wx: !!w };
   }
 
@@ -1484,7 +1489,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     if (isToday(sel)) {
       const st = tideState(D.tides, now), nx = D.tides.find(q => q.t > now) || computeDay(addDays(sel, 1).y, addDays(sel, 1).m, addDays(sel, 1).d).tides.find(q => q.t > now);
       if (st || nx) tideNow = `Tide: <b>${st || '—'}</b>${nx ? ` · next ${nx.type === 'HW' ? 'high' : 'low'} ${fmt(nx.t)}` : ''}`;
-      const C = LIVE.wx && LIVE.wx.current; if (C) windNow = `<span class="chip">${compass(C.wind_direction_10m)} ${Math.round(C.wind_speed_10m)} mph</span>`;
+      const C = LIVE.wx && LIVE.wx.current; if (C) windNow = `<span class="chip">${C.wind_speed_10m < 1 ? 'Calm' : compass(C.wind_direction_10m) + ' ' + Math.round(C.wind_speed_10m) + ' mph'}</span>`;
       const cl = clarityAt(now); if (cl) clNow = `<span class="chip tide">Water ${cl.label.toLowerCase()}</span>`;
     }
     const mr = D.moon.find(q => q.type === 'rise'), ms = D.moon.find(q => q.type === 'set');
