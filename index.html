@@ -195,6 +195,9 @@ button.primary { background: var(--rust); border-color: var(--rust); font-weight
 ol.steps { margin: 4px 0 0; padding-left: 20px; }
 ol.steps li { margin: 4px 0; }
 .back { font-size: .85rem; }
+.scrub { margin-top: 6px; font-size: .88rem; color: var(--muted); min-height: 1.4em; }
+.scrub b { color: var(--ink); }
+.timeline svg { touch-action: pan-x pan-y; cursor: crosshair; }
 label.btnlike { font: inherit; color: var(--ink); background: #292623; border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
 details.more { margin-top: 10px; }
 details.more > summary { cursor: pointer; font-family: var(--font-label); font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 6px 0; }
@@ -230,12 +233,14 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       <button id="today">Today</button>
     </div>
     <div class="week" id="week"></div>
+    <div class="panel" id="warnings" style="display:none"></div>
     <div class="panel hero" id="hero"></div>
     <div class="panel" id="best"></div>
     <div class="panel" id="wx"></div>
     <div class="panel">
       <h2>Day at a glance</h2>
       <div class="timeline" id="timeline"></div>
+      <div class="scrub" id="scrub">Tap or drag on the chart to see the tide at any time.</div>
       <div class="legend">
         <span><i style="background:var(--rust)"></i>Major feeding (moon overhead / underfoot)</span>
         <span><i style="background:var(--muted)"></i>Minor feeding (moonrise / moonset)</span>
@@ -411,6 +416,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       <button id="s-month" aria-pressed="true">Good this month</button>
       <button id="s-all" aria-pressed="false">All spots</button>
     </div>
+    <div class="panel" id="myspots"></div>
     <div class="species" id="spots"></div>
     <p class="note">Access, parking and fishing rules can change. Follow local signs, and check tide times before walking out on spits or mud.</p>
   </section>
@@ -552,7 +558,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Wind, weather, waves and tides away from the Solent: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 15 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Weather warnings: Met Office. Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 16 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -856,15 +862,27 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       gpsMsg = ''; setLoc({ mode: 'gps', lat, lon, name });
     }, err => { gpsMsg = err.code === 1 ? 'Location is blocked. Allow it for this app in your phone settings, then try again.' : 'Couldn\'t get your location. Try again outside.'; renderLocBar(); }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 10 * MIN });
   }
+  // ---------- my own spots (saved on this phone) ----------
+  let MYSPOTS = [];
+  try { MYSPOTS = JSON.parse(localStorage.getItem('sh-myspots') || '[]'); if (!Array.isArray(MYSPOTS)) MYSPOTS = []; } catch (err) { MYSPOTS = []; }
+  function saveMySpots() { try { localStorage.setItem('sh-myspots', JSON.stringify(MYSPOTS)); } catch (err) {} }
+  function getPos() {
+    return new Promise((res, rej) => {
+      if (!navigator.geolocation) return rej(new Error('nogeo'));
+      navigator.geolocation.getCurrentPosition(p => res({ lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy }), e => rej(e), { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+    });
+  }
   function renderLocBar() {
     const el = $('locbar'); if (!el) return;
     const opts = [`<option value="gps">📍 Use my location</option>`, `<option value="home"${LOC.mode === 'home' ? ' selected' : ''}>Southampton (home)</option>`]
+      .concat(MYSPOTS.map((s, i) => `<option value="m${i}"${LOC.mode === 'my' && LOC.name === s.n ? ' selected' : ''}>★ ${s.n}</option>`))
       .concat(SPOTS.map((s, i) => `<option value="s${i}"${LOC.mode === 'spot' && LOC.name === s.n ? ' selected' : ''}>${s.n}</option>`));
     if (LOC.mode === 'gps') opts.splice(1, 0, `<option value="cur" selected>📍 ${LOC.name}</option>`);
     el.innerHTML = `<label for="locsel" class="lbl">Fishing at</label><select id="locsel">${opts.join('')}</select>${gpsMsg ? `<span class="note" style="margin:0">${gpsMsg}</span>` : ''}`;
     $('locsel').addEventListener('change', ev => {
       const v = ev.target.value;
       if (v === 'gps') useGPS(); else if (v === 'home') setLoc(HOME); else if (v[0] === 's') { const s = SPOTS[+v.slice(1)]; setLoc({ mode: 'spot', lat: s.lat, lon: s.lon, name: s.n }); }
+      else if (v[0] === 'm') { const s = MYSPOTS[+v.slice(1)]; if (s) setLoc({ mode: 'my', lat: s.lat, lon: s.lon, name: s.n }); }
     });
   }
 
@@ -931,11 +949,13 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     if (LIVE.loading) return;
     if (!force && Date.now() - LIVE.wxAt < 20 * MIN && LIVE.wx) {
       if (!LIVE.adm || LIVE.adm.key !== locKey()) { await loadAdmiralty(locKey()); LIVE.ver++; renderAll(); }
+      if (!LIVE.warn || Date.now() - LIVE.warn.at > 30 * MIN) { await loadWarnings(); renderWarnings(); }
       return;
     }
     LIVE.loading = true; LIVE.err = ''; renderLiveBits();
-    const key = locKey(), wxUrl = `https://api.open-meteo.com/v1/forecast?latitude=${LOC.lat.toFixed(4)}&longitude=${LOC.lon.toFixed(4)}&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code,precipitation&hourly=temperature_2m,precipitation,precipitation_probability,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,precipitation_probability_max&wind_speed_unit=mph&timezone=Europe%2FLondon&timeformat=unixtime&past_days=2&forecast_days=7`;
+    const key = locKey(), wxUrl = `https://api.open-meteo.com/v1/forecast?latitude=${LOC.lat.toFixed(4)}&longitude=${LOC.lon.toFixed(4)}&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code,precipitation,pressure_msl&hourly=temperature_2m,precipitation,pressure_msl,precipitation_probability,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,precipitation_probability_max&wind_speed_unit=mph&timezone=Europe%2FLondon&timeformat=unixtime&past_days=2&forecast_days=7`;
     if (!LIVE.adm || LIVE.adm.key !== key || Date.now() - LIVE.adm.at > 6 * HOUR) await loadAdmiralty(key);
+    await loadWarnings();
     const L0 = LOC.lat, G0 = LOC.lon, pts = inSolent() ? [[50.79, -1.30], [50.77, -1.22], [50.74, -1.12]] : [[L0, G0], [L0 - 0.06, G0], [L0 - 0.12, G0], [L0, G0 - 0.1], [L0, G0 + 0.1], [L0 + 0.06, G0]];
     try {
       const wx = await getJSON(wxUrl);
@@ -1000,7 +1020,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
         head = `<div class="wxnow"><div class="wxdir">${arrow(c.wind_direction_10m, 40)}<span class="mono">${compass(c.wind_direction_10m)}</span></div>
           <div><div class="wxbig">${Math.round(c.wind_speed_10m)} <small>mph</small></div><div class="note" style="margin:0">Gusts ${Math.round(c.wind_gusts_10m)} mph · ${wcode(c.weather_code)} · ${Math.round(c.temperature_2m)}°C</div></div></div>
           <div class="chips" style="margin:8px 0">${sea && sea.wh != null ? `<span class="chip tide">Waves ${sea.wh.toFixed(1)} m${sea.wp ? ' · ' + Math.round(sea.wp) + ' s' : ''}</span>` : ''}${sea && sea.sst != null ? `<span class="chip tide">Sea ${sea.sst.toFixed(1)}°C</span>` : ''}</div>
-          <div class="wxmsg ${ww.c}">${ww.t}</div>${(s => { if (!s || FACE[s.n] == null) return ''; const r = windRel(FACE[s.n], c.wind_direction_10m, c.wind_speed_10m); return `<div class="wxmsg ${r.cls}" style="margin-top:8px"><b>${r.t} at ${s.n}</b> <span class="note" style="margin:0;display:block">${r.tip}</span></div>`; })(spotHere())}${(cl => cl ? `<div class="wxmsg ${cl.cls}" style="margin-top:8px"><b>Water: ${cl.label}</b> <span class="note" style="margin:0;display:block">${cl.why} (estimate)</span>${cl.tip}</div>` : '')(clarityAt(Date.now()))}`;
+          <div class="wxmsg ${ww.c}">${ww.t}</div>${(pr => pr ? `<div class="wxmsg ${pr.cls}" style="margin-top:8px"><b>Pressure ${pr.now} hPa, ${pr.word}</b> <span class="note" style="margin:0;display:block">${pr.tip}</span></div>` : '')(pressureInfo())}${(s => { if (!s || FACE[s.n] == null) return ''; const r = windRel(FACE[s.n], c.wind_direction_10m, c.wind_speed_10m); return `<div class="wxmsg ${r.cls}" style="margin-top:8px"><b>${r.t} at ${s.n}</b> <span class="note" style="margin:0;display:block">${r.tip}</span></div>`; })(spotHere())}${(cl => cl ? `<div class="wxmsg ${cl.cls}" style="margin-top:8px"><b>Water: ${cl.label}</b> <span class="note" style="margin:0;display:block">${cl.why} (estimate)</span>${cl.tip}</div>` : '')(clarityAt(Date.now()))}`;
       }
       let strip = '';
       for (let t = D.start; t < D.end; t += HOUR) {
@@ -1019,6 +1039,40 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     if (i < 0) return null;
     const Dd = W.daily;
     return { code: Dd.weather_code[i], tmax: Dd.temperature_2m_max[i], tmin: Dd.temperature_2m_min[i], w: Dd.wind_speed_10m_max[i], g: Dd.wind_gusts_10m_max[i], dir: Dd.wind_direction_10m_dominant[i], rain: Dd.precipitation_probability_max[i] };
+  }
+
+  // ---------- air pressure trend ----------
+  function pressureInfo() {
+    const W = LIVE.wx; if (!W || !W.hourly || !W.hourly.pressure_msl) return null;
+    const i = wxHourIdx(Date.now()), j = wxHourIdx(Date.now() - 3 * HOUR); if (i < 0 || j < 0) return null;
+    const pn = W.hourly.pressure_msl[i], pp = W.hourly.pressure_msl[j]; if (pn == null || pp == null) return null;
+    const d = pn - pp, a = Math.abs(d);
+    let word, tip, cls = 'ok';
+    if (a < 1) { word = 'steady'; tip = pn > 1022 ? 'High and steady: settled, clear weather. Fish dawn, dusk and after dark.' : 'Steady pressure: normal fishing.'; }
+    else if (d < 0 && a <= 3) { word = `falling slowly (${d.toFixed(1)} in 3 h)`; tip = 'A slow fall before a front often switches fish on, especially bass. A good time to be out.'; }
+    else if (d < 0) { word = `falling fast (${d.toFixed(1)} in 3 h)`; tip = 'A fast fall means rough weather is coming. Check the warnings and stay off exposed marks.'; cls = 'bad'; }
+    else if (a <= 3) { word = `rising slowly (+${d.toFixed(1)} in 3 h)`; tip = 'Rising after bad weather: fishing can be slow for a day, then improves as it settles.'; }
+    else { word = `rising fast (+${d.toFixed(1)} in 3 h)`; tip = 'A sharp rise after a front: often a quiet spell. Fish smaller baits and slow down.'; cls = 'warn'; }
+    return { now: Math.round(pn), word, tip, cls };
+  }
+
+  // ---------- Met Office warnings (via the app's Netlify Function) ----------
+  function warnRegion() {
+    if (region() === 'abroad') return null;
+    if (LOC.lat < 51.3 && LOC.lon < -1.8) return 'sw';
+    if (LOC.lat < 51.6 && LOC.lon >= -1.8 && LOC.lon < 1.5) return 'se';
+    return 'UK';
+  }
+  async function loadWarnings() {
+    const rg = warnRegion(); if (!rg || !/^https?:/.test(location.protocol) || /claude\.ai|claudeusercontent/.test(location.hostname)) return;
+    try { const r = await fetch(`/.netlify/functions/warnings?region=${rg}`); if (!r.ok) return; const j = await r.json(); LIVE.warn = { region: rg, items: j.items || [], at: Date.now() }; } catch (err) {}
+  }
+  function renderWarnings() {
+    const el = $('warnings'); if (!el) return;
+    const W = LIVE.warn;
+    if (!W || !W.items.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+    el.style.display = '';
+    el.innerHTML = `<h2>⚠️ Met Office warnings</h2>` + W.items.slice(0, 4).map(i => `<div class="wxmsg bad" style="margin-top:8px"><b>${i.title.replace(/</g, '&lt;')}</b>${i.desc ? `<span class="note" style="margin:0;display:block">${i.desc.replace(/</g, '&lt;')}</span>` : ''}</div>`).join('') + `<p class="note"><a href="https://www.metoffice.gov.uk/weather/warnings-and-advice/uk-warnings" target="_blank" rel="noopener">Full details on the Met Office site</a></p>`;
   }
 
   // ---------- water clarity (estimate) ----------
@@ -1145,7 +1199,36 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
 
   // ---------- spots page ----------
   let spotMode = 'month';
+  let mySpotMsg = '', mySpotDraft = null, mySpotDel = null;
+  function renderMySpots() {
+    const el = $('myspots'); if (!el) return;
+    const rows = MYSPOTS.map((s, i) => ({ s, i, d: km(LOC.lat, LOC.lon, s.lat, s.lon) })).sort((a, b) => a.d - b.d);
+    el.innerHTML = `<h2>★ My spots</h2><p class="note" style="margin:-4px 0 10px">Your own marks, saved with GPS on this phone (and in your backup).</p>
+      ${mySpotDraft ? `<div class="fish"><div class="lbl">New spot · accuracy ±${Math.round(mySpotDraft.acc || 0)} m</div>
+        <div class="field"><label for="ms-name">Name</label><input id="ms-name" maxlength="40" placeholder="e.g. Secret bass rocks"></div>
+        <div class="field"><label for="ms-notes">Notes</label><textarea id="ms-notes" placeholder="Best tide, bait, where to park"></textarea></div>
+        <div class="chips"><button class="primary small" id="ms-save">Save spot</button><button class="small" id="ms-cancel">Cancel</button></div></div>` : `<button id="ms-add">📍 Save where I am now</button>`}
+      ${mySpotMsg ? `<p class="note">${mySpotMsg}</p>` : ''}
+      <div class="list" style="margin-top:10px">${rows.map(({ s, i, d }) => `<div class="fish"><div class="fishhead"><div><div class="fishname">★ ${s.n.replace(/</g, '&lt;')}</div><div class="latin" style="font-style:normal">${s.lat.toFixed(5)}, ${s.lon.toFixed(5)}</div></div><span class="chip">${d < 1 ? 'here' : Math.round(d) + ' km'}</span></div>
+        ${s.notes ? `<p class="note" style="margin:0">${s.notes.replace(/</g, '&lt;')}</p>` : ''}
+        <div class="chips"><button class="small ms-fish" data-i="${i}">Fish here</button><a class="btnlink" href="https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lon}" target="_blank" rel="noopener">Open in Maps</a><button class="small ms-del" data-i="${i}">${mySpotDel === s.id ? 'Tap again to delete' : 'Delete'}</button></div></div>`).join('')}</div>`;
+    const add = $('ms-add');
+    if (add) add.addEventListener('click', async () => {
+      mySpotMsg = 'Getting a GPS fix… stand still for a few seconds.'; renderMySpots();
+      try { const p = await getPos(); mySpotDraft = p; mySpotMsg = ''; } catch (err) { mySpotMsg = err && err.code === 1 ? 'Location is blocked. Allow it for this app in your phone settings.' : 'Couldn\'t get a GPS fix. Try again with a clear view of the sky.'; }
+      renderMySpots();
+    });
+    if ($('ms-cancel')) $('ms-cancel').addEventListener('click', () => { mySpotDraft = null; renderMySpots(); });
+    if ($('ms-save')) $('ms-save').addEventListener('click', () => {
+      const n = $('ms-name').value.trim() || `My spot ${MYSPOTS.length + 1}`;
+      MYSPOTS.push({ id: 'p' + Date.now(), n, notes: $('ms-notes').value.trim(), lat: mySpotDraft.lat, lon: mySpotDraft.lon, t: Date.now() });
+      saveMySpots(); mySpotDraft = null; mySpotMsg = `Saved “${n}”. It's now in the Fishing at list too.`; renderMySpots(); renderLocBar();
+    });
+    el.querySelectorAll('.ms-fish').forEach(b => b.addEventListener('click', () => { const s = MYSPOTS[+b.dataset.i]; setLoc({ mode: 'my', lat: s.lat, lon: s.lon, name: s.n }); location.hash = 'today'; }));
+    el.querySelectorAll('.ms-del').forEach(b => b.addEventListener('click', () => { const s = MYSPOTS[+b.dataset.i]; if (mySpotDel !== s.id) { mySpotDel = s.id; renderMySpots(); return; } MYSPOTS.splice(+b.dataset.i, 1); mySpotDel = null; saveMySpots(); mySpotMsg = 'Spot deleted.'; renderMySpots(); renderLocBar(); }));
+  }
   function renderSpots() {
+    renderMySpots();
     $('s-month').setAttribute('aria-pressed', String(spotMode === 'month'));
     $('s-all').setAttribute('aria-pressed', String(spotMode === 'all'));
     const inS = n => { const f = FISH.find(x => x.n === n); return f && f.m.includes(sel.m); };
@@ -1234,8 +1317,8 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   function backupLog() {
     try {
       const p = ukParts(Date.now());
-      saveBlob(new Blob([JSON.stringify({ app: 'santos-hooked-tides', version: 1, saved: Date.now(), catches: CATCHES })], { type: 'application/json' }), `santos-hooked-backup-${p.y}-${pad(p.m + 1)}-${pad(p.d)}.json`);
-      logMsg = `Backup saved to your downloads (${CATCHES.length} catches, with photos). Keep it in Google Drive or email it to yourself.`;
+      saveBlob(new Blob([JSON.stringify({ app: 'santos-hooked-tides', version: 2, saved: Date.now(), catches: CATCHES, myspots: MYSPOTS })], { type: 'application/json' }), `santos-hooked-backup-${p.y}-${pad(p.m + 1)}-${pad(p.d)}.json`);
+      logMsg = `Backup saved to your downloads (${CATCHES.length} catches with photos, ${MYSPOTS.length} saved spots). Keep it in Google Drive or email it to yourself.`;
     } catch (err) { logMsg = 'Couldn\'t save the backup here.'; }
     renderLog();
   }
@@ -1246,7 +1329,9 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       if (!Array.isArray(list)) throw new Error('bad');
       const have = new Set(CATCHES.map(c => c.id)); let added = 0;
       for (const c of list) { if (c && c.id && c.sp && c.t && !have.has(c.id)) { await dbPut(c); added++; } }
-      CATCHES = await dbAll(); logMsg = added ? `Restored ${added} catch${added === 1 ? '' : 'es'} from the backup.` : 'Nothing new in that backup: those catches are already here.';
+      let sp = 0; if (Array.isArray(j.myspots)) j.myspots.forEach(s => { if (s && s.id && typeof s.lat === 'number' && !MYSPOTS.some(m => m.id === s.id)) { MYSPOTS.push(s); sp++; } });
+      if (sp) { saveMySpots(); renderSpots(); renderLocBar(); }
+      CATCHES = await dbAll(); logMsg = (sp ? `Restored ${sp} saved spot${sp === 1 ? '' : 's'}. ` : '') + (added ? `Restored ${added} catch${added === 1 ? '' : 'es'} from the backup.` : 'No new catches in that backup.');
     } catch (err) { logMsg = 'That file isn\'t a Santos Hooked backup.'; }
     renderLog();
   }
@@ -1361,6 +1446,23 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     let nowLine = '';
     if (isToday(sel) && now >= D.start && now < D.end) { const x = X(now); nowLine = `<line x1="${x}" x2="${x}" y1="0" y2="236" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${Math.min(W - 20, x + 4)}" y="104" font-size="11" fill="var(--ink)">now</text>`; }
     $('timeline').innerHTML = `<svg viewBox="0 0 ${W} 262" role="img" aria-label="Daylight, feeding windows and tide curve for the day">${sky}${ticks}${grid}${curve}${marks}${bars}${nowLine}</svg>`;
+    (() => {
+      const svg = $('timeline').querySelector('svg'); if (!svg) return;
+      const ns = 'http://www.w3.org/2000/svg', ln = document.createElementNS(ns, 'line');
+      ln.setAttribute('y1', '0'); ln.setAttribute('y2', '236'); ln.setAttribute('stroke', 'var(--rust)'); ln.setAttribute('stroke-width', '2'); ln.style.display = 'none'; svg.appendChild(ln);
+      const show = ev => {
+        const r = svg.getBoundingClientRect(), x = Math.max(0, Math.min(W, (ev.clientX - r.left) / r.width * W)), t = D.start + x / W * span;
+        ln.setAttribute('x1', x); ln.setAttribute('x2', x); ln.style.display = '';
+        const h = tideAt(D.tides, t), st = tideState(D.tides, t), hi = wxHourIdx(t), rel = D.tides.some(q => q.hNull);
+        const wnd = hi >= 0 ? ` · ${compass(LIVE.wx.hourly.wind_direction_10m[hi])} ${Math.round(LIVE.wx.hourly.wind_speed_10m[hi])} mph` : '';
+        const win = D.wins.find(w => t >= w.s && t < w.e);
+        $('scrub').innerHTML = `<b>${fmt(t)}</b>${D.tides.length && !rel ? ` · <b>${h.toFixed(1)} m</b>` : ''}${st ? ' · ' + st : ''}${wnd}${win ? ` · <span style="color:var(--rust)">${win.label}</span>` : ''}`;
+      };
+      let down = false;
+      svg.addEventListener('pointerdown', ev => { down = true; show(ev); });
+      svg.addEventListener('pointermove', ev => { if (down || ev.pointerType === 'mouse') show(ev); });
+      ['pointerup', 'pointercancel', 'pointerleave'].forEach(n => svg.addEventListener(n, () => { down = false; }));
+    })();
   }
 
   function renderToday() {
@@ -1522,7 +1624,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     document.querySelectorAll('nav.tabs a').forEach(a => { const on = a.dataset.p === (TABOF[p] || p); a.classList.toggle('on', on); if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     window.scrollTo(0, 0);
   }
-  function renderAll() { renderLocBar(); renderToday(); renderBest(); renderLiveBits(); renderTides(); renderMoon(); renderFish(); renderRules(); renderSpots(); }
+  function renderAll() { renderLocBar(); renderWarnings(); renderToday(); renderBest(); renderLiveBits(); renderTides(); renderMoon(); renderFish(); renderRules(); renderSpots(); }
 
   $('prev').addEventListener('click', () => { sel = addDays(sel, -1); renderAll(); });
   $('next').addEventListener('click', () => { sel = addDays(sel, 1); renderAll(); });
