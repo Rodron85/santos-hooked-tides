@@ -302,7 +302,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
         <li><b>Major periods</b>: about 2 hours around the moon passing overhead or underfoot. Fish feed hardest then.</li>
         <li><b>Minor periods</b>: about 1 hour around moonrise and moonset.</li>
         <li><b>New and full moon</b> give the strongest days, and they also bring spring tides.</li>
-        <li>When a major or minor period lands on <b>dawn or dusk</b>, it's prime time.</li>
+        <li>When a major or minor period lands on <b>dawn or dusk</b>, with the tide flooding, high or just turned, it's prime time. At low water it isn't, whatever the moon says.</li>
         <li>For <b>squid at night</b>, a dark sky (new moon, or moon below the horizon) makes pier lights work best.</li>
       </ul>
     </div>
@@ -727,6 +727,11 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     light.forEach(l => { l.prime = wins.some(w => w.prime && Math.min(w.e, l.e) > Math.max(w.s, l.s)); });
     const all = wins.concat(light).sort((a, b) => a.s - b.s);
     all.forEach(w => { w.tide = tideState(tides, (w.s + w.e) / 2); });
+    // prime time also needs a fishable tide: flooding, high, or the first 2 hours of the ebb (not low water or the late ebb)
+    const tideOK = t => { if (!tides.length) return true; const st = tideState(tides, t); if (!st) return true; if (/Low water/.test(st)) return false;
+      if (/Ebbing/.test(st)) { const hw = tides.filter(q => q.type === 'HW' && q.t <= t).pop(); return !!hw && t - hw.t <= 2 * HOUR; } return true; };
+    all.forEach(w => { w.tideOK = tideOK((w.s + w.e) / 2); if (w.prime && !w.tideOK) w.prime = false; });
+    light.forEach(l => { l.prime = l.tideOK && wins.some(w => w.prime && Math.min(w.e, l.e) > Math.max(w.s, l.s)); });
     const phaseF = (1 + Math.cos(4 * Math.PI * ph.phase)) / 2, sp = springF(start + 12 * HOUR);
     const score = 15 + 35 * phaseF + 20 * sp + 30 * Math.min(1, overlap / (90 * MIN));
     const stars = Math.max(1, Math.min(5, Math.round(score / 20)));
@@ -1299,7 +1304,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
         if (w.e < now) return;
         const mid = (w.s + w.e) / 2;
         let sc = base + (w.kind === 'major' ? 2 : 1) + (w.prime ? 2 : 0), wind = null;
-        if (/Flooding|High water/.test(w.tide || '')) sc += 1;
+        if (w.tide) { if (/Low water/.test(w.tide)) sc -= 2; else if (w.tideOK) sc += 2; else sc -= 1; }
         const hi = wxHourIdx(mid);
         if (hi >= 0) {
           const H = LIVE.wx.hourly, ws = H.wind_speed_10m[hi], g = H.wind_gusts_10m[hi], rp = H.precipitation_probability[hi];
@@ -1696,7 +1701,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   'Phase, rise and set, and the best days ahead': 'Fase, nascer e pôr, e os melhores dias que aí vêm', 'Phases, calendar, best days and spring tides': 'Fases, calendário, melhores dias e marés vivas', 'Next # weeks': 'Próximas # semanas', 'Coming up': 'A seguir', 'How the moon affects fishing': 'Como a lua afeta a pesca',
   ': about # hours around the moon passing overhead or underfoot. Fish feed hardest then.': ': cerca de # horas à volta da passagem da lua no zénite ou no nadir. É quando os peixes comem mais.',
   ': about # hour around moonrise and moonset.': ': cerca de # hora à volta do nascer e do pôr da lua.', 'New and full moon': 'A lua nova e a lua cheia', 'give the strongest days, and they also bring spring tides.': 'dão os dias mais fortes e trazem também as marés vivas.',
-  'When a major or minor period lands on': 'Quando um período maior ou menor coincide com o', 'dawn or dusk': 'amanhecer ou o anoitecer', ', it\'s prime time.': ', é a melhor altura.', 'For': 'Para a', 'squid at night': 'lula à noite', ', a dark sky (new moon, or moon below the horizon) makes pier lights work best.': ', um céu escuro (lua nova, ou lua abaixo do horizonte) faz com que as luzes dos cais funcionem melhor.',
+  'When a major or minor period lands on': 'Quando um período maior ou menor coincide com o', 'dawn or dusk': 'amanhecer ou o anoitecer', ', it\'s prime time.': ', é a melhor altura.', ', with the tide flooding, high or just turned, it\'s prime time. At low water it isn\'t, whatever the moon says.': ', com a maré a encher, cheia ou acabada de virar, é a melhor altura. Na baixa-mar não é, diga a lua o que disser.', 'For': 'Para a', 'squid at night': 'lula à noite', ', a dark sky (new moon, or moon below the horizon) makes pier lights work best.': ', um céu escuro (lua nova, ou lua abaixo do horizonte) faz com que as luzes dos cais funcionem melhor.',
   // best windows
   'Best times to fish': 'Melhores horas para pescar', 'Best times this week': 'Melhores horas desta semana', 'moon, tide, light and wind combined': 'lua, maré, luz e vento combinados', 'Prime time': 'Melhor altura', 'No windows left this week.': 'Já não há períodos esta semana.', 'No feeding windows found for this day.': 'Não há períodos de alimentação neste dia.',
   // tides
