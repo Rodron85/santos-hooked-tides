@@ -1320,8 +1320,8 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
         let sc = tdp ? tdp.sc : 1; const why = [];
         if (tdp) why.push(tdp.label);
         if (lt === 'dawn' || lt === 'dusk') { sc += 1.5; why.push(lt === 'dawn' ? 'Dawn' : 'Dusk'); } else if (lt === 'night') sc += 0.5;
-        if (w) { sc += w.kind === 'major' ? 1 : 0.5; why.push(w.label); }
-        if (D.sp > 0.66) sc += 0.5;
+        if (w) { sc += w.kind === 'major' ? 2 : 1; why.push(w.label); }
+        const nf = Math.min(D.ph.phase, 1 - D.ph.phase, Math.abs(D.ph.phase - 0.5)); if (nf < 0.07) { sc += 1; why.push(D.ph.phase > 0.25 && D.ph.phase < 0.75 ? 'Full moon' : 'New moon'); } else if (D.sp > 0.66) sc += 0.5;
         const hi = wxHourIdx(t); let wind = null;
         if (hi >= 0) {
           const H = LIVE.wx.hourly, ws = H.wind_speed_10m[hi], g = H.wind_gusts_10m[hi], rp = H.precipitation_probability[hi];
@@ -1347,8 +1347,8 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   function renderBest() {
     const el = $('best'); if (!el) return;
     const b = bestWindows();
-    el.innerHTML = `<h2>Best times this week</h2><p class="note" style="margin:-4px 0 8px">📍 ${LOC.name} · the tide leads; dawn, dusk and the moon add a little${LIVE.wx ? ', strong wind takes away' : ''}</p>` + (b.length ? '<div class="list">' + b.map(o => {
-      const prime = o.sc >= 6;
+    el.innerHTML = `<h2>Best times this week</h2><p class="note" style="margin:-4px 0 8px">📍 ${LOC.name} · tide and moon lead; dawn and dusk add a little${LIVE.wx ? ', strong wind takes away' : ''}</p>` + (b.length ? '<div class="list">' + b.map(o => {
+      const prime = o.sc >= 7;
       return `<button class="row bestrow${prime ? ' prime' : ''}" data-y="${o.x.y}" data-m="${o.x.m}" data-d="${o.x.d}"><div class="mono">${isToday(o.x) ? 'Today' : DOW[o.x.dow] + ' ' + o.x.d}<br>${fmt(o.s)}–${fmt(o.e)}</div>
         <div><div class="what">${o.why.slice(0, 3).join(' · ')}</div><div class="chips">${o.wind ? `<span class="chip">${o.wind}</span>` : ''}${prime ? '<span class="chip prime">Prime time</span>' : ''}</div></div></button>`;
     }).join('') + '</div>' : '<p class="note">No windows left this week.</p>');
@@ -1539,7 +1539,8 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
           sc += ts; if (ts >= 2) why.unshift(tdp.label.toLowerCase());
         }
         const w = D.wins.find(w => (w.kind === 'major' || w.kind === 'minor') && t >= w.s && t < w.e);
-        if (w) { sc += w.kind === 'major' ? 1 : 0.5; why.push(w.label.toLowerCase()); }
+        if (w) { sc += w.kind === 'major' ? 2 : 1; why.push(w.label.toLowerCase()); }
+        { const nf = Math.min(D.ph.phase, 1 - D.ph.phase, Math.abs(D.ph.phase - 0.5)); if (nf < 0.07) sc += 1; }
         if (P.dark) { const ma = moonState(t).alt; if (sa < -6 && (ma < 0 || D.ph.frac < 0.3)) { sc += 1; why.push('dark sky'); } }
         if (P.springs && D.sp > 0.66) { sc += 1; why.push('spring tides'); }
         if (P.neaps && D.sp < 0.33) { sc += 1; why.push('neap tides'); }
@@ -1965,7 +1966,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   'Bait clip': 'Clip de isco', 'Bead': 'Missanga', 'Bead + swivel': 'Missanga + destorcedor', 'Beads + swivel': 'Missangas + destorcedor', 'Drilled bullet': 'Chumbo furado', 'Float': 'Boia', 'Grip lead': 'Chumbada com garras', 'Hook': 'Anzol', 'Lead': 'Chumbada', 'Lead clip': 'Clip da chumbada', 'Lead link': 'Ligação da chumbada', 'Lead slider (boom)': 'Corrediça da chumbada', 'Main line': 'Linha principal',
   'Pulley bead/swivel': 'Missanga/destorcedor do pulley', 'Shock leader': 'Linha de choque', 'Snood # cm': 'Estralho # cm', 'Snood #–# cm': 'Estralho #–# cm', 'Squid jig or baited hook': 'Toneira ou anzol com isco', 'Stop knot (sets depth)': 'Nó stopper (define a profundidade)', 'Swivel': 'Destorcedor', 'Trace # cm': 'Estralho # cm', 'Trace #–# lb': 'Estralho #–# lb', 'Trace #–# cm': 'Estralho #–# cm', 'Two hooks (pennel)': 'Dois anzóis (pennel)', '#m': '#m',
   'Last of the flood': 'Fim da enchente', 'Early flood': 'Início da enchente', 'First of the ebb': 'Início da vazante', 'Late ebb': 'Fim da vazante',
-  'the tide leads; dawn, dusk and the moon add a little, strong wind takes away': 'a maré manda; o amanhecer, o anoitecer e a lua ajudam um pouco, o vento forte tira', 'the tide leads; dawn, dusk and the moon add a little': 'a maré manda; o amanhecer, o anoitecer e a lua ajudam um pouco',
+  'tide and moon lead; dawn and dusk add a little, strong wind takes away': 'a maré e a lua mandam; o amanhecer e o anoitecer ajudam um pouco, o vento forte tira', 'tide and moon lead; dawn and dusk add a little': 'a maré e a lua mandam; o amanhecer e o anoitecer ajudam um pouco',
   // places
   'Funchal (Madeira)': 'Funchal (Madeira)', 'Caniçal (Madeira)': 'Caniçal (Madeira)', 'Porto Moniz (Madeira)': 'Porto Moniz (Madeira)',
   };
