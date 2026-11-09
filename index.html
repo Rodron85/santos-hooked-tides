@@ -1295,38 +1295,62 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   }
   function spotHere() { const n = SPOTS.map(s => ({ s, d: km(LOC.lat, LOC.lon, s.lat, s.lon) })).sort((a, b) => a.d - b.d)[0]; return n && n.d < 3 ? n.s : null; }
 
-  // ---------- best fishing windows in the next 7 days ----------
+  // ---------- tide phase: the tide leads, light and moon add a little ----------
+  function tidePhase(ex, t) {
+    const i = ex.findIndex(q => q.t > t); if (i <= 0) return null;
+    const pv = ex[i - 1], nx = ex[i];
+    if (pv.type === 'HW' && nx.type === 'HW') return { sc: 4, label: 'High water stand', k: 'hw' };
+    if (pv.type === 'LW' && nx.type === 'LW') return { sc: -1, label: 'Low water stand', k: 'lw' };
+    if (nx.type === 'HW') { const to = nx.t - t; if (to <= HOUR) return { sc: 4, label: 'High water', k: 'hw' }; if (to <= 3 * HOUR) return { sc: 4, label: 'Last of the flood', k: 'lateflood' }; if (t - pv.t <= HOUR) return { sc: -1, label: 'Low water', k: 'lw' }; return { sc: 2, label: 'Early flood', k: 'earlyflood' }; }
+    const since = t - pv.t; if (since <= HOUR) return { sc: 4, label: 'High water', k: 'hw' }; if (since <= 2.5 * HOUR) return { sc: 3, label: 'First of the ebb', k: 'earlyebb' }; if (nx.t - t <= HOUR) return { sc: -1, label: 'Low water', k: 'lw' }; return { sc: 0, label: 'Late ebb', k: 'lateebb' };
+  }
+  function lightAt(D, t) {
+    if (D.sunrise && Math.abs(t - D.sunrise) <= 45 * MIN) return 'dawn';
+    if (D.sunset && Math.abs(t - D.sunset) <= 45 * MIN) return 'dusk';
+    return sunAlt(t) < -6 ? 'night' : sunAlt(t) > 0 ? 'day' : 'twilight';
+  }
+  // ---------- best fishing windows in the next 7 days (hour by hour) ----------
   function bestWindows() {
-    const out = [];
+    const slots = [];
     for (let i = 0; i < 7; i++) {
-      const x = addDays({ y: tp.y, m: tp.m, d: tp.d }, i), D = computeDay(x.y, x.m, x.d), base = dayRating(D).s;
-      D.wins.forEach(w => {
-        if (w.e < now) return;
-        const mid = (w.s + w.e) / 2;
-        let sc = base + (w.kind === 'major' ? 2 : 1) + (w.prime ? 2 : 0), wind = null;
-        if (w.tide) { if (/Low water/.test(w.tide)) sc -= 2; else if (w.tideOK) sc += 2; else sc -= 1; }
-        const hi = wxHourIdx(mid);
+      const x = addDays({ y: tp.y, m: tp.m, d: tp.d }, i), D = computeDay(x.y, x.m, x.d);
+      for (let t = D.start + 30 * MIN; t < D.end; t += 30 * MIN) {
+        if (t < now - 15 * MIN) continue;
+        const tdp = D.tides.length ? tidePhase(D.tides, t) : null, lt = lightAt(D, t), w = D.wins.find(w => (w.kind === 'major' || w.kind === 'minor') && t >= w.s && t < w.e);
+        let sc = tdp ? tdp.sc : 1; const why = [];
+        if (tdp) why.push(tdp.label);
+        if (lt === 'dawn' || lt === 'dusk') { sc += 1.5; why.push(lt === 'dawn' ? 'Dawn' : 'Dusk'); } else if (lt === 'night') sc += 0.5;
+        if (w) { sc += w.kind === 'major' ? 1 : 0.5; why.push(w.label); }
+        if (D.sp > 0.66) sc += 0.5;
+        const hi = wxHourIdx(t); let wind = null;
         if (hi >= 0) {
           const H = LIVE.wx.hourly, ws = H.wind_speed_10m[hi], g = H.wind_gusts_10m[hi], rp = H.precipitation_probability[hi];
           wind = `${compass(H.wind_direction_10m[hi])} ${Math.round(ws)} mph`;
-          if (ws > 28 || g > 40) sc -= 4; else if (ws > 20) sc -= 2; else if (ws <= 12) sc += 1;
+          if (ws > 28 || g > 40) sc -= 4; else if (ws > 20) sc -= 2; else if (ws <= 12) sc += 0.5;
           if (rp != null && rp > 70) sc -= 1;
         }
-        out.push({ x, w, sc, wind });
-      });
+        slots.push({ t, x, sc, why, wind, tide: tdp, D });
+      }
     }
-    out.sort((a, b) => b.sc - a.sc);
-    const pick = [];
-    out.forEach(o => { if (pick.length < 3 && pick.filter(p => p.x.d === o.x.d).length < 2 && !pick.some(p => p.x.d === o.x.d && Math.min(p.w.e, o.w.e) > Math.max(p.w.s, o.w.s))) pick.push(o); });
-    return pick.sort((a, b) => a.w.s - b.w.s);
+    // grow each peak into a window while the score stays close, max 3 h
+    const picks = [];
+    slots.slice().sort((a, b) => b.sc - a.sc).forEach(p => {
+      if (picks.length >= 3 || picks.filter(q => q.x.d === p.x.d).length >= 2 || picks.some(q => Math.abs(q.t - p.t) < 4 * HOUR)) return;
+      const k = slots.indexOf(p); let a = k, b = k;
+      while (a > 0 && slots[a - 1].x.d === p.x.d && slots[a - 1].sc >= p.sc - 2 && p.t - slots[a - 1].t <= 2 * HOUR) a--;
+      while (b < slots.length - 1 && slots[b + 1].x.d === p.x.d && slots[b + 1].sc >= p.sc - 2 && slots[b + 1].t - p.t <= 2 * HOUR) b++;
+      const why = [...new Set(slots.slice(a, b + 1).flatMap(s => s.why))];
+      picks.push({ ...p, s: slots[a].t - 15 * MIN, e: slots[b].t + 15 * MIN, why });
+    });
+    return picks.sort((a, b) => a.t - b.t);
   }
   function renderBest() {
     const el = $('best'); if (!el) return;
     const b = bestWindows();
-    el.innerHTML = `<h2>Best times this week</h2><p class="note" style="margin:-4px 0 8px">📍 ${LOC.name} · moon, tide, light${LIVE.wx ? ' and wind' : ''} combined</p>` + (b.length ? '<div class="list">' + b.map(o => {
-      const lowlight = o.w.prime ? (o.w.kind === 'dawn' || o.w.kind === 'dusk' ? '' : ' at ' + (Math.abs(o.w.s - (computeDay(o.x.y, o.x.m, o.x.d).sunset || 0)) < 3 * HOUR ? 'dusk' : 'dawn')) : '';
-      return `<button class="row bestrow ${o.w.kind}${o.w.prime ? ' prime' : ''}" data-y="${o.x.y}" data-m="${o.x.m}" data-d="${o.x.d}"><div class="mono">${isToday(o.x) ? 'Today' : DOW[o.x.dow] + ' ' + o.x.d}<br>${fmt(o.w.s)}–${fmt(o.w.e)}</div>
-        <div><div class="what">${o.w.label}${lowlight}</div><div class="chips">${o.w.tide ? `<span class="chip tide">${o.w.tide}</span>` : ''}${o.wind ? `<span class="chip">${o.wind}</span>` : ''}${o.w.prime ? '<span class="chip prime">Prime time</span>' : ''}</div></div></button>`;
+    el.innerHTML = `<h2>Best times this week</h2><p class="note" style="margin:-4px 0 8px">📍 ${LOC.name} · the tide leads; dawn, dusk and the moon add a little${LIVE.wx ? ', strong wind takes away' : ''}</p>` + (b.length ? '<div class="list">' + b.map(o => {
+      const prime = o.sc >= 6;
+      return `<button class="row bestrow${prime ? ' prime' : ''}" data-y="${o.x.y}" data-m="${o.x.m}" data-d="${o.x.d}"><div class="mono">${isToday(o.x) ? 'Today' : DOW[o.x.dow] + ' ' + o.x.d}<br>${fmt(o.s)}–${fmt(o.e)}</div>
+        <div><div class="what">${o.why.slice(0, 3).join(' · ')}</div><div class="chips">${o.wind ? `<span class="chip">${o.wind}</span>` : ''}${prime ? '<span class="chip prime">Prime time</span>' : ''}</div></div></button>`;
     }).join('') + '</div>' : '<p class="note">No windows left this week.</p>');
     el.querySelectorAll('.bestrow').forEach(bt => bt.addEventListener('click', () => { sel = { y: +bt.dataset.y, m: +bt.dataset.m, d: +bt.dataset.d }; renderAll(); window.scrollTo(0, 0); }));
   }
@@ -1498,34 +1522,32 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       for (let t = D.start + 30 * MIN; t < D.end; t += HOUR) {
         if (t < now - 30 * MIN) continue;
         let sc = 0; const why = [];
-        const sa = sunAlt(t), nearRise = D.sunrise && Math.abs(t - D.sunrise) <= 90 * MIN, nearSet = D.sunset && Math.abs(t - D.sunset) <= 90 * MIN;
-        if (P.light === 'night') { if (sa < -6) { sc += 3; if (!why.length) why.push('after dark'); } else if (sa < 0) sc += 1; else sc -= 2; }
-        if (P.dusk && nearSet) { sc += 2; why.push('dusk'); }
-        const firstDark = D.sunset && t >= D.sunset - 15 * MIN && t <= D.sunset + 75 * MIN;
-        if (P.duskBurst) { if (firstDark) { sc += 2; why.push('first hour of dark'); } else if (sa < -6) sc -= 1; }
-        if (P.light === 'dusk-night') { if (nearSet || (sa < -6 && t > D.start + 12 * HOUR)) { sc += 3; why.push(nearSet ? 'dusk' : 'after dark'); } else if (sa < 0) sc += 1; else sc -= 1; }
-        else if (P.light === 'dawn-dusk') { if (nearRise || nearSet) { sc += 3; why.push(nearRise ? 'dawn' : 'dusk'); } else if (sa < 0) sc += 1; }
-        else if (P.light === 'day') { if (sa > 5) { sc += 2; why.push('daylight'); } else sc -= 3; }
-        const st = tideState(D.tides, t);
-        if (D.tides.length) {
-          if (P.tide === 'flood' && /Flooding/.test(st)) { sc += 2; why.push('flooding tide'); }
-          else if (P.tide === 'hw' && /High water/.test(st)) { sc += 2; why.push(st.toLowerCase()); }
-          else if (P.tide === 'hw' && P.ebbBad && /Flooding/.test(st)) { sc += 1; why.push('flooding tide'); }
-          else if (P.tide === 'ebb' && /Ebbing/.test(st)) { sc += 2; why.push('ebbing tide'); }
-          else if (P.ebbBad && /Low water/.test(st)) sc -= 3;
-          else if (P.ebbBad && /Ebbing/.test(st)) sc -= 2;
-          else if (P.tide !== 'any' && /Low water/.test(st)) sc -= 1;
+        const sa = sunAlt(t), lt = lightAt(D, t);
+        // light: a short bonus at dawn/dusk, or the dark for night feeders
+        if (P.light === 'night') { if (sa < -6) { sc += 2; why.push('after dark'); } else if (sa > 0) sc -= 2; }
+        else if (P.light === 'dusk-night') { if (lt === 'dusk') { sc += 1.5; why.push('dusk'); } else if (sa < -6) { sc += 1.5; why.push('after dark'); } else if (sa > 0) sc -= 1; }
+        else if (P.light === 'dawn-dusk') { if (lt === 'dawn' || lt === 'dusk') { sc += 1.5; why.push(lt); } else if (sa < -6) sc += 0.5; }
+        else if (P.light === 'day') { if (sa > 5) sc += 1; else sc -= 3; }
+        if (P.duskBurst && D.sunset && t >= D.sunset - 15 * MIN && t <= D.sunset + 75 * MIN) { sc += 1.5; why.push('first hour of dark'); }
+        // tide: this leads
+        const tdp = D.tides.length ? tidePhase(D.tides, t) : null, st = tdp ? tdp.label : '';
+        if (tdp) {
+          let ts = tdp.sc;
+          if (P.tide === 'ebb') ts = { hw: 3, earlyebb: 4, lateebb: 2, lw: -1, earlyflood: 0, lateflood: 1 }[tdp.k];
+          else if (P.tide === 'any') ts = tdp.sc * 0.4;
+          if (P.ebbBad && (tdp.k === 'lw' || tdp.k === 'lateebb')) ts -= 2;
+          sc += ts; if (ts >= 2) why.unshift(tdp.label.toLowerCase());
         }
+        const w = D.wins.find(w => (w.kind === 'major' || w.kind === 'minor') && t >= w.s && t < w.e);
+        if (w) { sc += w.kind === 'major' ? 1 : 0.5; why.push(w.label.toLowerCase()); }
+        if (P.dark) { const ma = moonState(t).alt; if (sa < -6 && (ma < 0 || D.ph.frac < 0.3)) { sc += 1; why.push('dark sky'); } }
         if (P.springs && D.sp > 0.66) { sc += 1; why.push('spring tides'); }
         if (P.neaps && D.sp < 0.33) { sc += 1; why.push('neap tides'); }
-        const w = D.wins.find(w => t >= w.s && t < w.e);
-        if (w) { sc += w.kind === 'major' ? 2 : 1; why.push(w.label.toLowerCase()); }
-        if (P.dark) { const ma = moonState(t).alt; if (ma < 0 || D.ph.frac < 0.3) { sc += 2; why.push('dark sky'); } }
         const hi = wxHourIdx(t); let wind = null;
         if (hi >= 0) {
           const H = LIVE.wx.hourly, ws = H.wind_speed_10m[hi], g = H.wind_gusts_10m[hi];
           wind = `${compass(H.wind_direction_10m[hi])} ${Math.round(ws)} mph`;
-          if (ws > P.wind + 8 || g > 45) sc -= 5; else if (ws > P.wind) sc -= 2; else if (ws <= P.wind * 0.6) sc += 1;
+          if (ws > P.wind + 8 || g > 45) sc -= 5; else if (ws > P.wind) sc -= 2; else if (ws <= P.wind * 0.6) sc += 0.5;
           const rp = H.precipitation_probability[hi]; if (rp != null && rp > 70) sc -= 1;
         }
         if (P.clarity !== 'any') { const cl = clarityAt(t); if (cl) { const ok = (P.clarity === 'clear' && cl.label === 'Clear') || (P.clarity === 'slight' && cl.label !== 'Clear') || (P.clarity === 'coloured' && cl.label === 'Coloured'); if (ok) { sc += 1; why.push(cl.label.toLowerCase() + ' water'); } } }
@@ -1559,7 +1581,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       body = `<div class="chips" style="margin:6px 0 10px">${f && f.ret ? '<span class="chip ret">Must return</span>' : peak ? '<span class="chip prime">Peak season</span>' : inS ? '<span class="chip">In season</span>' : '<span class="chip ret">Out of season now</span>'}${f && f.min ? `<span class="chip size">Min ${f.min}</span>` : '<span class="chip size">No min size</span>'}${f && f.bag ? `<span class="chip size">Bag ${f.bag}</span>` : ''}</div>
         ${!inS ? `<p class="note" style="margin:0 0 8px">${TARGET} isn't usually about in ${MONTH[tp.m]}. These are still the best conditions for it this week.</p>` : ''}
         <div class="lbl">Best times this week · 📍 ${LOC.name.replace(/</g, '&lt;')}</div>
-        <div class="list" style="margin-top:6px">${pick.map(s => `<button class="row bestrow${s.sc >= 6 ? ' prime' : ''}" data-y="${s.x.y}" data-m="${s.x.m}" data-d="${s.x.d}"><div class="mono">${isToday(s.x) ? 'Today' : DOW[s.x.dow] + ' ' + s.x.d}<br>${fmt(s.t - HOUR)}–${fmt(s.t + HOUR)}</div><div><div class="what">${s.why.length ? s.why.slice(0, 3).join(' · ').replace(/^./, c => c.toUpperCase()) : 'Best of a quiet week'}</div><div class="chips">${s.st && !s.why.slice(0, 3).includes(s.st.toLowerCase()) ? `<span class="chip tide">${s.st}</span>` : ''}${s.wind ? `<span class="chip">${s.wind}</span>` : ''}</div></div></button>`).join('') || '<p class="note">No suitable times left this week.</p>'}</div>
+        <div class="list" style="margin-top:6px">${pick.map(s => `<button class="row bestrow${s.sc >= 7 ? ' prime' : ''}" data-y="${s.x.y}" data-m="${s.x.m}" data-d="${s.x.d}"><div class="mono">${isToday(s.x) ? 'Today' : DOW[s.x.dow] + ' ' + s.x.d}<br>${fmt(s.t - HOUR)}–${fmt(s.t + HOUR)}</div><div><div class="what">${s.why.length ? s.why.slice(0, 3).join(' · ').replace(/^./, c => c.toUpperCase()) : 'Best of a quiet week'}</div><div class="chips">${s.st && !s.why.slice(0, 3).includes(s.st.toLowerCase()) ? `<span class="chip tide">${s.st}</span>` : ''}${s.wind ? `<span class="chip">${s.wind}</span>` : ''}</div></div></button>`).join('') || '<p class="note">No suitable times left this week.</p>'}</div>
         <p class="note" style="margin-top:10px">${(TGT[TARGET] && TGT[TARGET].tip) || (f && f.k && f.tip) || P.tip || (f ? f.tip : '')}</p>
         ${f ? `<div class="lbl">Bait</div><div class="chips" style="margin-top:4px">${f.bait.map(b => `<span class="chip bait">${b}</span>`).join('')}</div>` : ''}
         ${P.rig ? `<p class="note">Rig: <a href="#rigs">${P.rig}</a></p>` : ''}
@@ -1942,6 +1964,8 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   'now': 'agora', 'LW #': 'BM #', 'HW #': 'PM #', 'LW': 'BM', 'HW': 'PM',
   'Bait clip': 'Clip de isco', 'Bead': 'Missanga', 'Bead + swivel': 'Missanga + destorcedor', 'Beads + swivel': 'Missangas + destorcedor', 'Drilled bullet': 'Chumbo furado', 'Float': 'Boia', 'Grip lead': 'Chumbada com garras', 'Hook': 'Anzol', 'Lead': 'Chumbada', 'Lead clip': 'Clip da chumbada', 'Lead link': 'Ligação da chumbada', 'Lead slider (boom)': 'Corrediça da chumbada', 'Main line': 'Linha principal',
   'Pulley bead/swivel': 'Missanga/destorcedor do pulley', 'Shock leader': 'Linha de choque', 'Snood # cm': 'Estralho # cm', 'Snood #–# cm': 'Estralho #–# cm', 'Squid jig or baited hook': 'Toneira ou anzol com isco', 'Stop knot (sets depth)': 'Nó stopper (define a profundidade)', 'Swivel': 'Destorcedor', 'Trace # cm': 'Estralho # cm', 'Trace #–# lb': 'Estralho #–# lb', 'Trace #–# cm': 'Estralho #–# cm', 'Two hooks (pennel)': 'Dois anzóis (pennel)', '#m': '#m',
+  'Last of the flood': 'Fim da enchente', 'Early flood': 'Início da enchente', 'First of the ebb': 'Início da vazante', 'Late ebb': 'Fim da vazante',
+  'the tide leads; dawn, dusk and the moon add a little, strong wind takes away': 'a maré manda; o amanhecer, o anoitecer e a lua ajudam um pouco, o vento forte tira', 'the tide leads; dawn, dusk and the moon add a little': 'a maré manda; o amanhecer, o anoitecer e a lua ajudam um pouco',
   // places
   'Funchal (Madeira)': 'Funchal (Madeira)', 'Caniçal (Madeira)': 'Caniçal (Madeira)', 'Porto Moniz (Madeira)': 'Porto Moniz (Madeira)',
   };
