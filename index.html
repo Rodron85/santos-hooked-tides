@@ -767,7 +767,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   const FISH_UK = [
     { n: 'Bass', l: 'Dicentrarchus labrax', m: [0,3,4,5,6,7,8,9,10,11], p: [5,6,7,8,9], min: '42 cm', bag: '3 a day · Feb–Mar release only', where: 'Shore & boat', bait: ['Peeler crab', 'Ragworm', 'Live or frozen sandeel', 'Soft plastics & surface lures'], tip: 'Dawn and dusk on the flood and first of the ebb, in the surf line or around structure. Shown in season Apr–Jan because Feb–Mar is release only.' },
     { n: 'Squid', l: 'Loligo vulgaris', m: [8,9,10,11,0], p: [9,10,11], min: null, where: 'Shore & boat', bait: ['Egi jigs 2.0–2.5', 'Squid jig under a float', 'Mackerel strip on a jig'], tip: 'After dark under pier and harbour lights, around high water. Slow lifts and long pauses.' },
-    { n: 'Cuttlefish', l: 'Sepia officinalis', m: [3,4,5,8,9], p: [4], min: null, where: 'Shore & boat', bait: ['Egi jigs', 'Mackerel strip under a float', 'Prawn'], tip: 'They come into the Solent shallows to breed in spring. Fish slowly near weed and structure.' },
+    { n: 'Cuttlefish', l: 'Sepia officinalis', m: [3,4,5,8,9,10], p: [4], min: null, where: 'Shore & boat', bait: ['Egi jigs', 'Mackerel strip under a float', 'Prawn'], tip: 'They come into the Solent shallows to breed in spring. Fish slowly near weed and structure.' },
     { n: 'Whiting', l: 'Merlangius merlangus', m: [9,10,11,0,1], p: [10,11], min: '27 cm', where: 'Shore & boat', bait: ['Mackerel strip', 'Squid strip', 'Lugworm tipped with squid'], tip: 'Best after dark. Two- or three-hook flapper rig with size 1–2 hooks.' },
     { n: 'Cod', l: 'Gadus morhua', m: [10,11,0,1], p: [11,0], min: '35 cm', where: 'Shore & boat', bait: ['Black lugworm', 'Squid', 'Lug & squid cocktail', 'Peeler crab'], tip: 'Scarce in the Solent. Go for big spring tides at night after a blow, when the water has colour.' },
     { n: 'Pouting', l: 'Trisopterus luscus', m: [8,9,10,11,0,1,2], p: [9,10,11], min: null, where: 'Shore & boat', bait: ['Ragworm', 'Squid strip', 'Mackerel strip'], tip: 'Around piers, wrecks and rough ground. Bites well, so it\'s great for the kids.' },
@@ -1458,8 +1458,8 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   // ---------- target species ----------
   // light: night | dusk-night | dawn-dusk | day | any ; tide: flood | hw | ebb | any ; clarity: clear | slight | coloured | any
   const TGT = {
-    'Squid': { light: 'night', tide: 'hw', clarity: 'clear', wind: 15, dark: true, dusk: true, rig: 'Float rig', tip: 'Under pier and harbour lights after dark. A dark sky (moon down or new) makes the lights work best. Small 2.0–2.5 egi jigs, slow lifts and long pauses.' },
-    'Cuttlefish': { light: 'dawn-dusk', tide: 'hw', clarity: 'clear', wind: 15, rig: 'Float rig', tip: 'Spring visitors to the shallows. Egi jigs fished slowly near weed, or a mackerel strip under a float.' },
+    'Squid': { light: 'night', tide: 'hw', clarity: 'clear', wind: 15, dark: true, duskBurst: true, ebbBad: true, rig: 'Float rig', tip: 'The best spell is often the first hour of dark after sunset, then it goes quiet. Under lights, high water and the top of the flood fish best; a low, ebbing tide is poor. A dark sky helps. Small 2.0–2.5 egi jigs, slow lifts and long pauses.' },
+    'Cuttlefish': { light: 'dawn-dusk', tide: 'any', clarity: 'clear', wind: 15, rig: 'Float rig', tip: 'Spring visitors to the shallows. Egi jigs fished slowly near weed, or a mackerel strip under a float.' },
     'Bass': { light: 'dawn-dusk', tide: 'flood', clarity: 'slight', wind: 22, springs: true, rig: 'Running ledger', tip: 'The first light and last light on a flooding tide. A little colour and surf after a blow is ideal. Peeler crab on the ledger, or lures over rough ground.' },
     'Whiting': { light: 'night', tide: 'any', clarity: 'any', wind: 25, rig: 'Two-hook flapper', tip: 'After dark on any tide. Mackerel or squid strip on size 1–2 hooks.' },
     'Cod': { light: 'night', tide: 'flood', clarity: 'coloured', wind: 25, springs: true, rig: 'Pulley pennel', tip: 'Big spring tides at night with coloured water after a blow. Black lug and squid cocktails.' },
@@ -1496,6 +1496,8 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
         const sa = sunAlt(t), nearRise = D.sunrise && Math.abs(t - D.sunrise) <= 90 * MIN, nearSet = D.sunset && Math.abs(t - D.sunset) <= 90 * MIN;
         if (P.light === 'night') { if (sa < -6) { sc += 3; if (!why.length) why.push('after dark'); } else if (sa < 0) sc += 1; else sc -= 2; }
         if (P.dusk && nearSet) { sc += 2; why.push('dusk'); }
+        const firstDark = D.sunset && t >= D.sunset - 15 * MIN && t <= D.sunset + 75 * MIN;
+        if (P.duskBurst) { if (firstDark) { sc += 2; why.push('first hour of dark'); } else if (sa < -6) sc -= 1; }
         if (P.light === 'dusk-night') { if (nearSet || (sa < -6 && t > D.start + 12 * HOUR)) { sc += 3; why.push(nearSet ? 'dusk' : 'after dark'); } else if (sa < 0) sc += 1; else sc -= 1; }
         else if (P.light === 'dawn-dusk') { if (nearRise || nearSet) { sc += 3; why.push(nearRise ? 'dawn' : 'dusk'); } else if (sa < 0) sc += 1; }
         else if (P.light === 'day') { if (sa > 5) { sc += 2; why.push('daylight'); } else sc -= 3; }
@@ -1503,7 +1505,10 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
         if (D.tides.length) {
           if (P.tide === 'flood' && /Flooding/.test(st)) { sc += 2; why.push('flooding tide'); }
           else if (P.tide === 'hw' && /High water/.test(st)) { sc += 2; why.push(st.toLowerCase()); }
+          else if (P.tide === 'hw' && P.ebbBad && /Flooding/.test(st)) { sc += 1; why.push('flooding tide'); }
           else if (P.tide === 'ebb' && /Ebbing/.test(st)) { sc += 2; why.push('ebbing tide'); }
+          else if (P.ebbBad && /Low water/.test(st)) sc -= 3;
+          else if (P.ebbBad && /Ebbing/.test(st)) sc -= 2;
           else if (P.tide !== 'any' && /Low water/.test(st)) sc -= 1;
         }
         if (P.springs && D.sp > 0.66) { sc += 1; why.push('spring tides'); }
@@ -1519,7 +1524,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
           const rp = H.precipitation_probability[hi]; if (rp != null && rp > 70) sc -= 1;
         }
         if (P.clarity !== 'any') { const cl = clarityAt(t); if (cl) { const ok = (P.clarity === 'clear' && cl.label === 'Clear') || (P.clarity === 'slight' && cl.label !== 'Clear') || (P.clarity === 'coloured' && cl.label === 'Coloured'); if (ok) { sc += 1; why.push(cl.label.toLowerCase() + ' water'); } } }
-        slots.push({ t, x, sc, why: why.map(w => w.toLowerCase()).filter((w, i, A) => A.indexOf(w) === i), wind, st });
+        slots.push({ t, x, sc, why: why.map(w => w.toLowerCase()).filter((w, i, A) => A.indexOf(w) === i && !(A.includes('first hour of dark') && /^(after dark|dark|dusk)$/.test(w))), wind, st });
       }
     }
     return { slots, P, f };
@@ -1809,6 +1814,8 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   'Venomous spines on its back. Don\'t touch it with bare hands, and wear shoes when wading. If stung, put the area in hot water and get medical help.': 'Espinhos venenosos no dorso. Não lhe toques com as mãos e usa calçado dentro de água. Se te picar, põe a zona em água quente e procura ajuda médica.',
   'Venomous spines on its back and gills. Unhook with pliers and a cloth. If stung, put the wound in hot water (as hot as you can bear) and get help.': 'Espinhos venenosos no dorso e nas guelras. Desferra com um alicate e um pano. Se te picar, põe a ferida em água quente (o mais quente que aguentares) e procura ajuda.',
   // target tips (UK species)
+  'The best spell is often the first hour of dark after sunset, then it goes quiet. Under lights, high water and the top of the flood fish best; a low, ebbing tide is poor. A dark sky helps. Small #–# egi jigs, slow lifts and long pauses.': 'A melhor fase costuma ser a primeira hora de escuro depois do pôr do sol; depois para. Debaixo das luzes, a preia-mar e o fim da enchente são o melhor; maré baixa a vazar é fraca. Um céu escuro ajuda. Toneiras pequenas #–#, puxões lentos e pausas longas.',
+  'first hour of dark': 'primeira hora de escuro',
   'Under pier and harbour lights after dark. A dark sky (moon down or new) makes the lights work best. Small #–# egi jigs, slow lifts and long pauses.': 'Debaixo das luzes dos cais e portos depois de escurecer. Um céu escuro (lua escondida ou nova) faz as luzes funcionarem melhor. Toneiras pequenas #–#, puxões lentos e pausas longas.',
   'Spring visitors to the shallows. Egi jigs fished slowly near weed, or a mackerel strip under a float.': 'Chegam às águas baixas na primavera. Toneiras devagar junto às algas, ou tira de cavala debaixo de boia.',
   'The first light and last light on a flooding tide. A little colour and surf after a blow is ideal. Peeler crab on the ledger, or lures over rough ground.': 'Primeira e última luz com a maré a encher. Um pouco de água turva e rebentação depois de um temporal é o ideal. Caranguejo mole no fundo, ou amostras sobre pedra.',
