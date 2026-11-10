@@ -1310,6 +1310,19 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     if (D.sunset && Math.abs(t - D.sunset) <= 45 * MIN) return 'dusk';
     return sunAlt(t) < -6 ? 'night' : sunAlt(t) > 0 ? 'day' : 'twilight';
   }
+  // good spells within one day: tide first, then light and moon (no wind), used by the Today card
+  function goodSpells(D) {
+    const out = []; let run = null;
+    for (let t = D.start + 15 * MIN; t < D.end; t += 30 * MIN) {
+      const tdp = D.tides.length ? tidePhase(D.tides, t) : null, lt = lightAt(D, t), w = D.wins.find(w => (w.kind === 'major' || w.kind === 'minor') && t >= w.s && t < w.e);
+      let sc = tdp ? tdp.sc : 1; if (lt === 'dawn' || lt === 'dusk') sc += 1.5; if (w) sc += w.kind === 'major' ? 2 : 1;
+      const lab = [tdp && tdp.sc >= 2 ? tdp.label : '', lt === 'dawn' ? 'Dawn' : lt === 'dusk' ? 'Dusk' : '', w ? w.label : ''].filter(Boolean).join(' · ') || 'Good conditions';
+      if (sc >= 4) { if (!run) run = { s: t - 15 * MIN, e: t + 15 * MIN, peak: sc, label: lab }; else { run.e = t + 15 * MIN; if (sc > run.peak) { run.peak = sc; run.label = lab; } } }
+      else if (run) { out.push(run); run = null; }
+    }
+    if (run) out.push(run);
+    return out;
+  }
   // ---------- best fishing windows in the next 7 days (hour by hour) ----------
   function bestWindows() {
     const slots = [];
@@ -1968,6 +1981,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   'Pulley bead/swivel': 'Missanga/destorcedor do pulley', 'Shock leader': 'Linha de choque', 'Snood # cm': 'Estralho # cm', 'Snood #–# cm': 'Estralho #–# cm', 'Squid jig or baited hook': 'Toneira ou anzol com isco', 'Stop knot (sets depth)': 'Nó stopper (define a profundidade)', 'Swivel': 'Destorcedor', 'Trace # cm': 'Estralho # cm', 'Trace #–# lb': 'Estralho #–# lb', 'Trace #–# cm': 'Estralho #–# cm', 'Two hooks (pennel)': 'Dois anzóis (pennel)', '#m': '#m',
   'Last of the flood': 'Fim da enchente', 'Early flood': 'Início da enchente', 'First of the ebb': 'Início da vazante', 'Late ebb': 'Fim da vazante',
   'tide and moon lead; dawn and dusk add a little, strong wind takes away': 'a maré e a lua mandam; o amanhecer e o anoitecer ajudam um pouco, o vento forte tira', 'tide and moon lead; dawn and dusk add a little': 'a maré e a lua mandam; o amanhecer e o anoitecer ajudam um pouco',
+  'Fishing well now:': 'A dar bem agora:', 'Next good spell:': 'Próxima boa fase:', 'Nothing good left today. Check tomorrow.': 'Hoje já não há boas horas. Vê amanhã.', 'Good conditions': 'Boas condições', 'Next:': 'A seguir:', 'No more windows today. Check tomorrow.': 'Hoje já não há períodos. Vê amanhã.', '· prime time': '· melhor altura',
   // places
   'Funchal (Madeira)': 'Funchal (Madeira)', 'Caniçal (Madeira)': 'Caniçal (Madeira)', 'Porto Moniz (Madeira)': 'Porto Moniz (Madeira)',
   };
@@ -2134,14 +2148,15 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     $('datelabel').textContent = `${DOW[x.dow]} ${sel.d} ${MON[sel.m]} ${sel.y}`;
     renderWeek();
     let nextTxt = '';
+    const sp = goodSpells(D);
     if (isToday(sel)) {
-      const cur = D.wins.find(w => now >= w.s && now < w.e), nx = D.wins.find(w => w.s > now);
-      if (cur) nextTxt = `On now: <b>${cur.label}</b> until ${fmt(cur.e)}`;
-      else if (nx) nextTxt = `Next: <b>${nx.label}</b> at ${fmt(nx.s)}${nx.prime ? ' · prime time' : ''}`;
-      else nextTxt = 'No more windows today. Check tomorrow.';
+      const cur = sp.find(s => now >= s.s && now < s.e), nx = sp.find(s => s.s > now);
+      if (cur) nextTxt = `Fishing well now: <b>${cur.label}</b> until ${fmt(cur.e)}`;
+      else if (nx) nextTxt = `Next good spell: <b>${nx.label}</b> ${fmt(nx.s)}–${fmt(nx.e)}`;
+      else nextTxt = 'Nothing good left today. Check tomorrow.';
     } else {
-      const best = D.wins.find(w => w.prime) || D.wins.find(w => w.kind === 'major');
-      if (best) nextTxt = `Best bet: <b>${best.label}</b> at ${fmt(best.s)}–${fmt(best.e)}`;
+      const best = sp.slice().sort((a, b) => b.peak - a.peak)[0];
+      if (best) nextTxt = `Best bet: <b>${best.label}</b> ${fmt(best.s)}–${fmt(best.e)}`;
     }
     const DR = dayRating(D);
     let tideNow = '', windNow = '', clNow = '';
