@@ -45,6 +45,10 @@ header.brand { display: grid; gap: 8px; justify-items: center; text-align: cente
 header.brand h1 { display: inline-block; padding-left: .1em; }
 h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(2rem, 10vw, 2.6rem); line-height: .9; margin: 0; letter-spacing: .1em; white-space: nowrap; }
 h1 .hookS { height: .8em; width: auto; vertical-align: baseline; margin-right: .06em; overflow: visible; }
+figure.fishpic { margin: -2px -2px 10px; border-radius: 10px; overflow: hidden; background: #111; }
+figure.fishpic img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+figure.fishpic figcaption { font-size: 11px; line-height: 1.3; padding: 4px 8px; color: var(--muted); }
+figure.fishpic figcaption a { color: inherit; text-decoration: none; }
 h1 .reelO { height: .7em; width: .7em; vertical-align: baseline; margin-right: .1em; overflow: visible; }
 .tagline { display: flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--font-label); font-weight: 500; font-size: .8rem; letter-spacing: .3em; color: var(--muted); text-transform: uppercase; }
 .tagline i { display: block; width: 28px; height: 1px; background: var(--muted); }
@@ -561,7 +565,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 23 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 24 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -1593,7 +1597,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       const { pick, P, f } = targetBest(TARGET);
       const inS = f && f.m.includes(tp.m), peak = f && f.p.includes(tp.m);
       const marks = SPOTS.filter(s => s.fish.includes(TARGET)).map(s => ({ s, d: km(LOC.lat, LOC.lon, s.lat, s.lon) })).sort((a, b) => a.d - b.d).slice(0, 3);
-      body = `<div class="chips" style="margin:6px 0 10px">${f && f.ret ? '<span class="chip ret">Must return</span>' : peak ? '<span class="chip prime">Peak season</span>' : inS ? '<span class="chip">In season</span>' : '<span class="chip ret">Out of season now</span>'}${f && f.min ? `<span class="chip size">Min ${f.min}</span>` : '<span class="chip size">No min size</span>'}${f && f.bag ? `<span class="chip size">Bag ${f.bag}</span>` : ''}</div>
+      body = `${f ? photoHTML(f) : ''}<div class="chips" style="margin:6px 0 10px">${f && f.ret ? '<span class="chip ret">Must return</span>' : peak ? '<span class="chip prime">Peak season</span>' : inS ? '<span class="chip">In season</span>' : '<span class="chip ret">Out of season now</span>'}${f && f.min ? `<span class="chip size">Min ${f.min}</span>` : '<span class="chip size">No min size</span>'}${f && f.bag ? `<span class="chip size">Bag ${f.bag}</span>` : ''}</div>
         ${!inS ? `<p class="note" style="margin:0 0 8px">${TARGET} isn't usually about in ${MONTH[tp.m]}. These are still the best conditions for it this week.</p>` : ''}
         <div class="lbl">Best times this week · 📍 ${LOC.name.replace(/</g, '&lt;')}</div>
         <div class="list" style="margin-top:6px">${pick.map(s => `<button class="row bestrow${s.sc >= 7 ? ' prime' : ''}" data-y="${s.x.y}" data-m="${s.x.m}" data-d="${s.x.d}"><div class="mono">${isToday(s.x) ? 'Today' : DOW[s.x.dow] + ' ' + s.x.d}<br>${fmt(s.t - HOUR)}–${fmt(s.t + HOUR)}</div><div><div class="what">${s.why.length ? s.why.slice(0, 3).join(' · ').replace(/^./, c => c.toUpperCase()) : 'Best of a quiet week'}</div><div class="chips">${s.st && !s.why.slice(0, 3).includes(s.st.toLowerCase()) ? `<span class="chip tide">${s.st}</span>` : ''}${s.wind ? `<span class="chip">${s.wind}</span>` : ''}</div></div></button>`).join('') || '<p class="note">No suitable times left this week.</p>'}</div>
@@ -1603,6 +1607,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
         ${marks.length ? `<div class="lbl" style="margin-top:8px">Nearest marks for ${TARGET.toLowerCase()}</div><div class="chips" style="margin-top:4px">${marks.map(({ s, d }) => `<button class="small tgtspot" data-n="${s.n}">${s.n} · ${Math.round(d)} km</button>`).join('')}</div>` : ''}`;
     }
     el.innerHTML = `<h2>🎯 Target</h2><div class="field"><label for="tgtsel">What are you fishing for?</label><select id="tgtsel">${opts.join('')}</select></div>${body}`;
+    fillPhotos(el);
     const setT = n => { TARGET = n; try { localStorage.setItem('sh-target', n); } catch (err) {} renderTarget(); };
     $('tgtsel').addEventListener('change', e => setT(e.target.value));
     el.querySelectorAll('.tgtpick').forEach(b => b.addEventListener('click', () => setT(b.dataset.n)));
@@ -1705,6 +1710,52 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       + box('Minimum sizes', `<div class="tablewrap"><table><thead><tr><th>Species</th><th class="r">Legal min</th></tr></thead><tbody>${rows.map(f => `<tr><td>${f.n}${f.bag ? `<div class="note" style="margin:0">${f.bag}</div>` : ''}</td><td class="r mono">${f.min || '—'}</td></tr>`).join('')}</tbody></table></div><p class="note">— means there's no legal minimum. Take only what you'll eat.</p>`)
       + box('Sources', `<ul class="tight">${mad ? `<li><a href="https://joram.madeira.gov.pt/joram/1serie/Ano%20de%202016/ISerie-199-2016-11-14sup.pdf" target="_blank" rel="noopener">Portaria 484/2016 (JORAM) · gear, limits and sizes</a></li><li><a href="https://www.madeira.gov.pt//Portals/40/documentos/Altera%C3%A7%C3%A3o%20%C3%A0%20Poratria%20484-2016.pdf" target="_blank" rel="noopener">2019 amendment · daily limits</a></li>`
         : `<li><a href="https://www.dgrm.pt/especies" target="_blank" rel="noopener">DGRM · banned species and daily limits</a></li><li><a href="https://dgrm.pt/documents/20143/121101/Tabela+de+Tamanhos+M%C3%ADnimos+de+Captura+30-10-25.pdf/0395af29-7e6b-8fd8-4b8a-3e29c09226e4" target="_blank" rel="noopener">DGRM · minimum sizes table (30 Oct 2025)</a></li><li><a href="https://www.dgrm.pt/documents/20143/0/FAQ-PescaLudica2018.pdf/730e6d56-1f8c-66a2-a020-aecc016685bb" target="_blank" rel="noopener">DGRM · pesca lúdica questions and answers</a></li>`}</ul><p class="note">Rules change. If in doubt, ask the ${mad ? 'Direção Regional de Pescas' : 'DGRM'} or the local Capitania.</p>`);
+  }
+
+  // ---------- fish photos from Wikimedia Commons (free licences, credited) ----------
+  // Loaded by the phone straight from Wikipedia/Wikimedia (not from our host), then kept on the phone.
+  const WIKI_FIX = { 'Gaidropsarus spp.': 'Gaidropsarus vulgaris', 'Mustelus spp.': 'Mustelus asterias', 'Raja montagui / brachyura': 'Raja montagui', 'Scophthalmus maximus / rhombus': 'Scophthalmus maximus', 'Symphodus melops etc.': 'Symphodus melops', 'Chelidonichthys spp.': 'Chelidonichthys lucerna', 'Solea spp.': 'Solea solea', 'Mugilidae': 'Chelon labrosus', 'Epinephelus spp.': 'Epinephelus marginatus', 'Seriola spp.': 'Seriola dumerili', 'Muraenidae': 'Muraena helena', 'Epinephelus marginatus, Mycteroperca fusca': 'Epinephelus marginatus' };
+  const wikiTitle = f => (WIKI_FIX[f.l] || f.l).replace(/ /g, '_');
+  let PHOTOS = {}; try { PHOTOS = JSON.parse(localStorage.getItem('sh-photos') || '{}'); } catch (err) {}
+  const photoBusy = {}, photoQ = []; let photoRunning = 0;
+  const WM_HDR = { 'Api-User-Agent': 'SantosHookedTides/1.0 (https://santoshookedtides.netlify.app)' };
+  const stripHtml = h => { const d = document.createElement('div'); d.innerHTML = h || ''; return (d.textContent || '').replace(/\s+/g, ' ').trim(); };
+  async function fetchPhoto(key) {
+    const s = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(key)}?redirect=true`, { headers: WM_HDR }).then(r => r.ok ? r.json() : null);
+    const th = s && (s.thumbnail || s.originalimage); if (!th || !th.source) return { none: true, at: Date.now() };
+    const m = th.source.match(/\/commons\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^/]+)/); if (!m) return { none: true, at: Date.now() };
+    const file = decodeURIComponent(m[1]);
+    const src = /\/thumb\//.test(th.source) ? th.source.replace(/\/\d+px-[^/]+$/, `/640px-${m[1]}`) : th.source;
+    const q = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&prop=imageinfo&iiprop=extmetadata&titles=${encodeURIComponent('File:' + file)}`, { headers: WM_HDR }).then(r => r.ok ? r.json() : null);
+    const pg = q && q.query && Object.values(q.query.pages || {})[0], md = pg && pg.imageinfo && pg.imageinfo[0] && pg.imageinfo[0].extmetadata;
+    const lic = md && md.LicenseShortName ? stripHtml(md.LicenseShortName.value) : '';
+    if (!md || !/CC|Public domain|PD|GFDL/i.test(lic)) return { none: true, at: Date.now() };
+    const artist = stripHtml(md.Artist && md.Artist.value).slice(0, 48) || 'Unknown author';
+    return { src, file, lic, artist, at: Date.now() };
+  }
+  function pumpPhotos() {
+    while (photoRunning < 3 && photoQ.length) {
+      const key = photoQ.shift(); photoRunning++;
+      fetchPhoto(key).then(p => { if (p) { PHOTOS[key] = p; try { localStorage.setItem('sh-photos', JSON.stringify(PHOTOS)); } catch (err) {} fillPhotos(); } })
+        .catch(() => {}).finally(() => { photoRunning--; delete photoBusy[key]; pumpPhotos(); });
+    }
+  }
+  function wantPhoto(key) {
+    const p = PHOTOS[key];
+    if (p && (!p.none || Date.now() - p.at < 7 * 864e5)) return; // try again a week after a miss
+    if (photoBusy[key] || !navigator.onLine) return; photoBusy[key] = 1; photoQ.push(key); pumpPhotos();
+  }
+  function photoHTML(f) { return `<figure class="fishpic" data-photo="${wikiTitle(f)}" hidden><img alt="${f.n}" loading="lazy" decoding="async"><figcaption></figcaption></figure>`; }
+  function fillPhotos(root) {
+    (root || document).querySelectorAll('figure.fishpic[data-photo]').forEach(fg => {
+      const key = fg.dataset.photo, p = PHOTOS[key];
+      if (!p) { wantPhoto(key); return; }
+      if (p.none) { wantPhoto(key); fg.hidden = true; return; }
+      const img = fg.querySelector('img');
+      if (img.getAttribute('src') !== p.src) { img.onerror = () => { fg.hidden = true; }; img.src = p.src; }
+      fg.querySelector('figcaption').innerHTML = `<a href="https://commons.wikimedia.org/wiki/File:${encodeURIComponent(p.file)}" target="_blank" rel="noopener">Photo: ${p.artist.replace(/</g, '&lt;')} · ${p.lic} · Wikimedia Commons</a>`;
+      fg.hidden = false;
+    });
   }
 
   // ---------- language (English / Português) ----------
@@ -2020,6 +2071,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     [/^Saved “(.+)”\. It's now in the Fishing at list too\.$/, (m, n) => `“${n}” guardado. Já aparece também em "A pescar em".`],
     [/^You're outside the Southern IFCA area \((.+)\)\. .*$/, (m, a) => `Estás fora da área da Southern IFCA (${a}). As regras do robalo e da juliana abaixo aplicam-se em toda a Inglaterra, mas os tamanhos mínimos podem mudar localmente. Confirma na IFCA local antes de levar peixe.`],
     [/^You're outside the UK \((.+)\), so these rules don't apply\..*$/, (m, a) => `Estás fora do Reino Unido (${a}), por isso estas regras não se aplicam. Vê as regras de pesca locais antes de levar alguma coisa.`],
+    [/^Photo: (.*)$/s, (m, a) => `Foto: ${a.replace('Unknown author', 'Autor desconhecido')}`],
     [/^Rules checked (\d+) (\w+) (\d+)$/, (m, d, mo, y) => `Regras verificadas a ${d} ${tr(mo)} ${y}`]
   ];
   function tr(s) {
@@ -2263,6 +2315,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       const status = f.ret ? '<span class="chip ret">Must return</span>' : f.warn ? '<span class="chip ret">Venomous</span>' : peak ? '<span class="chip prime">Peak</span>' : inS ? '<span class="chip">In season</span>' : '<span class="chip">Out of season</span>';
       const rules = f.ret ? '' : `<span class="chip size">${f.min ? 'Min ' + f.min : 'No min size'}</span>${f.bag ? `<span class="chip size">Bag ${f.bag}</span>` : ''}${f.rec ? `<span class="chip">Rec. ${f.rec}</span>` : ''}`;
       return `<div class="fish${peak && !f.ret && !f.warn ? ' peak' : ''}">
+        ${photoHTML(f)}
         <div class="fishhead"><div><div class="fishname">${f.n}</div><div class="latin">${f.l}</div></div>${status}</div>
         <div class="season mono">${MON.map((mn, i) => `<i class="${f.p.includes(i) ? 'pk' : f.m.includes(i) ? 'on' : ''}${i === sel.m ? ' cur' : ''}" title="${mn}">${mn[0]}</i>`).join('')}</div>
         <div class="chips">${rules}<span class="chip">${f.where}</span></div>
@@ -2271,6 +2324,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
         <p class="note">${f.tip}</p>
       </div>`;
     }).join('') || '<p class="note">No fish match that search.</p>';
+    fillPhotos($('species'));
   }
 
   // ---------- RULES ----------
