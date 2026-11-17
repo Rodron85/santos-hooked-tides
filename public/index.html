@@ -49,6 +49,9 @@ figure.fishpic { margin: -2px -2px 10px; border-radius: 10px; overflow: hidden; 
 figure.fishpic img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
 figure.fishpic figcaption { font-size: 11px; line-height: 1.3; padding: 4px 8px; color: var(--muted); }
 figure.fishpic figcaption a { color: inherit; text-decoration: none; }
+details.prep { margin-top: 8px; border: 1px solid #3E5A3A; border-radius: 10px; padding: 8px 10px; background: #1b2219; }
+details.prep summary { cursor: pointer; color: #CFE3C8; font-weight: 600; }
+details.prep ol { margin: 8px 0 0; padding-left: 20px; }
 .chip.eat { color: #CFE3C8; border-color: #3E5A3A; background: #1f2a1d; }
 h1 .reelO { height: .7em; width: .7em; vertical-align: baseline; margin-right: .1em; overflow: visible; }
 .tagline { display: flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--font-label); font-weight: 500; font-size: .8rem; letter-spacing: .3em; color: var(--muted); text-transform: uppercase; }
@@ -569,7 +572,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 28 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 29 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -791,7 +794,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     { n: 'Pollack', l: 'Pollachius pollachius', m: [3,4,5,6,7,8,9,10,11], p: [5,6,7,8,9], min: '30 cm', bag: '3 a day (2026)', where: 'Mostly boat; rocks', bait: ['Soft plastic eels & shads', 'Live sandeel', 'Ragworm under a float'], tip: 'Rocks and wrecks: Hurst, the Isle of Wight and Dorset. Dawn and dusk; keep the lure just off the bottom.' },
     { n: 'Dogfish', l: 'Scyliorhinus canicula', m: [0,1,2,3,4,5,6,7,8,9,10,11], p: [9,10,11,0,1,2], min: null, where: 'Shore & boat', bait: ['Mackerel', 'Squid', 'Sandeel'], tip: 'Bites all year, mostly at night. A fish bait on the bottom will find them.' },
     { n: 'Bull huss', l: 'Scyliorhinus stellaris', m: [0,1,2,3,4,5,6,7,8,9,10,11], p: [5,6,7,8], min: null, where: 'Boat; deep rough ground', bait: ['Mackerel fillet', 'Squid', 'Whole small pouting'], tip: 'Big cousin of the dogfish. Rough ground at night; return it to grow.' },
-    { n: 'Smoothhound', l: 'Mustelus spp.', m: [3,4,5,6,7,8,9], p: [4,5,6], min: null, where: 'Shore & boat', bait: ['Peeler crab (best)', 'Hardback crab', 'Squid'], tip: 'Calshot and Lepe on the flood, evening into dark. They run hard, so set a strong drag. Release recommended.' },
+    { n: 'Smoothhound', l: 'Mustelus spp.', m: [3,4,5,6,7,8,9], p: [4,5,6], min: null, where: 'Shore & boat', bait: ['Peeler crab (best)', 'Hardback crab', 'Squid'], tip: 'Calshot and Lepe on the flood, evening into dark. They run hard, so set a strong drag.' },
     { n: 'Tope', l: 'Galeorhinus galeus', m: [4,5,6,7,8], p: [5,6,7], min: null, ret: true, where: 'Boat', bait: ['Whole mackerel', 'Mackerel flapper'], tip: 'Fast-running shark on the banks off the Isle of Wight. Wire trace. Rod-caught tope must go back.' },
     { n: 'Thornback ray', l: 'Raja clavata', m: [2,3,4,5,8,9,10], p: [3,4], min: '40 cm whole / 20 cm wing', where: 'Shore & boat', bait: ['Mackerel', 'Sandeel', 'Herring', 'Peeler crab'], tip: 'Spring is best, with a second run in autumn into November. Night on the flood, with a big bait on a pulley rig.' },
     { n: 'Small-eyed ray', l: 'Raja microocellata', m: [3,4,5,6,7,8,9], p: [5,6,7], min: '40 cm whole / 20 cm wing', where: 'Shore & boat', bait: ['Sandeel (best)', 'Squid', 'Mackerel strip'], tip: 'Sandy beaches near the Needles and the Isle of Wight, at night.' },
@@ -1834,11 +1837,25 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
 
   // ---------- is it good to eat? ----------
   const EAT = {};
-  'Bass,Squid,Cuttlefish,Whiting,Cod,Pollack,Plaice,Sole,Turbot & brill,Mackerel,Black bream,Gilthead bream,Red mullet,Thornback ray,Small-eyed ray,Spotted & blonde ray,Dab,Lemon sole,Witch flounder,John Dory,Ling,Coalfish (saithe),Herring,Sprat,Gurnard,Triggerfish,Sea bass (Robalo),White seabream (Sargo),Two-banded bream (Safia),Two-banded bream (Seifia),Zebra seabream (Sargo-veado),Sharpsnout bream (Sargo-bicudo),Gilthead bream (Dourada),Meagre (Corvina),Sand steenbras (Ferreira),Black seabream (Choupa),Pandora (Bica),Chub mackerel (Cavala),Horse mackerel (Carapau),Blue jack mackerel (Chicharro),Sole (Linguado),Red mullet (Salmonete),Bluefish (Anchova),Pollack (Juliana),Squid (Lula),Cuttlefish (Choco),Octopus (Polvo),Forkbeard (Abrótea),Red porgy (Pargo),Grey triggerfish (Peixe-porco),Barracuda (Bicuda),Amberjack (Charuteiro)'.split(',').forEach(n => EAT[n] = 'good');
-  'Pouting,Poor cod,Rockling,Dogfish,Bull huss,Smoothhound,Flounder,Scad (horse mackerel),Garfish,Thick-lipped mullet,Thin-lipped mullet,Golden grey mullet,Conger,Sand smelt,Spurdog,Common stingray,Blue shark,Salema,Mullet (Tainha),Bogue (Boga),Pouting (Faneca),Conger (Congro),Moray (Moreia),Parrotfish (Bodião)'.split(',').forEach(n => EAT[n] = 'ok');
-  'Ballan wrasse,Corkwing & small wrasse,Cuckoo wrasse,Sea scorpion,Blennies & gobies,Dragonet,Pipefish,Clingfish'.split(',').forEach(n => EAT[n] = 'no');
-  const EAT_LBL = { good: '🍽 Good to eat', ok: '🍽 Edible', no: '↩ Best put back' };
-  function eatChip(f) { const e = !f.ret && !f.warn && EAT[f.n]; return e ? `<span class="chip${e === 'good' ? ' eat' : ''}">${EAT_LBL[e]}</span>` : ''; }
+  'Bass,Squid,Cuttlefish,Whiting,Cod,Pollack,Plaice,Sole,Turbot & brill,Mackerel,Black bream,Gilthead bream,Red mullet,Dab,Lemon sole,Witch flounder,John Dory,Ling,Coalfish (saithe),Herring,Sprat,Gurnard,Triggerfish,Sea bass (Robalo),White seabream (Sargo),Two-banded bream (Safia),Two-banded bream (Seifia),Zebra seabream (Sargo-veado),Sharpsnout bream (Sargo-bicudo),Gilthead bream (Dourada),Meagre (Corvina),Sand steenbras (Ferreira),Black seabream (Choupa),Pandora (Bica),Chub mackerel (Cavala),Horse mackerel (Carapau),Blue jack mackerel (Chicharro),Sole (Linguado),Red mullet (Salmonete),Bluefish (Anchova),Pollack (Juliana),Squid (Lula),Cuttlefish (Choco),Octopus (Polvo),Forkbeard (Abrótea),Red porgy (Pargo),Grey triggerfish (Peixe-porco),Barracuda (Bicuda),Amberjack (Charuteiro)'.split(',').forEach(n => EAT[n] = 'good');
+  'Pouting,Poor cod,Rockling,Flounder,Scad (horse mackerel),Garfish,Thick-lipped mullet,Thin-lipped mullet,Golden grey mullet,Conger,Sand smelt,Salema,Mullet (Tainha),Bogue (Boga),Pouting (Faneca),Conger (Congro),Moray (Moreia),Parrotfish (Bodião)'.split(',').forEach(n => EAT[n] = 'ok');
+  'Smoothhound,Dogfish,Bull huss,Spurdog,Thornback ray,Small-eyed ray,Spotted & blonde ray,Common stingray,Blue shark'.split(',').forEach(n => EAT[n] = 'prep');
+  'Ballan wrasse,Corkwing & small wrasse,Cuckoo wrasse'.split(',').forEach(n => EAT[n] = 'no');
+  'Sea scorpion,Blennies & gobies,Dragonet,Pipefish,Clingfish'.split(',').forEach(n => EAT[n] = 'never');
+  const EAT_LBL = { good: '🍽 Good to eat', ok: '🍽 Edible', prep: '🔪 Good to eat with quick prep', no: '↩ Best put back', never: '✖ Not for eating' };
+  function eatChip(f) { const e = !f.ret && !f.warn && EAT[f.n]; return e ? `<span class="chip${e === 'good' || e === 'prep' ? ' eat' : e === 'never' ? ' ret' : ''}">${EAT_LBL[e]}</span>` : ''; }
+  // sharks, dogfish and rays keep urea in their blood; it turns to ammonia (the "pee" smell) if the fish is left warm
+  function prepNote(f) {
+    if (f.ret || EAT[f.n] !== 'prep') return '';
+    const ray = /ray/i.test(f.n);
+    return `<details class="prep"><summary>🔪 How to prepare it</summary><ol class="tight">
+      <li>Bleed it straight away: cut through the tail${ray ? ' or across the wing bases' : ' or just behind the gills'} and let it bleed out.</li>
+      <li>Gut it as soon as you can.</li>
+      <li>${ray ? 'Cut off the wings; that is the part you eat. Skin them, or cook them skin-on and peel it off after.' : 'Take the skin off.'}</li>
+      <li>Bag it and put it in the cooler on ice. Don't leave it in the sun.</li>
+      <li>Eat it within 1–2 days or freeze it. If it still smells a bit, soak it for an hour in milk, or water with lemon or vinegar.</li>
+    </ol><p class="note" style="margin:6px 0 0">Why: ${ray ? 'rays' : 'sharks and dogfish'} keep urea in their blood and flesh. Left warm, it turns into ammonia, the "pee" smell and taste. Bleeding, skinning and ice stop it.</p></details>`;
+  }
 
   // ---------- language (English / Português) ----------
   let LANG = 'en'; try { LANG = localStorage.getItem('sh-lang') === 'pt' ? 'pt' : 'en'; } catch (err) {}
@@ -1960,7 +1977,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   'Rocks and wrecks: Hurst, the Isle of Wight and Dorset. Dawn and dusk; keep the lure just off the bottom.': 'Rochas e naufrágios: Hurst, a Ilha de Wight e Dorset. Amanhecer e anoitecer; mantém a amostra mesmo acima do fundo.',
   'Bites all year, mostly at night. A fish bait on the bottom will find them.': 'Pica todo o ano, sobretudo à noite. Um isco de peixe no fundo encontra-as.',
   'Big cousin of the dogfish. Rough ground at night; return it to grow.': 'Prima grande da pata-roxa. Fundo de pedra à noite; devolve-a para crescer.',
-  'Calshot and Lepe on the flood, evening into dark. They run hard, so set a strong drag. Release recommended.': 'Calshot e Lepe com a maré a encher, do fim da tarde até escurecer. Puxam muito, por isso aperta o travão. Recomenda-se devolver.',
+  'Calshot and Lepe on the flood, evening into dark. They run hard, so set a strong drag.': 'Calshot e Lepe com a maré a encher, do fim da tarde até escurecer. Puxam muito, por isso aperta o travão.',
   'Spring is best. Night on the flood, with a big bait on a pulley rig.': 'A primavera é o melhor. Noite com a maré a encher, com um isco grande numa montagem pulley.',
   'Sandy beaches near the Needles and the Isle of Wight, at night.': 'Praias de areia perto dos Needles e da Ilha de Wight, à noite.',
   'Sandbanks in the western Solent and off the Isle of Wight.': 'Bancos de areia no oeste do Solent e ao largo da Ilha de Wight.',
@@ -2153,6 +2170,15 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   'Needs an Environment Agency rod licence. In the Solent estuaries they must go back.': 'Precisa de licença de cana da Environment Agency. Nos estuários do Solent têm de ser devolvidas.',
   'Protected: needs an Environment Agency rod licence, and rod-caught salmon must be released. Return it at once.': 'Protegido: precisa de licença de cana da Environment Agency, e o salmão apanhado à cana tem de ser devolvido. Devolve-o logo.',
   '🍽 Good to eat': '🍽 Bom para comer', '🍽 Edible': '🍽 Comestível', '↩ Best put back': '↩ Melhor devolver',
+  '🔪 Good to eat with quick prep': '🔪 Bom para comer, com preparação rápida', '✖ Not for eating': '✖ Não é para comer', '🔪 How to prepare it': '🔪 Como preparar',
+  'Bleed it straight away: cut through the tail or across the wing bases and let it bleed out.': 'Sangra-a logo: corta a cauda ou a base das asas e deixa escorrer o sangue.',
+  'Bleed it straight away: cut through the tail or just behind the gills and let it bleed out.': 'Sangra-o logo: corta a cauda ou logo atrás das guelras e deixa escorrer o sangue.',
+  'Gut it as soon as you can.': 'Amanha-o o mais depressa possível.', 'Take the skin off.': 'Tira-lhe a pele.',
+  'Cut off the wings; that is the part you eat. Skin them, or cook them skin-on and peel it off after.': 'Corta as asas, que é a parte que se come. Tira-lhes a pele, ou cozinha com pele e tira-a depois.',
+  'Bag it and put it in the cooler on ice. Don\'t leave it in the sun.': 'Mete num saco e na geleira com gelo. Não deixes ao sol.',
+  'Eat it within 1–2 days or freeze it. If it still smells a bit, soak it for an hour in milk, or water with lemon or vinegar.': 'Come em 1–2 dias ou congela. Se ainda cheirar um pouco, deixa uma hora de molho em leite, ou em água com limão ou vinagre.',
+  'Why: rays keep urea in their blood and flesh. Left warm, it turns into ammonia, the "pee" smell and taste. Bleeding, skinning and ice stop it.': 'Porquê: as raias guardam ureia no sangue e na carne. Se ficarem quentes, passa a amoníaco, o cheiro e o sabor a "chichi". Sangrar, tirar a pele e o gelo evitam isso.',
+  'Why: sharks and dogfish keep urea in their blood and flesh. Left warm, it turns into ammonia, the "pee" smell and taste. Bleeding, skinning and ice stop it.': 'Porquê: os tubarões e as patas-roxas guardam ureia no sangue e na carne. Se ficarem quentes, passa a amoníaco, o cheiro e o sabor a "chichi". Sangrar, tirar a pele e o gelo evitam isso.',
   // places
   'Funchal (Madeira)': 'Funchal (Madeira)', 'Caniçal (Madeira)': 'Caniçal (Madeira)', 'Porto Moniz (Madeira)': 'Porto Moniz (Madeira)',
   };
@@ -2446,6 +2472,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
         <div class="lbl">Bait</div>
         <div class="chips">${f.bait.map(b => `<span class="chip bait">${b}</span>`).join('')}</div>
         <p class="note">${f.tip}</p>
+        ${prepNote(f)}
       </div>`;
     }).join('') || '<p class="note">No fish match that search.</p>';
     fillPhotos($('species'));
