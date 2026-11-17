@@ -572,7 +572,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 31 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 32 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -1812,9 +1812,20 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     if (photoBusy[key] || !navigator.onLine || Date.now() - (photoFail[key] || 0) < 60000) return; photoBusy[key] = 1; photoQ.push(key); pumpPhotos();
   }
   function photoHTML(f) { return `<figure class="fishpic" data-photo="${wikiTitle(f)}" hidden><img alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"><figcaption></figcaption></figure>`; }
+  // Photos stored with the app itself (downloaded once by GitHub Actions): no outside servers, no limits.
+  let LOCAL = null;
+  fetch('/fish/index.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : {}).catch(() => ({})).then(j => { LOCAL = j || {}; fillPhotos(); });
   function fillPhotos(root) {
+    if (!LOCAL) return; // wait for the app's own photo list first
     (root || document).querySelectorAll('figure.fishpic[data-photo]').forEach(fg => {
-      const key = fg.dataset.photo, p = PHOTOS[key];
+      const key = fg.dataset.photo, loc = LOCAL[key];
+      if (loc) {
+        const img = fg.querySelector('img');
+        if (!img.dataset.set) { img.dataset.set = '1'; img.onerror = () => { fg.hidden = true; }; img.src = '/fish/' + key + '.jpg'; }
+        fg.querySelector('figcaption').innerHTML = `<a href="${loc.link}" target="_blank" rel="noopener">Photo: ${String(loc.credit).replace(/</g, '&lt;')}${loc.via === 'iNaturalist' ? '' : ' · ' + loc.lic} · ${loc.via}</a>`;
+        fg.hidden = false; return;
+      }
+      const p = PHOTOS[key];
       if (!p) { wantPhoto(key); return; }
       if (p.none) { wantPhoto(key); fg.hidden = true; return; }
       const img = fg.querySelector('img');

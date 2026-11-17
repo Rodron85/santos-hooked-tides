@@ -1,0 +1,44 @@
+name: Download fish photos
+
+on:
+  push:
+    branches: [app]
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/photos.yml'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Download every photo again (1 = yes)'
+        default: '0'
+
+permissions:
+  contents: write
+
+concurrency: photos
+
+jobs:
+  photos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: app
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pillow
+      - run: python scripts/fetch_photos.py
+        env:
+          FORCE: ${{ github.event.inputs.force || '0' }}
+      - name: Commit photos to app and main
+        run: |
+          git config user.name "photo-bot"
+          git config user.email "actions@github.com"
+          git add public/fish
+          if git diff --cached --quiet; then echo "no changes"; exit 0; fi
+          git commit -m "Fish photos (downloaded by GitHub Actions)"
+          git pull --rebase origin app
+          git push origin HEAD:app
+          git push -f origin HEAD:main
