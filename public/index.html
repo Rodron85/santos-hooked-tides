@@ -566,7 +566,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 25 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 26 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -823,6 +823,19 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     { n: 'Sea scorpion', l: 'Taurulus bubalis', m: A_, p: [3,4,5,6,7,8], min: null, where: 'Rock pools & harbour walls', bait: ['Ragworm', 'Small fish strip'], tip: 'Rock pools and harbour walls with a small hook. Spiny but harmless; great for the kids. Put it back.' },
     { n: 'Blennies & gobies', l: 'Lipophrys pholis, Gobius spp.', m: A_, p: [4,5,6,7,8], min: null, where: 'Rock pools & harbour walls', bait: ['Ragworm', 'Prawn', 'Small fish strip'], tip: 'Tiny hooks and a bit of ragworm at harbour walls and rock pools. The kids\' favourite. Put them back.' },
     { n: 'Cuckoo wrasse', l: 'Labrus mixtus', m: [4,5,6,7,8,9], p: [5,6,7], min: null, where: 'Rocks & boat', bait: ['Ragworm', 'Prawn', 'Squid strip'], tip: 'Deeper rocky ground, mostly in Dorset. The males are bright blue and orange. Return it.' },
+    { n: 'Lemon sole', l: 'Microstomus kitt', m: [3,4,5,6,7,8,9], p: [5,6,7], min: '25 cm', where: 'Mostly boat', bait: ['Ragworm', 'Small ragworm', 'Beads & sequins'], tip: 'Clean sand and gravel, mostly from a boat on the drift. Small hooks and thin worm baits.' },
+    { n: 'Witch flounder', l: 'Glyptocephalus cynoglossus', m: [3,4,5,6,7,8,9], p: [5,6,7], min: '28 cm', where: 'Boat; deep sand', bait: ['Ragworm', 'Squid strip'], tip: 'Deeper sand and mud offshore. Rare from the shore.' },
+    { n: 'Sand smelt', l: 'Atherina presbyter', m: [4,5,6,7,8,9], p: [6,7,8], min: null, where: 'Harbours & piers', bait: ['Bread', 'Tiny hooks with ragworm'], tip: 'Silver shoals in harbours and marinas in summer. Tiny hooks; great fun for the kids and a good live bait for bass.' },
+    { n: 'Sprat', l: 'Sprattus sprattus', m: [9,10,11,0,1], p: [10,11,0], min: null, where: 'Harbours & piers', bait: ['Sabikis'], tip: 'Winter shoals in the Solent and harbours. Tiny sabikis; brilliant fresh bait.' },
+    { n: 'Dragonet', l: 'Callionymus lyra', m: [3,4,5,6,7,8,9], p: [5,6,7], min: null, where: 'Sandy ground', bait: ['Ragworm'], tip: 'Small, colourful fish on sand, often caught while fishing for plaice. The males have long fins. Put it back.' },
+    { n: 'Pipefish', l: 'Syngnathidae', m: A_, p: [5,6,7], min: null, where: 'Weed & rock pools', bait: ['Usually caught by accident'], tip: 'Thin cousins of the seahorse, found in weed and eelgrass. Put them straight back.' },
+    { n: 'Clingfish', l: 'Lepadogaster spp.', m: A_, p: [4,5,6,7], min: null, where: 'Rock pools', bait: ['Found under stones'], tip: 'Tiny fish that stick to the underside of rocks. A rock-pooling find for the kids; put the stone back the right way up.' },
+    { n: 'Blue shark', l: 'Prionace glauca', m: [5,6,7,8,9], p: [7,8], min: null, where: 'Boat (offshore)', bait: ['Mackerel fillet', 'Rubby dubby (fish groundbait)'], tip: 'Summer, well offshore from charter boats. Anglers release them; use circle hooks and a wire trace.' },
+    { n: 'Porbeagle', l: 'Lamna nasus', m: [5,6,7,8,9], p: [7,8], min: null, ret: true, where: 'Boat (offshore)', bait: ['Whole mackerel'], tip: 'Protected: you can\'t keep it. Released by charter boats off the Isle of Wight and Dorset.' },
+    { n: 'Thresher shark', l: 'Alopias vulpinus', m: [5,6,7,8], p: [6,7], min: null, ret: true, where: 'Boat (offshore)', bait: ['Mackerel'], tip: 'Protected: you can\'t keep it. Occasionally hooked off the south coast in summer; release it.' },
+    { n: 'Bluefin tuna', l: 'Thunnus thynnus', m: [7,8,9,10], p: [8,9], min: null, ret: true, where: 'Boat (offshore)', bait: ['Licensed charters only'], tip: 'You can only fish for them on licensed catch-and-release charter boats (CHART scheme). Never kept.' },
+    { n: 'Sea trout', l: 'Salmo trutta', m: [3,4,5,6,7,8,9], p: [5,6], min: null, ret: true, where: 'Estuaries', bait: ['Small spinners', 'Small lures'], tip: 'Needs an Environment Agency rod licence. In the Solent estuaries they must go back.' },
+    { n: 'Salmon', l: 'Salmo salar', m: [3,4,5,6,7,8,9], p: [], min: null, ret: true, where: 'Estuaries', bait: ['Usually caught by accident'], tip: 'Protected: needs an Environment Agency rod licence, and rod-caught salmon must be released. Return it at once.' },
     { n: 'Lesser weever', l: 'Echiichthys vipera', m: [5,6,7,8], p: [6,7], min: null, warn: true, where: 'Sandy beaches', bait: ['Takes ragworm meant for other fish'], tip: 'Venomous spines on its back. Don\'t touch it with bare hands, and wear shoes when wading. If stung, put the area in hot water and get medical help.' }
   ];
   let FISH = FISH_UK;
@@ -2098,6 +2111,22 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   'in a moon period (#%)': 'num período da lua (#%)', 'After dark': 'Depois de escurecer', 'Daylight': 'De dia', 'Twilight': 'Crepúsculo',
   'Share the app': 'Partilhar a app', '📤 Share the app': '📤 Partilhar a app', 'Send it to other anglers. It\'s free and works on any phone.': 'Envia aos outros pescadores. É grátis e funciona em qualquer telemóvel.', 'Link copied.': 'Link copiado.',
   'Tides, moon, best fishing times and fish for the Solent, Dorset, Portugal and Madeira.': 'Marés, lua, melhores horas de pesca e peixes para o Solent, Dorset, Portugal e Madeira.',
+  'Lemon sole': 'Solha-limão', 'Witch flounder': 'Solhão', 'Sand smelt': 'Peixe-rei', 'Sprat': 'Espadilha', 'Dragonet': 'Peixe-pau', 'Pipefish': 'Marinhas', 'Clingfish': 'Sugadouro', 'Blue shark': 'Tintureira', 'Porbeagle': 'Tubarão-sardo', 'Thresher shark': 'Tubarão-raposo', 'Bluefin tuna': 'Atum-rabilho', 'Sea trout': 'Truta-marisca', 'Salmon': 'Salmão',
+  'Boat; deep sand': 'Barco; areia funda', 'Sandy ground': 'Fundo de areia', 'Weed & rock pools': 'Algas e poças de maré', 'Rock pools': 'Poças de maré', 'Boat (offshore)': 'Barco (ao largo)',
+  'Tiny hooks with ragworm': 'Anzóis minúsculos com casulo', 'Usually caught by accident': 'Normalmente apanha-se por acaso', 'Found under stones': 'Encontra-se debaixo das pedras', 'Rubby dubby (fish groundbait)': 'Engodo de peixe (rubby dubby)', 'Licensed charters only': 'Só em barcos licenciados',
+  'Clean sand and gravel, mostly from a boat on the drift. Small hooks and thin worm baits.': 'Areia limpa e cascalho, sobretudo de barco em deriva. Anzóis pequenos e iscos finos de minhoca.',
+  'Deeper sand and mud offshore. Rare from the shore.': 'Areia e lodo mais fundos, ao largo. Raro da costa.',
+  'Silver shoals in harbours and marinas in summer. Tiny hooks; great fun for the kids and a good live bait for bass.': 'Cardumes prateados em portos e marinas no verão. Anzóis minúsculos; muito divertido para os miúdos e bom isco vivo para robalo.',
+  'Winter shoals in the Solent and harbours. Tiny sabikis; brilliant fresh bait.': 'Cardumes de inverno no Solent e nos portos. Sabikis minúsculos; ótimo isco fresco.',
+  'Small, colourful fish on sand, often caught while fishing for plaice. The males have long fins. Put it back.': 'Peixe pequeno e colorido da areia, muitas vezes apanhado a pescar solha. Os machos têm barbatanas compridas. Devolve-o.',
+  'Thin cousins of the seahorse, found in weed and eelgrass. Put them straight back.': 'Primas finas do cavalo-marinho, vivem nas algas e nas pradarias marinhas. Devolve-as logo.',
+  'Tiny fish that stick to the underside of rocks. A rock-pooling find for the kids; put the stone back the right way up.': 'Peixinhos que se colam por baixo das pedras. Um achado nas poças para os miúdos; volta a pôr a pedra como estava.',
+  'Summer, well offshore from charter boats. Anglers release them; use circle hooks and a wire trace.': 'No verão, bem ao largo, em barcos de aluguer. Os pescadores devolvem-nas; usa anzóis circulares e estralho de aço.',
+  'Protected: you can\'t keep it. Released by charter boats off the Isle of Wight and Dorset.': 'Protegido: não podes ficar com ele. Os barcos de aluguer devolvem-nos ao largo da Ilha de Wight e de Dorset.',
+  'Protected: you can\'t keep it. Occasionally hooked off the south coast in summer; release it.': 'Protegido: não podes ficar com ele. De vez em quando ferra-se ao largo da costa sul no verão; devolve-o.',
+  'You can only fish for them on licensed catch-and-release charter boats (CHART scheme). Never kept.': 'Só se pode pescar em barcos de aluguer licenciados para pescar e devolver (programa CHART). Nunca se fica com eles.',
+  'Needs an Environment Agency rod licence. In the Solent estuaries they must go back.': 'Precisa de licença de cana da Environment Agency. Nos estuários do Solent têm de ser devolvidas.',
+  'Protected: needs an Environment Agency rod licence, and rod-caught salmon must be released. Return it at once.': 'Protegido: precisa de licença de cana da Environment Agency, e o salmão apanhado à cana tem de ser devolvido. Devolve-o logo.',
   // places
   'Funchal (Madeira)': 'Funchal (Madeira)', 'Caniçal (Madeira)': 'Caniçal (Madeira)', 'Porto Moniz (Madeira)': 'Porto Moniz (Madeira)',
   };
