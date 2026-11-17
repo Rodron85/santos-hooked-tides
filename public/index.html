@@ -59,7 +59,9 @@ h3 { font-family: var(--font-label); font-weight: 600; font-size: 1rem; letter-s
 .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .page { display: none; gap: 14px; grid-template-columns: minmax(0, 1fr); }
 .page.on { display: grid; }
-.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.panel { background: linear-gradient(180deg, #232120 0%, var(--panel) 60%); border: 1px solid var(--line); border-radius: 14px; padding: 14px; box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 10px 28px rgba(0,0,0,.35); }
+#hero, #target { background: radial-gradient(120% 90% at 100% 0%, rgba(196,85,43,.16), transparent 60%), linear-gradient(160deg, #2a221d 0%, #1d1a17 70%); border-color: #4a3428; }
+#target h2 { color: #E7A07A; }
 button { font: inherit; color: var(--ink); background: #292623; border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
 button:hover { background: #35302b; }
 button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--rust); outline-offset: 2px; }
