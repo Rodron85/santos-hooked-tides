@@ -46,7 +46,7 @@ header.brand h1 { display: inline-block; padding-left: .1em; }
 h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(2rem, 10vw, 2.6rem); line-height: .9; margin: 0; letter-spacing: .1em; white-space: nowrap; }
 h1 .hookS { height: .8em; width: auto; vertical-align: baseline; margin-right: .06em; overflow: visible; }
 figure.fishpic { margin: -2px -2px 10px; border-radius: 10px; overflow: hidden; background: #111; }
-figure.fishpic img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+figure.fishpic img { display: block; width: 100%; height: auto; max-height: 260px; object-fit: contain; background: #0f0f0f; }
 figure.fishpic figcaption { font-size: 11px; line-height: 1.3; padding: 4px 8px; color: var(--muted); }
 figure.fishpic figcaption a { color: inherit; text-decoration: none; }
 details.prep { margin-top: 8px; border: 1px solid #3E5A3A; border-radius: 10px; padding: 8px 10px; background: #1b2219; }
@@ -572,7 +572,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 29 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 30 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -1760,7 +1760,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   // Loaded by the phone straight from Wikipedia/Wikimedia (not from our host), then kept on the phone.
   const WIKI_FIX = { 'Gaidropsarus spp.': 'Gaidropsarus vulgaris', 'Mustelus spp.': 'Mustelus asterias', 'Lepadogaster spp.': 'Lepadogaster purpurea', 'Syngnathidae': 'Syngnathus acus', 'Lipophrys pholis, Gobius spp.': 'Lipophrys pholis', 'Raja montagui / brachyura': 'Raja montagui', 'Scophthalmus maximus / rhombus': 'Scophthalmus maximus', 'Symphodus melops etc.': 'Symphodus melops', 'Chelidonichthys spp.': 'Chelidonichthys lucerna', 'Solea spp.': 'Solea solea', 'Mugilidae': 'Chelon labrosus', 'Epinephelus spp.': 'Epinephelus marginatus', 'Seriola spp.': 'Seriola dumerili', 'Muraenidae': 'Muraena helena', 'Epinephelus marginatus, Mycteroperca fusca': 'Epinephelus marginatus' };
   const wikiTitle = f => (WIKI_FIX[f.l] || f.l).replace(/ /g, '_');
-  let PHOTOS = {}; try { PHOTOS = JSON.parse(localStorage.getItem('sh-photos3') || '{}'); localStorage.removeItem('sh-photos'); localStorage.removeItem('sh-photos2'); } catch (err) {}
+  let PHOTOS = {}; try { PHOTOS = JSON.parse(localStorage.getItem('sh-photos4') || '{}'); localStorage.removeItem('sh-photos'); localStorage.removeItem('sh-photos2'); localStorage.removeItem('sh-photos3'); } catch (err) {}
   const photoBusy = {}, photoQ = []; let photoRunning = 0;
   const WM_HDR = { 'Api-User-Agent': 'SantosHookedTides/1.0 (https://santos-hooked-tides.ronnieandrodrigues.workers.dev)' };
   const stripHtml = h => { const d = document.createElement('div'); d.innerHTML = h || ''; return (d.textContent || '').replace(/\s+/g, ' ').trim(); };
@@ -1773,23 +1773,28 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     const artist = stripHtml(md.Artist && md.Artist.value).replace(/No machine-readable author provided\.?\s*/i, '').replace(/\s*assumed.*$/i, '').slice(0, 48) || 'Unknown author';
     return { src: ii.thumburl, src2: ii.thumburl.replace(/\/\d+px-([^/]+)$/, '/500px-$1'), file, lic, artist, at: Date.now() };
   }
+  async function inatPhoto(key) {
+    const name = key.replace(/_/g, ' ');
+    const j = await fetch(`https://api.inaturalist.org/v1/taxa?q=${encodeURIComponent(name)}&per_page=10`).then(r => r.ok ? r.json() : null);
+    const res = (j && j.results) || [];
+    const t = res.find(x => (x.name || '').toLowerCase() === name.toLowerCase()) || res.find(x => (x.matched_term || '').toLowerCase() === name.toLowerCase());
+    const ph = t && t.default_photo;
+    if (!ph || !ph.medium_url || !ph.license_code) return null; // only photos the author has licensed for reuse
+    return { src: ph.medium_url.replace('/medium.', '/large.'), src2: ph.medium_url, inat: t.id, credit: (ph.attribution || '').replace(/\s+/g, ' ').slice(0, 90), lic: ph.license_code.toUpperCase(), at: Date.now() };
+  }
   async function fetchPhoto(key) {
-    // 1) the main picture of the Wikipedia article, if it's a real photo
+    // 1) iNaturalist: the species' chosen photo (a real photo of the right fish)
+    try { const r = await inatPhoto(key); if (r) return r; } catch (err) {}
+    // 2) Wikipedia: the article's main picture, only if it's a real photo
     const s = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(key)}?redirect=true`, { headers: WM_HDR }).then(r => r.ok ? r.json() : null);
     const th = s && (s.originalimage || s.thumbnail), m = th && th.source && th.source.match(/\/commons\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^/]+)/);
-    if (m) { const file = decodeURIComponent(m[1]); if (!NOT_PHOTO.test(file)) { const r = await commonsInfo(file); if (r) return r; } }
-    // 2) otherwise the first real photo used in the article
-    const title = (s && s.titles && s.titles.canonical) || key;
-    const q = await fetch(`https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=images&imlimit=50&redirects=1&titles=${encodeURIComponent(title)}`, { headers: WM_HDR }).then(r => r.ok ? r.json() : null);
-    const pg = q && q.query && Object.values(q.query.pages || {})[0];
-    const files = ((pg && pg.images) || []).map(i => i.title.replace(/^File:/, '')).filter(f => /\.jpe?g$/i.test(f) && !NOT_PHOTO.test(f));
-    for (const f of files.slice(0, 4)) { const r = await commonsInfo(f); if (r) return r; }
+    if (m) { const file = decodeURIComponent(m[1]); if (/\.jpe?g$/i.test(file) && !NOT_PHOTO.test(file)) { const r = await commonsInfo(file); if (r) return r; } }
     return { none: true, at: Date.now() };
   }
   function pumpPhotos() {
     while (photoRunning < 3 && photoQ.length) {
       const key = photoQ.shift(); photoRunning++;
-      fetchPhoto(key).then(p => { if (p) { PHOTOS[key] = p; try { localStorage.setItem('sh-photos3', JSON.stringify(PHOTOS)); } catch (err) {} fillPhotos(); } })
+      fetchPhoto(key).then(p => { if (p) { PHOTOS[key] = p; try { localStorage.setItem('sh-photos4', JSON.stringify(PHOTOS)); } catch (err) {} fillPhotos(); } })
         .catch(() => {}).finally(() => { photoRunning--; delete photoBusy[key]; pumpPhotos(); });
     }
   }
@@ -1798,7 +1803,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     if (p && (!p.none || Date.now() - p.at < 7 * 864e5)) return; // try again a week after a miss
     if (photoBusy[key] || !navigator.onLine) return; photoBusy[key] = 1; photoQ.push(key); pumpPhotos();
   }
-  function photoHTML(f) { return `<figure class="fishpic" data-photo="${wikiTitle(f)}" hidden><img alt="" crossorigin="anonymous" loading="lazy" decoding="async"><figcaption></figcaption></figure>`; }
+  function photoHTML(f) { return `<figure class="fishpic" data-photo="${wikiTitle(f)}" hidden><img alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"><figcaption></figcaption></figure>`; }
   function fillPhotos(root) {
     (root || document).querySelectorAll('figure.fishpic[data-photo]').forEach(fg => {
       const key = fg.dataset.photo, p = PHOTOS[key];
@@ -1811,7 +1816,9 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
         img.onload = () => { if (!img.naturalWidth) img.onerror(); };
         img.src = p.src;
       }
-      fg.querySelector('figcaption').innerHTML = `<a href="https://commons.wikimedia.org/wiki/File:${encodeURIComponent(p.file)}" target="_blank" rel="noopener">Photo: ${p.artist.replace(/</g, '&lt;')} · ${p.lic} · Wikimedia Commons</a>`;
+      fg.querySelector('figcaption').innerHTML = p.inat
+        ? `<a href="https://www.inaturalist.org/taxa/${p.inat}" target="_blank" rel="noopener">Photo: ${p.credit.replace(/</g, '&lt;')} · iNaturalist</a>`
+        : `<a href="https://commons.wikimedia.org/wiki/File:${encodeURIComponent(p.file)}" target="_blank" rel="noopener">Photo: ${p.artist.replace(/</g, '&lt;')} · ${p.lic} · Wikimedia Commons</a>`;
       fg.hidden = false;
     });
   }
