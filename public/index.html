@@ -49,6 +49,7 @@ figure.fishpic { margin: -2px -2px 10px; border-radius: 10px; overflow: hidden; 
 figure.fishpic img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
 figure.fishpic figcaption { font-size: 11px; line-height: 1.3; padding: 4px 8px; color: var(--muted); }
 figure.fishpic figcaption a { color: inherit; text-decoration: none; }
+.chip.eat { color: #CFE3C8; border-color: #3E5A3A; background: #1f2a1d; }
 h1 .reelO { height: .7em; width: .7em; vertical-align: baseline; margin-right: .1em; overflow: visible; }
 .tagline { display: flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--font-label); font-weight: 500; font-size: .8rem; letter-spacing: .3em; color: var(--muted); text-transform: uppercase; }
 .tagline i { display: block; width: 28px; height: 1px; background: var(--muted); }
@@ -568,7 +569,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 27 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 28 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -1754,30 +1755,38 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
 
   // ---------- fish photos from Wikimedia Commons (free licences, credited) ----------
   // Loaded by the phone straight from Wikipedia/Wikimedia (not from our host), then kept on the phone.
-  const WIKI_FIX = { 'Gaidropsarus spp.': 'Gaidropsarus vulgaris', 'Mustelus spp.': 'Mustelus asterias', 'Raja montagui / brachyura': 'Raja montagui', 'Scophthalmus maximus / rhombus': 'Scophthalmus maximus', 'Symphodus melops etc.': 'Symphodus melops', 'Chelidonichthys spp.': 'Chelidonichthys lucerna', 'Solea spp.': 'Solea solea', 'Mugilidae': 'Chelon labrosus', 'Epinephelus spp.': 'Epinephelus marginatus', 'Seriola spp.': 'Seriola dumerili', 'Muraenidae': 'Muraena helena', 'Epinephelus marginatus, Mycteroperca fusca': 'Epinephelus marginatus' };
+  const WIKI_FIX = { 'Gaidropsarus spp.': 'Gaidropsarus vulgaris', 'Mustelus spp.': 'Mustelus asterias', 'Lepadogaster spp.': 'Lepadogaster purpurea', 'Syngnathidae': 'Syngnathus acus', 'Lipophrys pholis, Gobius spp.': 'Lipophrys pholis', 'Raja montagui / brachyura': 'Raja montagui', 'Scophthalmus maximus / rhombus': 'Scophthalmus maximus', 'Symphodus melops etc.': 'Symphodus melops', 'Chelidonichthys spp.': 'Chelidonichthys lucerna', 'Solea spp.': 'Solea solea', 'Mugilidae': 'Chelon labrosus', 'Epinephelus spp.': 'Epinephelus marginatus', 'Seriola spp.': 'Seriola dumerili', 'Muraenidae': 'Muraena helena', 'Epinephelus marginatus, Mycteroperca fusca': 'Epinephelus marginatus' };
   const wikiTitle = f => (WIKI_FIX[f.l] || f.l).replace(/ /g, '_');
-  let PHOTOS = {}; try { PHOTOS = JSON.parse(localStorage.getItem('sh-photos2') || '{}'); localStorage.removeItem('sh-photos'); } catch (err) {}
+  let PHOTOS = {}; try { PHOTOS = JSON.parse(localStorage.getItem('sh-photos3') || '{}'); localStorage.removeItem('sh-photos'); localStorage.removeItem('sh-photos2'); } catch (err) {}
   const photoBusy = {}, photoQ = []; let photoRunning = 0;
   const WM_HDR = { 'Api-User-Agent': 'SantosHookedTides/1.0 (https://santos-hooked-tides.ronnieandrodrigues.workers.dev)' };
   const stripHtml = h => { const d = document.createElement('div'); d.innerHTML = h || ''; return (d.textContent || '').replace(/\s+/g, ' ').trim(); };
-  async function fetchPhoto(key) {
-    const s = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(key)}?redirect=true`, { headers: WM_HDR }).then(r => r.ok ? r.json() : null);
-    const th = s && (s.thumbnail || s.originalimage); if (!th || !th.source) return { none: true, at: Date.now() };
-    const m = th.source.match(/\/commons\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^/]+)/); if (!m) return { none: true, at: Date.now() };
-    const file = decodeURIComponent(m[1]);
-    // Wikimedia only serves thumbnails at standard widths (e.g. 500, 960); keep the summary's own thumbnail as a fallback
-    const src = /\/thumb\//.test(th.source) ? th.source.replace(/\/\d+px-([^/]+)$/, '/960px-$1') : th.source, src2 = th.source;
-    const q = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&prop=imageinfo&iiprop=extmetadata&titles=${encodeURIComponent('File:' + file)}`, { headers: WM_HDR }).then(r => r.ok ? r.json() : null);
-    const pg = q && q.query && Object.values(q.query.pages || {})[0], md = pg && pg.imageinfo && pg.imageinfo[0] && pg.imageinfo[0].extmetadata;
+  const NOT_PHOTO = /map|range|distribution|verbreitung|area|logo|icon|drawing|illustration|plate|diagram|skeleton|\.svg$|\.gif$|\.tiff?$/i;
+  async function commonsInfo(file) {
+    const q = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&prop=imageinfo&iiprop=extmetadata|url&iiurlwidth=960&titles=${encodeURIComponent('File:' + file)}`, { headers: WM_HDR }).then(r => r.ok ? r.json() : null);
+    const pg = q && q.query && Object.values(q.query.pages || {})[0], ii = pg && pg.imageinfo && pg.imageinfo[0], md = ii && ii.extmetadata;
     const lic = md && md.LicenseShortName ? stripHtml(md.LicenseShortName.value) : '';
-    if (!md || !/CC|Public domain|PD|GFDL/i.test(lic)) return { none: true, at: Date.now() };
-    const artist = stripHtml(md.Artist && md.Artist.value).slice(0, 48) || 'Unknown author';
-    return { src, src2, file, lic, artist, at: Date.now() };
+    if (!md || !ii.thumburl || !/CC|Public domain|PD|GFDL/i.test(lic)) return null;
+    const artist = stripHtml(md.Artist && md.Artist.value).replace(/No machine-readable author provided\.?\s*/i, '').replace(/\s*assumed.*$/i, '').slice(0, 48) || 'Unknown author';
+    return { src: ii.thumburl, src2: ii.thumburl.replace(/\/\d+px-([^/]+)$/, '/500px-$1'), file, lic, artist, at: Date.now() };
+  }
+  async function fetchPhoto(key) {
+    // 1) the main picture of the Wikipedia article, if it's a real photo
+    const s = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(key)}?redirect=true`, { headers: WM_HDR }).then(r => r.ok ? r.json() : null);
+    const th = s && (s.originalimage || s.thumbnail), m = th && th.source && th.source.match(/\/commons\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^/]+)/);
+    if (m) { const file = decodeURIComponent(m[1]); if (!NOT_PHOTO.test(file)) { const r = await commonsInfo(file); if (r) return r; } }
+    // 2) otherwise the first real photo used in the article
+    const title = (s && s.titles && s.titles.canonical) || key;
+    const q = await fetch(`https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=images&imlimit=50&redirects=1&titles=${encodeURIComponent(title)}`, { headers: WM_HDR }).then(r => r.ok ? r.json() : null);
+    const pg = q && q.query && Object.values(q.query.pages || {})[0];
+    const files = ((pg && pg.images) || []).map(i => i.title.replace(/^File:/, '')).filter(f => /\.jpe?g$/i.test(f) && !NOT_PHOTO.test(f));
+    for (const f of files.slice(0, 4)) { const r = await commonsInfo(f); if (r) return r; }
+    return { none: true, at: Date.now() };
   }
   function pumpPhotos() {
     while (photoRunning < 3 && photoQ.length) {
       const key = photoQ.shift(); photoRunning++;
-      fetchPhoto(key).then(p => { if (p) { PHOTOS[key] = p; try { localStorage.setItem('sh-photos2', JSON.stringify(PHOTOS)); } catch (err) {} fillPhotos(); } })
+      fetchPhoto(key).then(p => { if (p) { PHOTOS[key] = p; try { localStorage.setItem('sh-photos3', JSON.stringify(PHOTOS)); } catch (err) {} fillPhotos(); } })
         .catch(() => {}).finally(() => { photoRunning--; delete photoBusy[key]; pumpPhotos(); });
     }
   }
@@ -1822,6 +1831,14 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     });
     return `<div class="lbl" style="margin-top:12px">What works for you</div>` + (rows.length ? `<ul class="tight">${rows.join('')}</ul>` : `<p class="note" style="margin:4px 0 0">After 3 catches of a species, the app shows the tide, light and bait that work best for you.</p>`);
   }
+
+  // ---------- is it good to eat? ----------
+  const EAT = {};
+  'Bass,Squid,Cuttlefish,Whiting,Cod,Pollack,Plaice,Sole,Turbot & brill,Mackerel,Black bream,Gilthead bream,Red mullet,Thornback ray,Small-eyed ray,Spotted & blonde ray,Dab,Lemon sole,Witch flounder,John Dory,Ling,Coalfish (saithe),Herring,Sprat,Gurnard,Triggerfish,Sea bass (Robalo),White seabream (Sargo),Two-banded bream (Safia),Two-banded bream (Seifia),Zebra seabream (Sargo-veado),Sharpsnout bream (Sargo-bicudo),Gilthead bream (Dourada),Meagre (Corvina),Sand steenbras (Ferreira),Black seabream (Choupa),Pandora (Bica),Chub mackerel (Cavala),Horse mackerel (Carapau),Blue jack mackerel (Chicharro),Sole (Linguado),Red mullet (Salmonete),Bluefish (Anchova),Pollack (Juliana),Squid (Lula),Cuttlefish (Choco),Octopus (Polvo),Forkbeard (Abrótea),Red porgy (Pargo),Grey triggerfish (Peixe-porco),Barracuda (Bicuda),Amberjack (Charuteiro)'.split(',').forEach(n => EAT[n] = 'good');
+  'Pouting,Poor cod,Rockling,Dogfish,Bull huss,Smoothhound,Flounder,Scad (horse mackerel),Garfish,Thick-lipped mullet,Thin-lipped mullet,Golden grey mullet,Conger,Sand smelt,Spurdog,Common stingray,Blue shark,Salema,Mullet (Tainha),Bogue (Boga),Pouting (Faneca),Conger (Congro),Moray (Moreia),Parrotfish (Bodião)'.split(',').forEach(n => EAT[n] = 'ok');
+  'Ballan wrasse,Corkwing & small wrasse,Cuckoo wrasse,Sea scorpion,Blennies & gobies,Dragonet,Pipefish,Clingfish'.split(',').forEach(n => EAT[n] = 'no');
+  const EAT_LBL = { good: '🍽 Good to eat', ok: '🍽 Edible', no: '↩ Best put back' };
+  function eatChip(f) { const e = !f.ret && !f.warn && EAT[f.n]; return e ? `<span class="chip${e === 'good' ? ' eat' : ''}">${EAT_LBL[e]}</span>` : ''; }
 
   // ---------- language (English / Português) ----------
   let LANG = 'en'; try { LANG = localStorage.getItem('sh-lang') === 'pt' ? 'pt' : 'en'; } catch (err) {}
@@ -2135,6 +2152,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   'You can only fish for them on licensed catch-and-release charter boats (CHART scheme). Never kept.': 'Só se pode pescar em barcos de aluguer licenciados para pescar e devolver (programa CHART). Nunca se fica com eles.',
   'Needs an Environment Agency rod licence. In the Solent estuaries they must go back.': 'Precisa de licença de cana da Environment Agency. Nos estuários do Solent têm de ser devolvidas.',
   'Protected: needs an Environment Agency rod licence, and rod-caught salmon must be released. Return it at once.': 'Protegido: precisa de licença de cana da Environment Agency, e o salmão apanhado à cana tem de ser devolvido. Devolve-o logo.',
+  '🍽 Good to eat': '🍽 Bom para comer', '🍽 Edible': '🍽 Comestível', '↩ Best put back': '↩ Melhor devolver',
   // places
   'Funchal (Madeira)': 'Funchal (Madeira)', 'Caniçal (Madeira)': 'Caniçal (Madeira)', 'Porto Moniz (Madeira)': 'Porto Moniz (Madeira)',
   };
@@ -2424,7 +2442,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
         ${photoHTML(f)}
         <div class="fishhead"><div><div class="fishname">${f.n}</div><div class="latin">${f.l}</div></div>${status}</div>
         <div class="season mono">${MON.map((mn, i) => `<i class="${f.p.includes(i) ? 'pk' : f.m.includes(i) ? 'on' : ''}${i === sel.m ? ' cur' : ''}" title="${mn}">${mn[0]}</i>`).join('')}</div>
-        <div class="chips">${rules}<span class="chip">${f.where}</span></div>
+        <div class="chips">${rules}<span class="chip">${f.where}</span>${eatChip(f)}</div>
         <div class="lbl">Bait</div>
         <div class="chips">${f.bait.map(b => `<span class="chip bait">${b}</span>`).join('')}</div>
         <p class="note">${f.tip}</p>
