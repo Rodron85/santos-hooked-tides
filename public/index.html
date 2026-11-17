@@ -557,6 +557,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   <!-- MORE -->
   <section class="page" id="p-more">
     <div><div class="pagetitle">More</div></div>
+    <div class="panel"><h2>Share the app</h2><p class="note" style="margin:0 0 8px">Send it to other anglers. It's free and works on any phone.</p><button class="small" id="shareapp">📤 Share the app</button> <span class="note" id="sharemsg"></span></div>
     <div class="panel"><div class="field" style="margin:0"><label for="langsel">Language / Idioma</label><select id="langsel" data-notr><option value="en">English</option><option value="pt">Português (Portugal)</option></select></div></div>
     <div class="morelist">
       <a href="#moon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><div><b>Moon</b><span>Phases, calendar, best days and spring tides</span></div></a>
@@ -565,7 +566,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 24 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 25 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -774,6 +775,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
 
   // ---------- fish data (Solent and nearby) ----------
   // m = months caught (0 = Jan), p = peak, min = legal minimum (Southern IFCA / UK), bag = legal daily limit, where = shore/boat, ret = must return
+  const A_ = [0,1,2,3,4,5,6,7,8,9,10,11];
   const FISH_UK = [
     { n: 'Bass', l: 'Dicentrarchus labrax', m: [0,3,4,5,6,7,8,9,10,11], p: [5,6,7,8,9], min: '42 cm', bag: '3 a day · Feb–Mar release only', where: 'Shore & boat', bait: ['Peeler crab', 'Ragworm', 'Live or frozen sandeel', 'Soft plastics & surface lures'], tip: 'Dawn and dusk on the flood and first of the ebb, in the surf line or around structure. Shown in season Apr–Jan because Feb–Mar is release only.' },
     { n: 'Squid', l: 'Loligo vulgaris', m: [8,9,10,11,0], p: [9,10,11], min: null, where: 'Shore & boat', bait: ['Egi jigs 2.0–2.5', 'Squid jig under a float', 'Mackerel strip on a jig'], tip: 'After dark under pier and harbour lights, around high water. Slow lifts and long pauses.' },
@@ -788,7 +790,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     { n: 'Bull huss', l: 'Scyliorhinus stellaris', m: [0,1,2,3,4,5,6,7,8,9,10,11], p: [5,6,7,8], min: null, where: 'Boat; deep rough ground', bait: ['Mackerel fillet', 'Squid', 'Whole small pouting'], tip: 'Big cousin of the dogfish. Rough ground at night; return it to grow.' },
     { n: 'Smoothhound', l: 'Mustelus spp.', m: [3,4,5,6,7,8,9], p: [4,5,6], min: null, where: 'Shore & boat', bait: ['Peeler crab (best)', 'Hardback crab', 'Squid'], tip: 'Calshot and Lepe on the flood, evening into dark. They run hard, so set a strong drag. Release recommended.' },
     { n: 'Tope', l: 'Galeorhinus galeus', m: [4,5,6,7,8], p: [5,6,7], min: null, ret: true, where: 'Boat', bait: ['Whole mackerel', 'Mackerel flapper'], tip: 'Fast-running shark on the banks off the Isle of Wight. Wire trace. Rod-caught tope must go back.' },
-    { n: 'Thornback ray', l: 'Raja clavata', m: [2,3,4,5,8,9], p: [3,4], min: '40 cm whole / 20 cm wing', where: 'Shore & boat', bait: ['Mackerel', 'Sandeel', 'Herring', 'Peeler crab'], tip: 'Spring is best. Night on the flood, with a big bait on a pulley rig.' },
+    { n: 'Thornback ray', l: 'Raja clavata', m: [2,3,4,5,8,9,10], p: [3,4], min: '40 cm whole / 20 cm wing', where: 'Shore & boat', bait: ['Mackerel', 'Sandeel', 'Herring', 'Peeler crab'], tip: 'Spring is best, with a second run in autumn into November. Night on the flood, with a big bait on a pulley rig.' },
     { n: 'Small-eyed ray', l: 'Raja microocellata', m: [3,4,5,6,7,8,9], p: [5,6,7], min: '40 cm whole / 20 cm wing', where: 'Shore & boat', bait: ['Sandeel (best)', 'Squid', 'Mackerel strip'], tip: 'Sandy beaches near the Needles and the Isle of Wight, at night.' },
     { n: 'Spotted & blonde ray', l: 'Raja montagui / brachyura', m: [3,4,5,6,7,8,9], p: [5,6,7], min: '40 cm whole / 20 cm wing', where: 'Boat', bait: ['Sandeel', 'Squid', 'Mackerel'], tip: 'Sandbanks in the western Solent and off the Isle of Wight.' },
     { n: 'Undulate ray', l: 'Raja undulata', m: [3,4,5,6,7,8,9], p: [4,5,6], min: null, ret: true, where: 'Shore & boat', bait: ['Sandeel', 'Squid', 'Mackerel'], tip: 'Recognisable by its wavy lines. Endangered, so always release it alive.' },
@@ -812,6 +814,15 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     { n: 'Gurnard', l: 'Chelidonichthys spp.', m: [3,4,5,6,7,8,9], p: [5,6,7,8], min: null, where: 'Boat', bait: ['Mackerel strip', 'Squid', 'Ragworm', 'Small lures'], tip: 'Sandy ground on the drift. They grunt when landed, which the kids will love.' },
     { n: 'Conger', l: 'Conger conger', m: [0,1,2,3,4,5,6,7,8,9,10,11], p: [5,6,7,8], min: '58 cm', where: 'Shore & boat', bait: ['Mackerel fillet', 'Whole squid'], tip: 'Pier legs, harbour walls and wrecks at night. Heavy gear and a strong trace.' },
     { n: 'European eel', l: 'Anguilla anguilla', m: [3,4,5,6,7,8,9], p: [5,6,7], min: null, ret: true, where: 'Estuaries', bait: ['Ragworm', 'Small fish strip'], tip: 'Caught in estuaries in warm months. Protected, so it must be returned.' },
+    { n: 'Common stingray', l: 'Dasyatis pastinaca', m: [5,6,7,8], p: [6,7], min: '40 cm whole / 20 cm wing', where: 'Shore & boat', bait: ['Peeler crab', 'Ragworm', 'Mackerel strip', 'Squid'], tip: 'Summer visitor to the Solent and Christchurch Bay, on mud and sand in warm, shallow water. The tail spine is venomous: unhook it in the water with long pliers and cut the line if needed.' },
+    { n: 'Spurdog', l: 'Squalus acanthias', m: [9,10,11,0,1,2], p: [10,11,0], min: null, where: 'Mostly boat', bait: ['Mackerel fillet', 'Squid', 'Whole small fish'], tip: 'A small shark that arrives in packs in winter, mostly from boats. It has a sharp spine in front of each dorsal fin, so handle it carefully. Release recommended.' },
+    { n: 'Ling', l: 'Molva molva', m: A_, p: [11,0,1,2], min: null, where: 'Boat; wrecks', bait: ['Mackerel fillet', 'Whole squid', 'Big soft plastics'], tip: 'Wrecks and deep rough ground offshore. Heavy gear and a strong trace.' },
+    { n: 'Coalfish (saithe)', l: 'Pollachius virens', m: [9,10,11,0,1,2,3], p: [11,0,1], min: '35 cm', where: 'Boat; rocks', bait: ['Soft plastic eels & shads', 'Feathers or sabikis', 'Mackerel strip'], tip: 'Like pollack but likes colder months. Wrecks and rocky marks; smaller ones come close in to harbours and piers.' },
+    { n: 'John Dory', l: 'Zeus faber', m: [6,7,8,9], p: [7,8], min: null, where: 'Piers & boat', bait: ['Small live fish', 'Small whole fish'], tip: 'Late summer around piers and pontoons, stalking small fish. Float-fish a small live bait near the pier legs.' },
+    { n: 'Herring', l: 'Clupea harengus', m: [10,11,0,1], p: [11,0], min: '20 cm', where: 'Piers & harbours', bait: ['Feathers or sabikis', 'Small fish strip'], tip: 'Winter shoals in the Solent and harbours. Small sabikis at dusk; great fresh bait for rays and cod.' },
+    { n: 'Sea scorpion', l: 'Taurulus bubalis', m: A_, p: [3,4,5,6,7,8], min: null, where: 'Rock pools & harbour walls', bait: ['Ragworm', 'Small fish strip'], tip: 'Rock pools and harbour walls with a small hook. Spiny but harmless; great for the kids. Put it back.' },
+    { n: 'Blennies & gobies', l: 'Lipophrys pholis, Gobius spp.', m: A_, p: [4,5,6,7,8], min: null, where: 'Rock pools & harbour walls', bait: ['Ragworm', 'Prawn', 'Small fish strip'], tip: 'Tiny hooks and a bit of ragworm at harbour walls and rock pools. The kids\' favourite. Put them back.' },
+    { n: 'Cuckoo wrasse', l: 'Labrus mixtus', m: [4,5,6,7,8,9], p: [5,6,7], min: null, where: 'Rocks & boat', bait: ['Ragworm', 'Prawn', 'Squid strip'], tip: 'Deeper rocky ground, mostly in Dorset. The males are bright blue and orange. Return it.' },
     { n: 'Lesser weever', l: 'Echiichthys vipera', m: [5,6,7,8], p: [6,7], min: null, warn: true, where: 'Sandy beaches', bait: ['Takes ragworm meant for other fish'], tip: 'Venomous spines on its back. Don\'t touch it with bare hands, and wear shoes when wading. If stung, put the area in hot water and get medical help.' }
   ];
   let FISH = FISH_UK;
@@ -1155,6 +1166,8 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     const i = wxHourIdx(t);
     if (i >= 0) { const H = LIVE.wx.hourly; out.wind = `${Math.round(H.wind_speed_10m[i])} mph ${compass(H.wind_direction_10m[i])}`; }
     const w = D.wins.find(x => t >= x.s && t < x.e); if (w) out.win = w.label;
+    const tdp = D.tides.length ? tidePhase(D.tides, t) : null; if (tdp) out.phase = tdp.label;
+    out.light = lightAt(D, t);
     return out;
   }
   async function saveCatch(e) {
@@ -1179,7 +1192,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     const by = k => { const m = {}; list.forEach(c => { if (c[k]) m[c[k]] = (m[c[k]] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1]); };
     const sps = by('sp'), baits = by('bait'), spots = by('spot');
     $('logstats').innerHTML = list.length ? `<div class="big"><div class="stat"><b>${list.length}</b><span>fish logged</span></div><div class="stat"><b>${sps.length}</b><span>species</span></div><div class="stat"><b>${baits[0] ? baits[0][0] : '—'}</b><span>best bait</span></div><div class="stat"><b>${spots[0] ? spots[0][0] : '—'}</b><span>best spot</span></div></div>
-      <div class="chips" style="margin-top:8px">${sps.slice(0, 6).map(([s, n]) => `<span class="chip size">${s} × ${n}</span>`).join('')}</div>` : '<p class="note" style="margin:0">No catches yet. Your first one goes here.</p>';
+      <div class="chips" style="margin-top:8px">${sps.slice(0, 6).map(([s, n]) => `<span class="chip size">${s} × ${n}</span>`).join('')}</div>${myPatterns(list)}` : '<p class="note" style="margin:0">No catches yet. Your first one goes here.</p>';
     $('loglist').innerHTML = list.map(c => {
       const p = ukParts(c.t), cd = c.cond || {};
       return `<div class="catch">${c.photo ? `<img src="${c.photo}" alt="${c.sp}">` : ''}<div class="cbody">
@@ -1321,7 +1334,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       const tdp = D.tides.length ? tidePhase(D.tides, t) : null, lt = lightAt(D, t), w = D.wins.find(w => (w.kind === 'major' || w.kind === 'minor') && t >= w.s && t < w.e);
       let sc = tdp ? tdp.sc : 1; if (lt === 'dawn' || lt === 'dusk') sc += 1.5; if (w) sc += w.kind === 'major' ? 2 : 1;
       const lab = [tdp && tdp.sc >= 2 ? tdp.label : '', lt === 'dawn' ? 'Dawn' : lt === 'dusk' ? 'Dusk' : '', w ? w.label : ''].filter(Boolean).join(' · ') || 'Good conditions';
-      if (sc >= 4) { if (!run) run = { s: t - 15 * MIN, e: t + 15 * MIN, peak: sc, label: lab }; else { run.e = t + 15 * MIN; if (sc > run.peak) { run.peak = sc; run.label = lab; } } }
+      if (sc >= 4) { if (!run) run = { s: t - 15 * MIN, e: t + 15 * MIN, peak: sc, label: lab, slots: [] }; else { run.e = t + 15 * MIN; if (sc > run.peak) { run.peak = sc; run.label = lab; } } run.slots.push({ t, label: lab }); }
       else if (run) { out.push(run); run = null; }
     }
     if (run) out.push(run);
@@ -1439,7 +1452,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     g.fillText([tr(cd.tide), tr(cd.moon), c.bait ? (LANG === 'pt' ? 'com ' + tr(c.bait) : 'on ' + c.bait) : ''].filter(Boolean).join(' · '), 48, 1225);
     g.fillStyle = RUST; g.fillRect(48, 1265, 70, 4);
     g.fillStyle = GREY; g.font = '400 30px "IBM Plex Sans", system-ui, sans-serif';
-    g.fillText('santoshookedtides.netlify.app', 136, 1279);
+    g.fillText(/\./.test(location.hostname) && !/^\d/.test(location.hostname) ? location.hostname : 'santos-hooked-tides.ronnieandrodrigues.workers.dev', 136, 1279);
     return new Promise(res => cv.toBlob(b => res(b), 'image/jpeg', 0.9));
   }
   async function shareCatch(c) {
@@ -1530,6 +1543,17 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     'Bull huss': { light: 'night', tide: 'any', clarity: 'any', wind: 22, rig: 'Pulley pennel', tip: 'Rough ground at night with a fish bait.' },
     'Gilthead bream': { light: 'day', tide: 'flood', clarity: 'clear', wind: 15, rig: 'Running ledger', tip: 'Warm estuaries on the flood. Crab or mussel, and give shy bites time.' }
   };
+  Object.assign(TGT, {
+    'Common stingray': { light: 'any', tide: 'flood', clarity: 'any', wind: 18, rig: 'Pulley pennel', tip: 'Warm summer days and evenings over mud and sand on the flood. Unhook in the water; mind the tail spine.' },
+    'Spurdog': { light: 'any', tide: 'any', clarity: 'any', wind: 18, rig: 'Pulley pennel', tip: 'Winter packs offshore; mackerel or squid on the bottom.' },
+    'Ling': { light: 'any', tide: 'any', clarity: 'any', wind: 15, rig: 'Pulley pennel', tip: 'Wrecks on neap tides from a boat. Big fish baits.' },
+    'Coalfish (saithe)': { light: 'dawn-dusk', tide: 'any', clarity: 'clear', wind: 18, rig: 'Float rig', tip: 'Dawn and dusk over rocks and wrecks. Soft plastics or feathers.' },
+    'John Dory': { light: 'day', tide: 'hw', clarity: 'clear', wind: 12, rig: 'Float rig', tip: 'Calm, clear days around high water by the pier legs. Small live bait under a float.' },
+    'Herring': { light: 'dawn-dusk', tide: 'hw', clarity: 'clear', wind: 15, rig: 'Mackerel flapper', tip: 'Dusk around high water from piers and harbour walls. Small sabikis.' },
+    'Sea scorpion': { light: 'day', tide: 'any', clarity: 'any', wind: 20, rig: 'Float rig', tip: 'Any time in rock pools and by harbour walls. Small hook and ragworm.' },
+    'Blennies & gobies': { light: 'day', tide: 'any', clarity: 'any', wind: 20, rig: 'Float rig', tip: 'Daylight at harbour walls and rock pools, tiny hooks and ragworm.' },
+    'Cuckoo wrasse': { light: 'day', tide: 'any', clarity: 'clear', wind: 15, neaps: true, rig: 'Two-hook flapper', tip: 'Daylight over deeper rocks, gentle tides.' }
+  });
   let TARGET = '';
   try { TARGET = localStorage.getItem('sh-target') || ''; } catch (err) {}
   function targetHours(name) {
@@ -1601,6 +1625,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
         ${!inS ? `<p class="note" style="margin:0 0 8px">${TARGET} isn't usually about in ${MONTH[tp.m]}. These are still the best conditions for it this week.</p>` : ''}
         <div class="lbl">Best times this week · 📍 ${LOC.name.replace(/</g, '&lt;')}</div>
         <div class="list" style="margin-top:6px">${pick.map(s => `<button class="row bestrow${s.sc >= 7 ? ' prime' : ''}" data-y="${s.x.y}" data-m="${s.x.m}" data-d="${s.x.d}"><div class="mono">${isToday(s.x) ? 'Today' : DOW[s.x.dow] + ' ' + s.x.d}<br>${fmt(s.t - HOUR)}–${fmt(s.t + HOUR)}</div><div><div class="what">${s.why.length ? s.why.slice(0, 3).join(' · ').replace(/^./, c => c.toUpperCase()) : 'Best of a quiet week'}</div><div class="chips">${s.st && !s.why.slice(0, 3).includes(s.st.toLowerCase()) ? `<span class="chip tide">${s.st}</span>` : ''}${s.wind ? `<span class="chip">${s.wind}</span>` : ''}</div></div></button>`).join('') || '<p class="note">No suitable times left this week.</p>'}</div>
+        ${(() => { const cs = CATCHES.filter(c => c.sp === TARGET); if (cs.length < 3) return ''; const P = catchPattern(cs); return `<p class="note" style="margin-top:10px">⭐ Your ${cs.length} catches: ${[P.tide && P.tide.v, P.light && P.light.v, P.bait && 'on ' + P.bait.v].filter(Boolean).join(' · ')}</p>`; })()}
         <p class="note" style="margin-top:10px">${(TGT[TARGET] && TGT[TARGET].tip) || (f && f.k && f.tip) || P.tip || (f ? f.tip : '')}</p>
         ${f ? `<div class="lbl">Bait</div><div class="chips" style="margin-top:4px">${f.bait.map(b => `<span class="chip bait">${b}</span>`).join('')}</div>` : ''}
         ${P.rig ? `<p class="note">Rig: <a href="#rigs">${P.rig}</a></p>` : ''}
@@ -1718,7 +1743,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   const wikiTitle = f => (WIKI_FIX[f.l] || f.l).replace(/ /g, '_');
   let PHOTOS = {}; try { PHOTOS = JSON.parse(localStorage.getItem('sh-photos') || '{}'); } catch (err) {}
   const photoBusy = {}, photoQ = []; let photoRunning = 0;
-  const WM_HDR = { 'Api-User-Agent': 'SantosHookedTides/1.0 (https://santoshookedtides.netlify.app)' };
+  const WM_HDR = { 'Api-User-Agent': 'SantosHookedTides/1.0 (https://santos-hooked-tides.ronnieandrodrigues.workers.dev)' };
   const stripHtml = h => { const d = document.createElement('div'); d.innerHTML = h || ''; return (d.textContent || '').replace(/\s+/g, ' ').trim(); };
   async function fetchPhoto(key) {
     const s = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(key)}?redirect=true`, { headers: WM_HDR }).then(r => r.ok ? r.json() : null);
@@ -1756,6 +1781,25 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       fg.querySelector('figcaption').innerHTML = `<a href="https://commons.wikimedia.org/wiki/File:${encodeURIComponent(p.file)}" target="_blank" rel="noopener">Photo: ${p.artist.replace(/</g, '&lt;')} · ${p.lic} · Wikimedia Commons</a>`;
       fg.hidden = false;
     });
+  }
+
+  // ---------- what works for you: patterns from your own catches ----------
+  const LIGHT_LBL = { dawn: 'Dawn', dusk: 'Dusk', night: 'After dark', day: 'Daylight', twilight: 'Twilight' };
+  function catchPattern(cs) {
+    const top = arr => { const m = {}; arr.filter(Boolean).forEach(v => m[v] = (m[v] || 0) + 1); const e = Object.entries(m).sort((a, b) => b[1] - a[1])[0]; return e ? { v: e[0], pct: Math.round(100 * e[1] / cs.length) } : null; };
+    const tide = top(cs.map(c => (c.cond && (c.cond.phase || c.cond.tide)) || '')), light = top(cs.map(c => c.cond && c.cond.light ? LIGHT_LBL[c.cond.light] : '')), bait = top(cs.map(c => c.bait));
+    const moon = cs.filter(c => c.cond && c.cond.win).length;
+    return { tide, light, bait, moonPct: Math.round(100 * moon / cs.length) };
+  }
+  function myPatterns(list) {
+    const bySp = {}; list.forEach(c => (bySp[c.sp] = bySp[c.sp] || []).push(c));
+    const rows = Object.entries(bySp).filter(([, cs]) => cs.length >= 3).sort((a, b) => b[1].length - a[1].length).slice(0, 6).map(([sp, cs]) => {
+      const P = catchPattern(cs), bits = [];
+      if (P.tide) bits.push(`${P.tide.v} (${P.tide.pct}%)`); if (P.light) bits.push(`${P.light.v} (${P.light.pct}%)`);
+      if (P.moonPct >= 40) bits.push(`in a moon period (${P.moonPct}%)`); if (P.bait) bits.push(`on ${P.bait.v}`);
+      return `<li><b>${sp}</b> × ${cs.length}: ${bits.map(b => `<span>${b.replace(/</g, '&lt;')}</span>`).join(' · ')}</li>`;
+    });
+    return `<div class="lbl" style="margin-top:12px">What works for you</div>` + (rows.length ? `<ul class="tight">${rows.join('')}</ul>` : `<p class="note" style="margin:4px 0 0">After 3 catches of a species, the app shows the tide, light and bait that work best for you.</p>`);
   }
 
   // ---------- language (English / Português) ----------
@@ -2033,6 +2077,27 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   'Last of the flood': 'Fim da enchente', 'Early flood': 'Início da enchente', 'First of the ebb': 'Início da vazante', 'Late ebb': 'Fim da vazante',
   'tide and moon lead; dawn and dusk add a little, strong wind takes away': 'a maré e a lua mandam; o amanhecer e o anoitecer ajudam um pouco, o vento forte tira', 'tide and moon lead; dawn and dusk add a little': 'a maré e a lua mandam; o amanhecer e o anoitecer ajudam um pouco',
   'Fishing well now:': 'A dar bem agora:', 'Next good spell:': 'Próxima boa fase:', 'Nothing good left today. Check tomorrow.': 'Hoje já não há boas horas. Vê amanhã.', 'Good conditions': 'Boas condições', 'Next:': 'A seguir:', 'No more windows today. Check tomorrow.': 'Hoje já não há períodos. Vê amanhã.', '· prime time': '· melhor altura',
+  'Common stingray': 'Uge', 'Spurdog': 'Galhudo-malhado', 'Ling': 'Maruca', 'Coalfish (saithe)': 'Escamudo', 'John Dory': 'Peixe-galo', 'Herring': 'Arenque', 'Sea scorpion': 'Escorpião-do-mar', 'Blennies & gobies': 'Marachombas e cabozes', 'Cuckoo wrasse': 'Bodião-cuco',
+  'Mostly boat': 'Sobretudo de barco', 'Boat; wrecks': 'Barco; naufrágios', 'Boat; rocks': 'Barco; rochas', 'Piers & boat': 'Cais e barco', 'Piers & harbours': 'Cais e portos', 'Rock pools & harbour walls': 'Poças de maré e paredões', 'Big soft plastics': 'Vinis grandes', 'Small live fish': 'Peixe pequeno vivo', 'Herring': 'Arenque',
+  'Summer visitor to the Solent and Christchurch Bay, on mud and sand in warm, shallow water. The tail spine is venomous: unhook it in the water with long pliers and cut the line if needed.': 'Visita o Solent e a baía de Christchurch no verão, em lodo e areia, em água quente e pouco funda. O espinho da cauda é venenoso: desferra-a dentro de água com um alicate comprido e corta a linha se for preciso.',
+  'A small shark that arrives in packs in winter, mostly from boats. It has a sharp spine in front of each dorsal fin, so handle it carefully. Release recommended.': 'Um tubarão pequeno que chega em cardumes no inverno, sobretudo de barco. Tem um espinho afiado à frente de cada barbatana dorsal, por isso pega-lhe com cuidado. Recomenda-se devolver.',
+  'Wrecks and deep rough ground offshore. Heavy gear and a strong trace.': 'Naufrágios e fundos de pedra ao largo. Material pesado e estralho forte.',
+  'Like pollack but likes colder months. Wrecks and rocky marks; smaller ones come close in to harbours and piers.': 'Parecido com a juliana, mas gosta dos meses frios. Naufrágios e pesqueiros de rocha; os pequenos chegam perto dos portos e cais.',
+  'Late summer around piers and pontoons, stalking small fish. Float-fish a small live bait near the pier legs.': 'Fim do verão junto a cais e pontões, à caça de peixe pequeno. Isco vivo pequeno à boia junto aos pilares.',
+  'Winter shoals in the Solent and harbours. Small sabikis at dusk; great fresh bait for rays and cod.': 'Cardumes de inverno no Solent e nos portos. Sabikis pequenos ao anoitecer; ótimo isco fresco para raias e bacalhau.',
+  'Rock pools and harbour walls with a small hook. Spiny but harmless; great for the kids. Put it back.': 'Poças de maré e paredões com anzol pequeno. Tem espinhos mas é inofensivo; ótimo para os miúdos. Devolve-o.',
+  'Tiny hooks and a bit of ragworm at harbour walls and rock pools. The kids\' favourite. Put them back.': 'Anzóis minúsculos e um bocadinho de casulo nos paredões e poças de maré. Os preferidos dos miúdos. Devolve-os.',
+  'Deeper rocky ground, mostly in Dorset. The males are bright blue and orange. Return it.': 'Fundo de rocha mais fundo, sobretudo em Dorset. Os machos são azuis e laranja vivos. Devolve-o.',
+  'Spring is best, with a second run in autumn into November. Night on the flood, with a big bait on a pulley rig.': 'A primavera é o melhor, com uma segunda fase no outono até novembro. Noite com a maré a encher, isco grande numa montagem pulley.',
+  'Warm summer days and evenings over mud and sand on the flood. Unhook in the water; mind the tail spine.': 'Dias e fins de tarde quentes de verão sobre lodo e areia com a maré a encher. Desferra dentro de água; cuidado com o espinho da cauda.',
+  'Winter packs offshore; mackerel or squid on the bottom.': 'Cardumes de inverno ao largo; cavala ou lula no fundo.', 'Wrecks on neap tides from a boat. Big fish baits.': 'Naufrágios com marés mortas, de barco. Iscos grandes de peixe.',
+  'Dawn and dusk over rocks and wrecks. Soft plastics or feathers.': 'Amanhecer e anoitecer sobre rochas e naufrágios. Vinis ou penas.', 'Calm, clear days around high water by the pier legs. Small live bait under a float.': 'Dias calmos e limpos à volta da preia-mar junto aos pilares. Isco vivo pequeno à boia.',
+  'Dusk around high water from piers and harbour walls. Small sabikis.': 'Anoitecer à volta da preia-mar nos cais e paredões. Sabikis pequenos.', 'Any time in rock pools and by harbour walls. Small hook and ragworm.': 'A qualquer hora em poças de maré e junto aos paredões. Anzol pequeno e casulo.',
+  'Daylight at harbour walls and rock pools, tiny hooks and ragworm.': 'De dia nos paredões e poças de maré, anzóis minúsculos e casulo.', 'Daylight over deeper rocks, gentle tides.': 'De dia sobre rochas mais fundas, marés suaves.',
+  'What works for you': 'O que resulta contigo', 'After # catches of a species, the app shows the tide, light and bait that work best for you.': 'Depois de # capturas de uma espécie, a app mostra a maré, a luz e o isco que melhor resultam contigo.',
+  'in a moon period (#%)': 'num período da lua (#%)', 'After dark': 'Depois de escurecer', 'Daylight': 'De dia', 'Twilight': 'Crepúsculo',
+  'Share the app': 'Partilhar a app', '📤 Share the app': '📤 Partilhar a app', 'Send it to other anglers. It\'s free and works on any phone.': 'Envia aos outros pescadores. É grátis e funciona em qualquer telemóvel.', 'Link copied.': 'Link copiado.',
+  'Tides, moon, best fishing times and fish for the Solent, Dorset, Portugal and Madeira.': 'Marés, lua, melhores horas de pesca e peixes para o Solent, Dorset, Portugal e Madeira.',
   // places
   'Funchal (Madeira)': 'Funchal (Madeira)', 'Caniçal (Madeira)': 'Caniçal (Madeira)', 'Porto Moniz (Madeira)': 'Porto Moniz (Madeira)',
   };
@@ -2071,6 +2136,10 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     [/^Saved “(.+)”\. It's now in the Fishing at list too\.$/, (m, n) => `“${n}” guardado. Já aparece também em "A pescar em".`],
     [/^You're outside the Southern IFCA area \((.+)\)\. .*$/, (m, a) => `Estás fora da área da Southern IFCA (${a}). As regras do robalo e da juliana abaixo aplicam-se em toda a Inglaterra, mas os tamanhos mínimos podem mudar localmente. Confirma na IFCA local antes de levar peixe.`],
     [/^You're outside the UK \((.+)\), so these rules don't apply\..*$/, (m, a) => `Estás fora do Reino Unido (${a}), por isso estas regras não se aplicam. Vê as regras de pesca locais antes de levar alguma coisa.`],
+    [/^⭐ Your (\d+) catches: (.*)$/, (m, n, r) => `⭐ As tuas ${n} capturas: ${r.split(' · ').map(x => x.startsWith('on ') ? 'com ' + tr(x.slice(3)) : tr(x)).join(' · ')}`],
+    [/^(\S.*?) \((\d+)%\)$/, (m, a, n) => `${tr(a)} (${n}%)`],
+    [/^on (.+)$/, (m, a) => `com ${tr(a)}`],
+    [/^(.+) × (\d+)$/, (m, a, n) => `${tr(a)} × ${n}`],
     [/^Photo: (.*)$/s, (m, a) => `Foto: ${a.replace('Unknown author', 'Autor desconhecido')}`],
     [/^Rules checked (\d+) (\w+) (\d+)$/, (m, d, mo, y) => `Regras verificadas a ${d} ${tr(mo)} ${y}`]
   ];
@@ -2203,7 +2272,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     const sp = goodSpells(D);
     if (isToday(sel)) {
       const cur = sp.find(s => now >= s.s && now < s.e), nx = sp.find(s => s.s > now);
-      if (cur) nextTxt = `Fishing well now: <b>${cur.label}</b> until ${fmt(cur.e)}`;
+      if (cur) nextTxt = `Fishing well now: <b>${(cur.slots.find(x => Math.abs(x.t - now) <= 15 * MIN) || cur).label}</b> until ${fmt(cur.e)}`;
       else if (nx) nextTxt = `Next good spell: <b>${nx.label}</b> ${fmt(nx.s)}–${fmt(nx.e)}`;
       else nextTxt = 'Nothing good left today. Check tomorrow.';
     } else {
@@ -2373,6 +2442,11 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   $('s-all').addEventListener('click', () => { spotMode = 'all'; renderSpots(); });
   window.addEventListener('hashchange', route);
   setupLog(); applyPack();
+  $('shareapp').addEventListener('click', async () => {
+    const url = location.origin && /^https:/.test(location.origin) ? location.origin + '/' : 'https://santos-hooked-tides.ronnieandrodrigues.workers.dev/';
+    try { if (navigator.share) { await navigator.share({ title: 'Santos Hooked Tides', text: tr('Tides, moon, best fishing times and fish for the Solent, Dorset, Portugal and Madeira.'), url }); return; } } catch (err) { if (err && err.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(url); $('sharemsg').textContent = tr('Link copied.'); } catch (err) { $('sharemsg').textContent = url; }
+  });
   // make the SANTOS HOOKED title fill the width of the screen
   function fitTitle() {
     const h = document.querySelector('header.brand h1'), box = document.querySelector('header.brand'); if (!h || !box) return;
