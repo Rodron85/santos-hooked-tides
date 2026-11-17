@@ -1,0 +1,78 @@
+name: Build Android app (APK)
+
+on:
+  push:
+    paths:
+      - 'android/**'
+      - '.github/workflows/apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - id: checkout
+        uses: actions/checkout@v4
+
+      - id: java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - id: gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - id: build
+        name: Build
+        working-directory: android
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          set -o pipefail
+          {
+            echo "ANDROID_HOME=$ANDROID_HOME ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+            ls "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/platforms" || true
+            java -version 2>&1; gradle --version
+            echo "sdk.dir=${ANDROID_HOME:-$ANDROID_SDK_ROOT}" > local.properties
+            gradle assembleDebug --no-daemon --stacktrace
+          } 2>&1 | tee ../build.log
+          cp app/build/outputs/apk/debug/app-debug.apk ../SantosTides.apk
+
+      - id: artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SantosTides.apk
+          path: SantosTides.apk
+
+      - id: release
+        name: Publish for download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ github.run_number }}
+          name: Santos Tides (Android) ${{ github.run_number }}
+          make_latest: true
+          files: SantosTides.apk
+
+      # if anything fails, save the report in the "logs" branch so it can be read and fixed
+      - name: Save error report
+        if: failure()
+        env:
+          STEPS: ${{ toJSON(steps) }}
+        run: |
+          mkdir -p /tmp/rel
+          echo "$STEPS" > /tmp/rel/steps.json
+          cp build.log /tmp/rel/build.log 2>/dev/null || echo "sem build.log" > /tmp/rel/build.log
+          git config user.name "santos-ci"
+          git config user.email "santos-ci@users.noreply.github.com"
+          git checkout --orphan logs-tmp
+          git rm -rf -q . || true
+          cp /tmp/rel/* .
+          git add steps.json build.log
+          git commit -q -m "build report ${{ github.run_number }}"
+          git push -f origin HEAD:logs

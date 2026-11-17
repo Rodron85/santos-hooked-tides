@@ -1,0 +1,46 @@
+plugins {
+    id 'com.android.application'
+}
+
+// The Android app opens the web app full screen in Chrome (Trusted Web Activity),
+// so GPS, photos, sharing and downloads all work like in the browser.
+def siteHost = 'santos-hooked-tides.ronnieandrodrigues.workers.dev'
+
+android {
+    namespace 'uk.santoshooked.tides'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "uk.santoshooked.tides"
+        minSdk 21
+        targetSdk 34
+        versionCode Integer.parseInt(System.getenv("BUILD_NUMBER") ?: "1")
+        versionName "1." + (System.getenv("BUILD_NUMBER") ?: "0")
+        manifestPlaceholders = [hostName: siteHost, launchUrl: "https://" + siteHost + "/"]
+        resValue "string", "asset_statements", "[{ \\\"relation\\\": [\\\"delegate_permission/common.handle_all_urls\\\"], \\\"target\\\": { \\\"namespace\\\": \\\"web\\\", \\\"site\\\": \\\"https://" + siteHost + "\\\" } }]"
+    }
+
+    // one fixed key, so every new version installs over the previous one
+    signingConfigs {
+        santos {
+            storeFile file('santos.keystore')
+            storePassword 'santos-tides'
+            keyAlias 'santos'
+            keyPassword 'santos-tides'
+        }
+    }
+
+    buildTypes {
+        debug { signingConfig signingConfigs.santos }
+        release { minifyEnabled false; signingConfig signingConfigs.santos }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+}

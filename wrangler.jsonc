@@ -1,0 +1,12 @@
+// Santos Hooked Tides – served by the Cloudflare Worker "santos-hooked-tides"
+// Secret needed in Cloudflare (Settings → Variables and Secrets): ADMIRALTY_KEY
+{
+  "name": "santos-hooked-tides",
+  "main": "worker.js",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true }
+}

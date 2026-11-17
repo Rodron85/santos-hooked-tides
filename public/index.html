@@ -934,7 +934,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   async function loadAdmiralty(key) {
     if (!/^https?:/.test(location.protocol) || /claude\.ai|claudeusercontent/.test(location.hostname)) return;
     try {
-      const r = await fetch(`/.netlify/functions/tides?lat=${LOC.lat.toFixed(2)}&lon=${LOC.lon.toFixed(2)}`);
+      const r = await fetch(`/api/tides?lat=${LOC.lat.toFixed(2)}&lon=${LOC.lon.toFixed(2)}`);
       if (!r.ok) { const j = await r.json().catch(() => ({})); LIVE.admErr = j.error || ('HTTP ' + r.status); return; }
       const j = await r.json();
       if (j.events && j.events.length) { LIVE.adm = { key, station: j.station, events: j.events, at: Date.now() }; LIVE.admErr = ''; }
@@ -1087,7 +1087,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   async function loadWarnings() {
     const rg = warnRegion(); if (!rg || !/^https?:/.test(location.protocol) || /claude\.ai|claudeusercontent/.test(location.hostname)) { LIVE.warn = null; return; }
     const q = rg.startsWith('ipma-') ? `src=ipma&area=${rg.slice(5)}` : `region=${rg}`;
-    try { const r = await fetch(`/.netlify/functions/warnings?${q}`); if (!r.ok) return; const j = await r.json(); LIVE.warn = { region: rg, items: j.items || [], at: Date.now() }; } catch (err) {}
+    try { const r = await fetch(`/api/warnings?${q}`); if (!r.ok) return; const j = await r.json(); LIVE.warn = { region: rg, items: j.items || [], at: Date.now() }; } catch (err) {}
   }
   function renderWarnings() {
     const el = $('warnings'); if (!el) return;
