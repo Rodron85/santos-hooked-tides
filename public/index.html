@@ -568,7 +568,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 26 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 27 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -1756,7 +1756,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   // Loaded by the phone straight from Wikipedia/Wikimedia (not from our host), then kept on the phone.
   const WIKI_FIX = { 'Gaidropsarus spp.': 'Gaidropsarus vulgaris', 'Mustelus spp.': 'Mustelus asterias', 'Raja montagui / brachyura': 'Raja montagui', 'Scophthalmus maximus / rhombus': 'Scophthalmus maximus', 'Symphodus melops etc.': 'Symphodus melops', 'Chelidonichthys spp.': 'Chelidonichthys lucerna', 'Solea spp.': 'Solea solea', 'Mugilidae': 'Chelon labrosus', 'Epinephelus spp.': 'Epinephelus marginatus', 'Seriola spp.': 'Seriola dumerili', 'Muraenidae': 'Muraena helena', 'Epinephelus marginatus, Mycteroperca fusca': 'Epinephelus marginatus' };
   const wikiTitle = f => (WIKI_FIX[f.l] || f.l).replace(/ /g, '_');
-  let PHOTOS = {}; try { PHOTOS = JSON.parse(localStorage.getItem('sh-photos') || '{}'); } catch (err) {}
+  let PHOTOS = {}; try { PHOTOS = JSON.parse(localStorage.getItem('sh-photos2') || '{}'); localStorage.removeItem('sh-photos'); } catch (err) {}
   const photoBusy = {}, photoQ = []; let photoRunning = 0;
   const WM_HDR = { 'Api-User-Agent': 'SantosHookedTides/1.0 (https://santos-hooked-tides.ronnieandrodrigues.workers.dev)' };
   const stripHtml = h => { const d = document.createElement('div'); d.innerHTML = h || ''; return (d.textContent || '').replace(/\s+/g, ' ').trim(); };
@@ -1765,18 +1765,19 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     const th = s && (s.thumbnail || s.originalimage); if (!th || !th.source) return { none: true, at: Date.now() };
     const m = th.source.match(/\/commons\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^/]+)/); if (!m) return { none: true, at: Date.now() };
     const file = decodeURIComponent(m[1]);
-    const src = /\/thumb\//.test(th.source) ? th.source.replace(/\/\d+px-[^/]+$/, `/640px-${m[1]}`) : th.source;
+    // Wikimedia only serves thumbnails at standard widths (e.g. 500, 960); keep the summary's own thumbnail as a fallback
+    const src = /\/thumb\//.test(th.source) ? th.source.replace(/\/\d+px-([^/]+)$/, '/960px-$1') : th.source, src2 = th.source;
     const q = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&prop=imageinfo&iiprop=extmetadata&titles=${encodeURIComponent('File:' + file)}`, { headers: WM_HDR }).then(r => r.ok ? r.json() : null);
     const pg = q && q.query && Object.values(q.query.pages || {})[0], md = pg && pg.imageinfo && pg.imageinfo[0] && pg.imageinfo[0].extmetadata;
     const lic = md && md.LicenseShortName ? stripHtml(md.LicenseShortName.value) : '';
     if (!md || !/CC|Public domain|PD|GFDL/i.test(lic)) return { none: true, at: Date.now() };
     const artist = stripHtml(md.Artist && md.Artist.value).slice(0, 48) || 'Unknown author';
-    return { src, file, lic, artist, at: Date.now() };
+    return { src, src2, file, lic, artist, at: Date.now() };
   }
   function pumpPhotos() {
     while (photoRunning < 3 && photoQ.length) {
       const key = photoQ.shift(); photoRunning++;
-      fetchPhoto(key).then(p => { if (p) { PHOTOS[key] = p; try { localStorage.setItem('sh-photos', JSON.stringify(PHOTOS)); } catch (err) {} fillPhotos(); } })
+      fetchPhoto(key).then(p => { if (p) { PHOTOS[key] = p; try { localStorage.setItem('sh-photos2', JSON.stringify(PHOTOS)); } catch (err) {} fillPhotos(); } })
         .catch(() => {}).finally(() => { photoRunning--; delete photoBusy[key]; pumpPhotos(); });
     }
   }
@@ -1785,14 +1786,19 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     if (p && (!p.none || Date.now() - p.at < 7 * 864e5)) return; // try again a week after a miss
     if (photoBusy[key] || !navigator.onLine) return; photoBusy[key] = 1; photoQ.push(key); pumpPhotos();
   }
-  function photoHTML(f) { return `<figure class="fishpic" data-photo="${wikiTitle(f)}" hidden><img alt="${f.n}" loading="lazy" decoding="async"><figcaption></figcaption></figure>`; }
+  function photoHTML(f) { return `<figure class="fishpic" data-photo="${wikiTitle(f)}" hidden><img alt="" crossorigin="anonymous" loading="lazy" decoding="async"><figcaption></figcaption></figure>`; }
   function fillPhotos(root) {
     (root || document).querySelectorAll('figure.fishpic[data-photo]').forEach(fg => {
       const key = fg.dataset.photo, p = PHOTOS[key];
       if (!p) { wantPhoto(key); return; }
       if (p.none) { wantPhoto(key); fg.hidden = true; return; }
       const img = fg.querySelector('img');
-      if (img.getAttribute('src') !== p.src) { img.onerror = () => { fg.hidden = true; }; img.src = p.src; }
+      if (!img.dataset.set) {
+        img.dataset.set = '1';
+        img.onerror = () => { if (p.src2 && img.getAttribute('src') !== p.src2) img.src = p.src2; else fg.hidden = true; };
+        img.onload = () => { if (!img.naturalWidth) img.onerror(); };
+        img.src = p.src;
+      }
       fg.querySelector('figcaption').innerHTML = `<a href="https://commons.wikimedia.org/wiki/File:${encodeURIComponent(p.file)}" target="_blank" rel="noopener">Photo: ${p.artist.replace(/</g, '&lt;')} · ${p.lic} · Wikimedia Commons</a>`;
       fg.hidden = false;
     });
