@@ -24,7 +24,17 @@ def inat(name):
     if not b: return None
     res = json.loads(b).get('results', [])
     t = next((x for x in res if (x.get('name') or '').lower() == name.lower()), None) or next((x for x in res if (x.get('matched_term') or '').lower() == name.lower()), None)
-    ph = t and t.get('default_photo')
+    if not t: return None
+    ph = t.get('default_photo')
+    if not ph or not ph.get('license_code'):  # default photo not free to reuse: take the first free one from the species' photo set
+        time.sleep(1.2); b = get('https://api.inaturalist.org/v1/taxa/%s' % t['id'])
+        tps = json.loads(b)['results'][0].get('taxon_photos', []) if b else []
+        ph = next((x['photo'] for x in tps if x.get('photo', {}).get('license_code')), None)
+    if not ph or not ph.get('license_code'):  # last resort: a research-grade observation photo
+        time.sleep(1.2); b = get('https://api.inaturalist.org/v1/observations?quality_grade=research&photo_license=cc-by,cc-by-nc,cc-by-sa,cc-by-nc-sa,cc0&order_by=votes&per_page=5&taxon_id=%s' % t['id'])
+        obs = json.loads(b).get('results', []) if b else []
+        ph = next((p for o in obs for p in o.get('photos', []) if p.get('license_code')), None)
+        if ph and not ph.get('medium_url'): ph['medium_url'] = ph['url'].replace('/square.', '/medium.')
     if not ph or not ph.get('medium_url') or not ph.get('license_code'): return None
     return {'url': ph['medium_url'].replace('/medium.', '/large.'), 'url2': ph['medium_url'], 'credit': (ph.get('attribution') or '')[:90], 'lic': ph['license_code'].upper(), 'link': 'https://www.inaturalist.org/taxa/%s' % t['id'], 'via': 'iNaturalist'}
 
