@@ -1,8 +1,26 @@
 {
+"Alopias_vulpinus": {
+"credit": "(c) arapp5, some rights reserved (CC BY-NC)",
+"lic": "CC-BY-NC",
+"link": "https://www.inaturalist.org/taxa/93696",
+"via": "iNaturalist"
+},
 "Anguilla_anguilla": {
 "credit": "(c) Mattia, some rights reserved (CC BY-NC), uploaded by Mattia",
 "lic": "CC-BY-NC",
 "link": "https://www.inaturalist.org/taxa/94105",
+"via": "iNaturalist"
+},
+"Argyrosomus_regius": {
+"credit": "(c) jellygelletich, some rights reserved (CC BY-NC)",
+"lic": "CC-BY-NC",
+"link": "https://www.inaturalist.org/taxa/118679",
+"via": "iNaturalist"
+},
+"Atherina_presbyter": {
+"credit": "(c) Frederico Almada, some rights reserved (CC BY-NC), uploaded by Frederico Almada",
+"lic": "CC-BY-NC",
+"link": "https://www.inaturalist.org/taxa/118594",
 "via": "iNaturalist"
 },
 "Balistes_capriscus": {
@@ -59,10 +77,28 @@
 "link": "https://www.inaturalist.org/taxa/623936",
 "via": "iNaturalist"
 },
+"Clupea_harengus": {
+"credit": "(c) Joachim S. M\u00fcller, some rights reserved (CC BY-NC-SA)",
+"lic": "CC-BY-NC-SA",
+"link": "https://www.inaturalist.org/taxa/97990",
+"via": "iNaturalist"
+},
+"Conger_conger": {
+"credit": "(c) Luis P. B., some rights reserved (CC BY-NC), uploaded by Luis P. B.",
+"lic": "CC-BY-NC",
+"link": "https://www.inaturalist.org/taxa/118589",
+"via": "iNaturalist"
+},
 "Dasyatis_pastinaca": {
 "credit": "(c) Luis P. B., some rights reserved (CC BY-NC), uploaded by Luis P. B.",
 "lic": "CC-BY-NC",
 "link": "https://www.inaturalist.org/taxa/47276",
+"via": "iNaturalist"
+},
+"Dentex_dentex": {
+"credit": "(c) Hectonichus, some rights reserved (CC BY-SA)",
+"lic": "CC-BY-SA",
+"link": "https://www.inaturalist.org/taxa/118654",
 "via": "iNaturalist"
 },
 "Dicentrarchus_labrax": {
@@ -75,6 +111,12 @@
 "credit": "(c) tim h, some rights reserved (CC BY-NC), uploaded by tim h",
 "lic": "CC-BY-NC",
 "link": "https://www.inaturalist.org/taxa/49984",
+"via": "iNaturalist"
+},
+"Diplodus_puntazzo": {
+"credit": "(c) Julien Renoult, some rights reserved (CC BY), uploaded by Julien Renoult",
+"lic": "CC-BY",
+"link": "https://www.inaturalist.org/taxa/53696",
 "via": "iNaturalist"
 },
 "Diplodus_sargus": {
@@ -107,6 +149,12 @@
 "link": "https://www.inaturalist.org/taxa/63740",
 "via": "iNaturalist"
 },
+"Gaidropsarus_vulgaris": {
+"credit": "(c) Thomas Menut, some rights reserved (CC BY-NC), uploaded by Thomas Menut",
+"lic": "CC-BY-NC",
+"link": "https://www.inaturalist.org/taxa/363797",
+"via": "iNaturalist"
+},
 "Galeorhinus_galeus": {
 "credit": "(c) alexburton, some rights reserved (CC BY-NC), uploaded by alexburton",
 "lic": "CC-BY-NC",
@@ -117,6 +165,12 @@
 "credit": "(c) cescgv, some rights reserved (CC BY-NC)",
 "lic": "CC-BY-NC",
 "link": "https://www.inaturalist.org/taxa/220480",
+"via": "iNaturalist"
+},
+"Labrus_bergylta": {
+"credit": "(c) Jo\u00e3o Pedro Silva, some rights reserved (CC BY-NC)",
+"lic": "CC-BY-NC",
+"link": "https://www.inaturalist.org/taxa/103911",
 "via": "iNaturalist"
 },
 "Labrus_mixtus": {
@@ -135,6 +189,12 @@
 "credit": "(c) Dennis Rabeling, some rights reserved (CC BY-NC-ND), uploaded by Dennis Rabeling",
 "lic": "CC-BY-NC-ND",
 "link": "https://www.inaturalist.org/taxa/472137",
+"via": "iNaturalist"
+},
+"Limanda_limanda": {
+"credit": "(c) Michael Verdirame, some rights reserved (CC BY-NC), uploaded by Michael Verdirame",
+"lic": "CC-BY-NC",
+"link": "https://www.inaturalist.org/taxa/61387",
 "via": "iNaturalist"
 },
 "Lipophrys_pholis": {
@@ -161,6 +221,12 @@
 "link": "https://www.inaturalist.org/taxa/430553",
 "via": "iNaturalist"
 },
+"Microstomus_kitt": {
+"credit": "(c) Poul Erik Rasmussen, some rights reserved (CC BY-NC), uploaded by Poul Erik Rasmussen",
+"lic": "CC-BY-NC",
+"link": "https://www.inaturalist.org/taxa/481841",
+"via": "iNaturalist"
+},
 "Molva_molva": {
 "credit": "(c) Tony Gilbert, some rights reserved (CC BY-NC), uploaded by Tony Gilbert",
 "lic": "CC-BY-NC",
@@ -177,6 +243,12 @@
 "credit": "(c) whodden, some rights reserved (CC BY-NC), uploaded by whodden",
 "lic": "CC-BY-NC",
 "link": "https://www.inaturalist.org/taxa/118590",
+"via": "iNaturalist"
+},
+"Mustelus_asterias": {
+"credit": "(c) richie rocket, some rights reserved (CC BY-NC-ND)",
+"lic": "CC-BY-NC-ND",
+"link": "https://www.inaturalist.org/taxa/106253",
 "via": "iNaturalist"
 },
 "Octopus_vulgaris": {
@@ -215,6 +287,12 @@
 "link": "https://www.inaturalist.org/taxa/47523",
 "via": "iNaturalist"
 },
+"Pollachius_pollachius": {
+"credit": "(c) Xaime Beiro, some rights reserved (CC BY-NC-ND), uploaded by Xaime Beiro",
+"lic": "CC-BY-NC-ND",
+"link": "https://www.inaturalist.org/taxa/332553",
+"via": "iNaturalist"
+},
 "Pollachius_virens": {
 "credit": "(c) Tino Strauss, some rights reserved (CC BY-SA)",
 "lic": "CC-BY-SA",
@@ -251,6 +329,18 @@
 "link": "https://www.inaturalist.org/taxa/111527",
 "via": "iNaturalist"
 },
+"Raja_undulata": {
+"credit": "(c) Dennis Rabeling, some rights reserved (CC BY-NC-ND), uploaded by Dennis Rabeling",
+"lic": "CC-BY-NC-ND",
+"link": "https://www.inaturalist.org/taxa/111535",
+"via": "iNaturalist"
+},
+"Salmo_salar": {
+"credit": "(c) stproc, some rights reserved (CC BY-NC)",
+"lic": "CC-BY-NC",
+"link": "https://www.inaturalist.org/taxa/48648",
+"via": "iNaturalist"
+},
 "Salmo_trutta": {
 "credit": "(c) kirk gardner, some rights reserved (CC BY), uploaded by kirk gardner",
 "lic": "CC-BY",
@@ -273,6 +363,12 @@
 "credit": "(c) Hans Hillewaert, some rights reserved (CC BY-NC-ND)",
 "lic": "CC-BY-NC-ND",
 "link": "https://www.inaturalist.org/taxa/118678",
+"via": "iNaturalist"
+},
+"Scophthalmus_maximus": {
+"credit": "(c) Yvan, some rights reserved (CC BY-NC-SA)",
+"lic": "CC-BY-NC-SA",
+"link": "https://www.inaturalist.org/taxa/416585",
 "via": "iNaturalist"
 },
 "Scyliorhinus_canicula": {
@@ -315,6 +411,12 @@
 "credit": "(c) Marinko Babi\u0107, some rights reserved (CC BY-NC), uploaded by Marinko Babi\u0107",
 "lic": "CC-BY-NC",
 "link": "https://www.inaturalist.org/taxa/1494783",
+"via": "iNaturalist"
+},
+"Sphyraena_viridensis": {
+"credit": "(c) Bernat Garrig\u00f3s, some rights reserved (CC BY-NC), uploaded by Bernat Garrig\u00f3s",
+"lic": "CC-BY-NC",
+"link": "https://www.inaturalist.org/taxa/47260",
 "via": "iNaturalist"
 },
 "Spondyliosoma_cantharus": {
