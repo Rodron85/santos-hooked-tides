@@ -212,6 +212,10 @@ ol.steps { margin: 4px 0 0; padding-left: 20px; }
 ol.steps li { margin: 4px 0; }
 .back { font-size: .85rem; }
 .leaflet-container { font: inherit; }
+#map.mapfull { position: fixed !important; inset: 0; z-index: 2000; height: 100% !important; width: 100% !important; }
+body.noscroll { overflow: hidden; }
+.map-fs { display: flex !important; align-items: center; justify-content: center; width: 44px; height: 44px; background: #fff; color: #222 !important; cursor: pointer; }
+.map-fs svg { width: 22px; height: 22px; }
 .leaflet-popup-content a { color: #1a6f6a; }
 .scrub { margin-top: 6px; font-size: .88rem; color: var(--muted); min-height: 1.4em; }
 .scrub b { color: var(--ink); }
@@ -432,7 +436,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       <button id="s-month" aria-pressed="true">Good this month</button>
       <button id="s-all" aria-pressed="false">All spots</button>
     </div>
-    <div class="panel" style="padding:0;overflow:hidden"><div id="map" style="height:340px;background:#1f1e1d"></div><div class="note" id="mapnote" style="margin:0;padding:8px 12px">Tap a mark to see what's in season and fish there. Rust = good this month · ★ = your spots · blue = selected place.</div><div class="note" style="margin:0;padding:0 12px 10px">Gullies and sandbars: open the layers button (top right), switch to Satellite and turn on LiDAR, then zoom in on a beach. LiDAR covers England only and shows what was dry when it was flown, so the lower beach and gullies show best on open beaches.</div></div>
+    <div class="panel" style="padding:0;overflow:hidden"><div id="map" style="height:340px;background:#1f1e1d"></div><div class="note" id="mapnote" style="margin:0;padding:8px 12px">Tap a mark to see what's in season and fish there. Rust = good this month · ★ = your spots · blue = selected place.</div><div class="note" style="margin:0;padding:0 12px 10px">Gullies and sandbars: tap the full-screen button (top left) to make the map bigger, open the layers button (top right), switch to Satellite and turn on LiDAR, then zoom in on a beach. LiDAR covers England only and shows what was dry when it was flown, so the lower beach and gullies show best on open beaches.</div></div>
     <div class="panel" id="myspots"></div>
     <div class="species" id="spots"></div>
     <p class="note">Access, parking and fishing rules can change. Follow local signs, and check tide times before walking out on spits or mud.</p>
@@ -577,7 +581,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 34 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 35 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -1555,6 +1559,26 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       const heights = L.tileLayer.wms(EA, eaOpt('Lidar_Composite_Elevation_DTM_1m', 0.7));
       L.control.layers({ 'Map': osm, 'Satellite': sat }, { 'Buoys & seamarks': sea, 'Beach & seabed shape (LiDAR)': relief, 'Beach heights in colour (LiDAR)': heights }, { collapsed: true }).addTo(MAP);
       MAP.on('overlayadd', e => { if ((e.layer === relief || e.layer === heights) && MAP.getZoom() < 14) MAP.setZoom(15); });
+      // full-screen button; the phone's back button also closes it
+      const ICON_OPEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
+      const ICON_CLOSE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
+      let fsBtn = null;
+      const setFull = on => {
+        el.classList.toggle('mapfull', on); document.body.classList.toggle('noscroll', on);
+        if (fsBtn) { fsBtn.innerHTML = on ? ICON_CLOSE : ICON_OPEN; fsBtn.setAttribute('aria-label', on ? 'Close full screen' : 'Full screen map'); }
+        setTimeout(() => MAP.invalidateSize(), 60);
+      };
+      const FsCtl = L.Control.extend({ options: { position: 'topleft' }, onAdd() {
+        const b = L.DomUtil.create('a', 'leaflet-bar leaflet-control map-fs'); fsBtn = b;
+        b.href = '#'; b.setAttribute('role', 'button'); b.setAttribute('aria-label', 'Full screen map'); b.innerHTML = ICON_OPEN;
+        L.DomEvent.disableClickPropagation(b);
+        L.DomEvent.on(b, 'click', e => { L.DomEvent.preventDefault(e);
+          if (el.classList.contains('mapfull')) { if (history.state && history.state.mapfull) history.back(); else setFull(false); }
+          else { setFull(true); try { history.pushState({ mapfull: 1 }, ''); } catch (err) {} } });
+        return b; } });
+      new FsCtl().addTo(MAP);
+      window.addEventListener('popstate', () => { if (el.classList.contains('mapfull')) setFull(false); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape' && el.classList.contains('mapfull')) { if (history.state && history.state.mapfull) history.back(); else setFull(false); } });
       mapLayer = L.layerGroup().addTo(MAP);
     }
     mapLayer.clearLayers();
@@ -1985,7 +2009,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   'Waves up to # m · # s': 'Ondas até # m · # s', 'Waves up to # m': 'Ondas até # m', 'Swell # m · # s': 'Ondulação # m · # s', 'Swell # m': 'Ondulação # m', 'Swell up to # m · # s': 'Ondulação até # m · # s', 'Swell up to # m': 'Ondulação até # m',
   'Swell from': 'Ondulação de', 'Waves from': 'Ondas de',
   'Map': 'Mapa', 'Satellite': 'Satélite', 'Beach & seabed shape (LiDAR)': 'Forma da praia e do fundo (LiDAR)', 'Beach heights in colour (LiDAR)': 'Alturas da praia a cores (LiDAR)',
-  'Gullies and sandbars: open the layers button (top right), switch to Satellite and turn on LiDAR, then zoom in on a beach. LiDAR covers England only and shows what was dry when it was flown, so the lower beach and gullies show best on open beaches.': 'Valas e bancos de areia: abre o botão das camadas (canto superior direito), muda para Satélite e liga o LiDAR, depois aproxima numa praia. O LiDAR só cobre Inglaterra e mostra o que estava seco quando foi feito o voo, por isso a parte baixa da praia e as valas veem-se melhor em praias abertas.',
+  'Gullies and sandbars: tap the full-screen button (top left) to make the map bigger, open the layers button (top right), switch to Satellite and turn on LiDAR, then zoom in on a beach. LiDAR covers England only and shows what was dry when it was flown, so the lower beach and gullies show best on open beaches.': 'Valas e bancos de areia: toca no botão de ecrã inteiro (canto superior esquerdo) para aumentar o mapa, abre o botão das camadas (canto superior direito), muda para Satélite e liga o LiDAR, depois aproxima numa praia. O LiDAR só cobre Inglaterra e mostra o que estava seco quando foi feito o voo, por isso a parte baixa da praia e as valas veem-se melhor em praias abertas.',
   'Calm sea': 'Mar chão', 'Smooth sea': 'Mar encrespado', 'Slight sea': 'Mar de pequena vaga', 'Moderate sea: not for a small boat': 'Mar cavado: não é para barco pequeno', 'Rough sea: stay ashore': 'Mar grosso: fica em terra', 'Very rough sea: stay ashore': 'Mar muito grosso: fica em terra',
   'Live wind, weather and tides load when the app is online. Until then, tides are estimated from the moon.': 'O vento, o tempo e as marés ao vivo carregam quando a app tem internet. Até lá, as marés são estimadas pela lua.',
   'Couldn\'t load wind and weather. Showing the last saved data.': 'Não foi possível carregar o vento e o tempo. A mostrar os últimos dados guardados.',
