@@ -432,7 +432,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       <button id="s-month" aria-pressed="true">Good this month</button>
       <button id="s-all" aria-pressed="false">All spots</button>
     </div>
-    <div class="panel" style="padding:0;overflow:hidden"><div id="map" style="height:340px;background:#1f1e1d"></div><div class="note" id="mapnote" style="margin:0;padding:8px 12px">Tap a mark to see what's in season and fish there. Rust = good this month · ★ = your spots · blue = selected place.</div></div>
+    <div class="panel" style="padding:0;overflow:hidden"><div id="map" style="height:340px;background:#1f1e1d"></div><div class="note" id="mapnote" style="margin:0;padding:8px 12px">Tap a mark to see what's in season and fish there. Rust = good this month · ★ = your spots · blue = selected place.</div><div class="note" style="margin:0;padding:0 12px 10px">Gullies and sandbars: open the layers button (top right), switch to Satellite and turn on LiDAR, then zoom in on a beach. LiDAR covers England only and shows what was dry when it was flown, so the lower beach and gullies show best on open beaches.</div></div>
     <div class="panel" id="myspots"></div>
     <div class="species" id="spots"></div>
     <p class="note">Access, parking and fishing rules can change. Follow local signs, and check tide times before walking out on spits or mud.</p>
@@ -577,7 +577,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 33 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 34 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -1061,7 +1061,8 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       if (S.sh && S.sh[i] != null && (is < 0 || S.sh[i] > S.sh[is])) is = i; });
     if (iw < 0) return null;
     const w = seaPick(S, iw), sw = is >= 0 ? seaPick(S, is) : null;
-    return { wh: w.wh, wp: w.wp, wd: w.wd, sh: sw ? sw.sh : null, sp: sw ? sw.sp : null, sd: sw ? sw.sd : null };
+    let tsum = 0, tn = 0; if (S.sst) S.time.forEach((x, i) => { const ms = x * 1000; if (ms >= s && ms < e && S.sst[i] != null) { tsum += S.sst[i]; tn++; } });
+    return { wh: w.wh, wp: w.wp, wd: w.wd, sh: sw ? sw.sh : null, sp: sw ? sw.sp : null, sd: sw ? sw.sd : null, sst: tn ? tsum / tn : null };
   }
   // sea state from wave height (Douglas scale), with a word for a small boat
   function seaState(h) {
@@ -1545,8 +1546,15 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     if (!MAP) {
       MAP = L.map(el, { zoomControl: true, attributionControl: true }).setView([LOC.lat, LOC.lon], 10);
       const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap contributors' }).addTo(MAP);
+      const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, maxNativeZoom: 18, attribution: 'Satellite © Esri, Maxar, Earthstar Geographics' });
       const sea = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', { maxZoom: 18, attribution: 'Seamarks © OpenSeaMap' }).addTo(MAP);
-      L.control.layers(null, { 'Buoys & seamarks': sea }, { collapsed: true }).addTo(MAP);
+      // Environment Agency LiDAR (England, 1 m): shows the shape of beaches and the dry-at-low-tide seabed — gullies, sandbars, holes
+      const EA = 'https://environment.data.gov.uk/spatialdata/lidar-composite-digital-terrain-model-dtm-1m/wms';
+      const eaOpt = (layers, op) => ({ layers, format: 'image/png', transparent: true, version: '1.3.0', opacity: op, minZoom: 12, maxZoom: 19, attribution: 'LiDAR © Environment Agency (Open Government Licence)' });
+      const relief = L.tileLayer.wms(EA, eaOpt('Lidar_Composite_Hillshade_DTM_1m', 0.75));
+      const heights = L.tileLayer.wms(EA, eaOpt('Lidar_Composite_Elevation_DTM_1m', 0.7));
+      L.control.layers({ 'Map': osm, 'Satellite': sat }, { 'Buoys & seamarks': sea, 'Beach & seabed shape (LiDAR)': relief, 'Beach heights in colour (LiDAR)': heights }, { collapsed: true }).addTo(MAP);
+      MAP.on('overlayadd', e => { if ((e.layer === relief || e.layer === heights) && MAP.getZoom() < 14) MAP.setZoom(15); });
       mapLayer = L.layerGroup().addTo(MAP);
     }
     mapLayer.clearLayers();
@@ -1976,6 +1984,8 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   'Hour by hour · wind mph, gusts, rain chance, waves · rust = feeding window': 'Hora a hora · vento mph, rajadas, probabilidade de chuva, ondas · cor de ferrugem = período de alimentação', 'Hour by hour · wind mph, gusts, rain chance, waves': 'Hora a hora · vento mph, rajadas, probabilidade de chuva, ondas',
   'Waves up to # m · # s': 'Ondas até # m · # s', 'Waves up to # m': 'Ondas até # m', 'Swell # m · # s': 'Ondulação # m · # s', 'Swell # m': 'Ondulação # m', 'Swell up to # m · # s': 'Ondulação até # m · # s', 'Swell up to # m': 'Ondulação até # m',
   'Swell from': 'Ondulação de', 'Waves from': 'Ondas de',
+  'Map': 'Mapa', 'Satellite': 'Satélite', 'Beach & seabed shape (LiDAR)': 'Forma da praia e do fundo (LiDAR)', 'Beach heights in colour (LiDAR)': 'Alturas da praia a cores (LiDAR)',
+  'Gullies and sandbars: open the layers button (top right), switch to Satellite and turn on LiDAR, then zoom in on a beach. LiDAR covers England only and shows what was dry when it was flown, so the lower beach and gullies show best on open beaches.': 'Valas e bancos de areia: abre o botão das camadas (canto superior direito), muda para Satélite e liga o LiDAR, depois aproxima numa praia. O LiDAR só cobre Inglaterra e mostra o que estava seco quando foi feito o voo, por isso a parte baixa da praia e as valas veem-se melhor em praias abertas.',
   'Calm sea': 'Mar chão', 'Smooth sea': 'Mar encrespado', 'Slight sea': 'Mar de pequena vaga', 'Moderate sea: not for a small boat': 'Mar cavado: não é para barco pequeno', 'Rough sea: stay ashore': 'Mar grosso: fica em terra', 'Very rough sea: stay ashore': 'Mar muito grosso: fica em terra',
   'Live wind, weather and tides load when the app is online. Until then, tides are estimated from the moon.': 'O vento, o tempo e as marés ao vivo carregam quando a app tem internet. Até lá, as marés são estimadas pela lua.',
   'Couldn\'t load wind and weather. Showing the last saved data.': 'Não foi possível carregar o vento e o tempo. A mostrar os últimos dados guardados.',
