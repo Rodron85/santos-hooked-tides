@@ -1,7 +1,8 @@
 // Santos Hooked Tides on Cloudflare: the app files come from ./public; this script only answers
-// the live-data routes (official tides, weather warnings) and the Android app link.
+// the live-data routes (official tides, weather warnings, shipwrecks) and the Android app link.
 import tides from './lib/tides.js';
 import warnings from './lib/warnings.js';
+import wrecks from './lib/wrecks.js';
 
 const ASSETLINKS = [{
   relation: ['delegate_permission/common.handle_all_urls'],
@@ -13,6 +14,7 @@ export default {
     const url = new URL(request.url), p = url.pathname;
     if (p === '/api/tides' || p === '/.netlify/functions/tides') return tides(request, env.ADMIRALTY_KEY);
     if (p === '/api/warnings' || p === '/.netlify/functions/warnings') return warnings(request);
+    if (p === '/api/wrecks' || p === '/.netlify/functions/wrecks') return wrecks(request);
     if (p === '/.well-known/assetlinks.json') return new Response(JSON.stringify(ASSETLINKS), { headers: { 'content-type': 'application/json' } });
     return env.ASSETS.fetch(request);
   }

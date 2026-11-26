@@ -436,7 +436,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       <button id="s-month" aria-pressed="true">Good this month</button>
       <button id="s-all" aria-pressed="false">All spots</button>
     </div>
-    <div class="panel" style="padding:0;overflow:hidden"><div id="map" style="height:340px;background:#1f1e1d"></div><div class="note" id="mapnote" style="margin:0;padding:8px 12px">Tap a mark to see what's in season and fish there. Rust = good this month · ★ = your spots · blue = selected place.</div><div class="note" style="margin:0;padding:0 12px 10px">Gullies and sandbars: tap the full-screen button (top left) to make the map bigger, open the layers button (top right), switch to Satellite and turn on LiDAR, then zoom in on a beach. LiDAR covers England only and shows what was dry when it was flown, so the lower beach and gullies show best on open beaches.</div></div>
+    <div class="panel" style="padding:0;overflow:hidden"><div id="map" style="height:340px;background:#1f1e1d"></div><div class="note" id="mapnote" style="margin:0;padding:8px 12px">Tap a mark to see what's in season and fish there. Rust = good this month · ★ = your spots · blue = selected place.</div><div class="note" style="margin:0;padding:0 12px 10px">Gullies and sandbars: tap the full-screen button (top left) to make the map bigger, open the layers button (top right), switch to Satellite and turn on LiDAR, then zoom in on a beach. Turn on Shipwrecks to see known wrecks (amber rings). LiDAR covers England only and shows what was dry when it was flown, so the lower beach and gullies show best on open beaches.</div></div>
     <div class="panel" id="myspots"></div>
     <div class="species" id="spots"></div>
     <p class="note">Access, parking and fishing rules can change. Follow local signs, and check tide times before walking out on spits or mud.</p>
@@ -581,7 +581,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 35 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 36 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -1557,8 +1557,31 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       const eaOpt = (layers, op) => ({ layers, format: 'image/png', transparent: true, version: '1.3.0', opacity: op, minZoom: 12, maxZoom: 19, attribution: 'LiDAR © Environment Agency (Open Government Licence)' });
       const relief = L.tileLayer.wms(EA, eaOpt('Lidar_Composite_Hillshade_DTM_1m', 0.75));
       const heights = L.tileLayer.wms(EA, eaOpt('Lidar_Composite_Elevation_DTM_1m', 0.7));
-      L.control.layers({ 'Map': osm, 'Satellite': sat }, { 'Buoys & seamarks': sea, 'Beach & seabed shape (LiDAR)': relief, 'Beach heights in colour (LiDAR)': heights }, { collapsed: true }).addTo(MAP);
-      MAP.on('overlayadd', e => { if ((e.layer === relief || e.layer === heights) && MAP.getZoom() < 14) MAP.setZoom(15); });
+      // known shipwrecks (EMODnet: Historic England records for England), fetched for the area on screen
+      const wrecks = L.layerGroup(), wreckCache = new Map(); let wreckTimer = 0, wreckSeq = 0;
+      const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+      async function loadWrecks() {
+        if (!MAP.hasLayer(wrecks) || MAP.getZoom() < 10) { wrecks.clearLayers(); return; }
+        const b = MAP.getBounds(), r = v => v.toFixed(2);
+        const bbox = [r(b.getWest() - 0.02), r(b.getSouth() - 0.02), r(b.getEast() + 0.02), r(b.getNorth() + 0.02)].join(','), seq = ++wreckSeq;
+        let data = wreckCache.get(bbox);
+        if (!data) { try { const res = await fetch('/api/wrecks?bbox=' + bbox); data = await res.json(); if (res.ok) wreckCache.set(bbox, data); } catch (err) { data = { items: [], error: 'offline' }; } }
+        if (seq !== wreckSeq) return;
+        wrecks.clearLayers();
+        (data.items || []).forEach(w => {
+          const rows = w.info.map(([k, v]) => `<div style="font-size:12px"><span style="color:#666">${esc(k)}:</span> ${esc(v)}</div>`).join('');
+          L.circleMarker([w.lat, w.lon], { radius: 6, color: '#F2C14E', weight: 2, fillColor: '#1C1C1C', fillOpacity: 1 })
+            .bindPopup(`<div style="font-family:var(--font-body);min-width:170px"><b style="font-size:14px">${esc(w.name)}</b>${rows}<div style="color:#888;font-size:11px;margin-top:6px">Shipwreck record: Historic England via EMODnet. Positions can be approximate.</div><a href="https://www.google.com/maps?q=${w.lat},${w.lon}" target="_blank" rel="noopener" style="font-size:12px">Open in Maps</a></div>`).addTo(wrecks);
+        });
+      }
+      const wrecksSoon = () => { clearTimeout(wreckTimer); wreckTimer = setTimeout(loadWrecks, 400); };
+      MAP.on('moveend', wrecksSoon);
+      L.control.layers({ 'Map': osm, 'Satellite': sat }, { 'Buoys & seamarks': sea, 'Beach & seabed shape (LiDAR)': relief, 'Beach heights in colour (LiDAR)': heights, 'Shipwrecks': wrecks }, { collapsed: true }).addTo(MAP);
+      MAP.on('overlayadd', e => {
+        if ((e.layer === relief || e.layer === heights) && MAP.getZoom() < 14) MAP.setZoom(15);
+        if (e.layer === wrecks) { if (MAP.getZoom() < 11) MAP.setZoom(12); else loadWrecks(); }
+      });
+      MAP.on('overlayremove', e => { if (e.layer === wrecks) wrecks.clearLayers(); });
       // full-screen button; the phone's back button also closes it
       const ICON_OPEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
       const ICON_CLOSE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
@@ -2008,8 +2031,10 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   'Hour by hour · wind mph, gusts, rain chance, waves · rust = feeding window': 'Hora a hora · vento mph, rajadas, probabilidade de chuva, ondas · cor de ferrugem = período de alimentação', 'Hour by hour · wind mph, gusts, rain chance, waves': 'Hora a hora · vento mph, rajadas, probabilidade de chuva, ondas',
   'Waves up to # m · # s': 'Ondas até # m · # s', 'Waves up to # m': 'Ondas até # m', 'Swell # m · # s': 'Ondulação # m · # s', 'Swell # m': 'Ondulação # m', 'Swell up to # m · # s': 'Ondulação até # m · # s', 'Swell up to # m': 'Ondulação até # m',
   'Swell from': 'Ondulação de', 'Waves from': 'Ondas de',
+  'Shipwrecks': 'Naufrágios', 'Unnamed wreck': 'Naufrágio sem nome', 'Sank:': 'Afundou:', 'Period:': 'Período:', 'Type:': 'Tipo:', 'Least depth (m):': 'Profundidade mínima (m):', 'Max depth (m):': 'Profundidade máxima (m):', 'Depth (m):': 'Profundidade (m):', 'Protection:': 'Proteção:', 'How it sank:': 'Como afundou:', 'Position accuracy:': 'Precisão da posição:',
+  'Shipwreck record: Historic England via EMODnet. Positions can be approximate.': 'Registo de naufrágio: Historic England via EMODnet. As posições podem ser aproximadas.', 'Open in Maps': 'Abrir no Maps',
   'Map': 'Mapa', 'Satellite': 'Satélite', 'Beach & seabed shape (LiDAR)': 'Forma da praia e do fundo (LiDAR)', 'Beach heights in colour (LiDAR)': 'Alturas da praia a cores (LiDAR)',
-  'Gullies and sandbars: tap the full-screen button (top left) to make the map bigger, open the layers button (top right), switch to Satellite and turn on LiDAR, then zoom in on a beach. LiDAR covers England only and shows what was dry when it was flown, so the lower beach and gullies show best on open beaches.': 'Valas e bancos de areia: toca no botão de ecrã inteiro (canto superior esquerdo) para aumentar o mapa, abre o botão das camadas (canto superior direito), muda para Satélite e liga o LiDAR, depois aproxima numa praia. O LiDAR só cobre Inglaterra e mostra o que estava seco quando foi feito o voo, por isso a parte baixa da praia e as valas veem-se melhor em praias abertas.',
+  'Gullies and sandbars: tap the full-screen button (top left) to make the map bigger, open the layers button (top right), switch to Satellite and turn on LiDAR, then zoom in on a beach. Turn on Shipwrecks to see known wrecks (amber rings). LiDAR covers England only and shows what was dry when it was flown, so the lower beach and gullies show best on open beaches.': 'Valas e bancos de areia: toca no botão de ecrã inteiro (canto superior esquerdo) para aumentar o mapa, abre o botão das camadas (canto superior direito), muda para Satélite e liga o LiDAR, depois aproxima numa praia. Liga Naufrágios para ver os naufrágios conhecidos (círculos amarelos). O LiDAR só cobre Inglaterra e mostra o que estava seco quando foi feito o voo, por isso a parte baixa da praia e as valas veem-se melhor em praias abertas.',
   'Calm sea': 'Mar chão', 'Smooth sea': 'Mar encrespado', 'Slight sea': 'Mar de pequena vaga', 'Moderate sea: not for a small boat': 'Mar cavado: não é para barco pequeno', 'Rough sea: stay ashore': 'Mar grosso: fica em terra', 'Very rough sea: stay ashore': 'Mar muito grosso: fica em terra',
   'Live wind, weather and tides load when the app is online. Until then, tides are estimated from the moon.': 'O vento, o tempo e as marés ao vivo carregam quando a app tem internet. Até lá, as marés são estimadas pela lua.',
   'Couldn\'t load wind and weather. Showing the last saved data.': 'Não foi possível carregar o vento e o tempo. A mostrar os últimos dados guardados.',
