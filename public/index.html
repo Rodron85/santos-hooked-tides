@@ -179,6 +179,11 @@ a.btnlink { display: inline-block; text-decoration: none; color: var(--ink); bac
 .hr b { color: var(--ink); font-size: .95rem; }
 .hr .g { color: var(--muted); font-size: .7rem; }
 .hr .rp { color: #8fb0d0; font-size: .7rem; min-height: 1em; }
+.hr .wv { color: #7fc4c9; font-size: .7rem; min-height: 1em; }
+.chip svg { vertical-align: -2px; }
+.chip.sea-ok { background: #1f3a2c; color: #9fd8b3; }
+.chip.sea-warn { background: #3d3418; color: #f0d27a; }
+.chip.sea-bad { background: #3f1f1f; color: #f2a29a; }
 .hr.good { background: #3a2620; box-shadow: inset 0 -3px 0 var(--rust); }
 .hr.nowh { outline: 1.5px solid var(--ink); }
 .tdwx { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 2px 0 6px; font-size: .8rem; color: var(--muted); }
@@ -572,7 +577,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 32 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 33 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -1009,14 +1014,14 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     } catch (err) { LIVE.err = 'Couldn\'t load wind and weather. Showing the last saved data.'; }
     for (const [la, lo] of pts) {
       try {
-        const m = await getJSON(`https://marine-api.open-meteo.com/v1/marine?latitude=${la}&longitude=${lo}&hourly=sea_level_height_msl,wave_height,wave_period,wave_direction,sea_surface_temperature&timezone=GMT&timeformat=unixtime&past_days=2&forecast_days=8`);
+        const m = await getJSON(`https://marine-api.open-meteo.com/v1/marine?latitude=${la}&longitude=${lo}&hourly=sea_level_height_msl,wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_period,swell_wave_direction,sea_surface_temperature&timezone=GMT&timeformat=unixtime&past_days=2&forecast_days=8`);
         const H = m.hourly || {};
         const lv = H.sea_level_height_msl || [], ok = lv.filter(v => v != null).length;
         if (ok > 48) {
           const ex = extremesFrom(H.time, lv);
           if (ex.length > 8) { LIVE.tide = ex; LIVE.tideAt = Date.now(); LIVE.tideKey = key; }
         }
-        if ((H.wave_height || []).some(v => v != null)) LIVE.sea = { time: H.time, wh: H.wave_height, wp: H.wave_period, wd: H.wave_direction, sst: H.sea_surface_temperature };
+        if ((H.wave_height || []).some(v => v != null)) LIVE.sea = { time: H.time, wh: H.wave_height, wp: H.wave_period, wd: H.wave_direction, sh: H.swell_wave_height, sp: H.swell_wave_period, sd: H.swell_wave_direction, sst: H.sea_surface_temperature };
         if (LIVE.tide && LIVE.tideKey === key) break;
       } catch (err) { /* try next point */ }
     }
@@ -1027,7 +1032,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   }
   const COMPASS = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
   const compass = d => COMPASS[Math.round(((d % 360) + 360) % 360 / 22.5) % 16];
-  const arrow = (d, s) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" style="transform:rotate(${(d + 180) % 360}deg)" aria-label="Wind from ${compass(d)}"><path d="M12 3l5 9h-3.5v9h-3v-9H7z" fill="currentColor"/></svg>`;
+  const arrow = (d, s, what) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" style="transform:rotate(${(d + 180) % 360}deg)" aria-label="${what || 'Wind'} from ${compass(d)}"><path d="M12 3l5 9h-3.5v9h-3v-9H7z" fill="currentColor"/></svg>`;
   function wcode(c) {
     if (c == null) return '';
     if (c === 0) return 'Clear'; if (c <= 2) return 'Partly cloudy'; if (c === 3) return 'Cloudy';
@@ -1040,11 +1045,43 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     if (mph >= 10) return { t: 'Moderate: fine for most shore marks', c: 'ok' };
     return { t: 'Light: perfect for float fishing and lures', c: 'ok' };
   }
+  const seaPick = (S, i) => ({ wh: S.wh[i], wp: S.wp ? S.wp[i] : null, wd: S.wd ? S.wd[i] : null, sh: S.sh ? S.sh[i] : null, sp: S.sp ? S.sp[i] : null, sd: S.sd ? S.sd[i] : null, sst: S.sst ? S.sst[i] : null });
   function seaAt(t) {
     const S = LIVE.sea; if (!S) return null;
     let best = -1, bd = 1e15; S.time.forEach((x, i) => { const d = Math.abs(x * 1000 - t); if (d < bd) { bd = d; best = i; } });
     if (best < 0 || bd > 2 * HOUR) return null;
-    return { wh: S.wh[best], wp: S.wp[best], sst: S.sst ? S.sst[best] : null };
+    return seaPick(S, best);
+  }
+  // the roughest hour of a day (waves), plus the biggest swell of that day
+  function seaDay(s, e) {
+    const S = LIVE.sea; if (!S) return null;
+    let iw = -1, is = -1;
+    S.time.forEach((x, i) => { const ms = x * 1000; if (ms < s || ms >= e) return;
+      if (S.wh[i] != null && (iw < 0 || S.wh[i] > S.wh[iw])) iw = i;
+      if (S.sh && S.sh[i] != null && (is < 0 || S.sh[i] > S.sh[is])) is = i; });
+    if (iw < 0) return null;
+    const w = seaPick(S, iw), sw = is >= 0 ? seaPick(S, is) : null;
+    return { wh: w.wh, wp: w.wp, wd: w.wd, sh: sw ? sw.sh : null, sp: sw ? sw.sp : null, sd: sw ? sw.sd : null };
+  }
+  // sea state from wave height (Douglas scale), with a word for a small boat
+  function seaState(h) {
+    if (h == null) return null;
+    if (h < 0.1) return { t: 'Calm sea', c: 'ok' };
+    if (h < 0.5) return { t: 'Smooth sea', c: 'ok' };
+    if (h < 1.25) return { t: 'Slight sea', c: 'ok' };
+    if (h < 2.5) return { t: 'Moderate sea: not for a small boat', c: 'warn' };
+    if (h < 4) return { t: 'Rough sea: stay ashore', c: 'bad' };
+    return { t: 'Very rough sea: stay ashore', c: 'bad' };
+  }
+  function seaChips(x, upTo) {
+    if (!x || x.wh == null) return '';
+    const st = seaState(x.wh), dirChip = (lbl, d) => d == null ? '' : `<span class="chip tide">${arrow(d, 13, lbl)} <span>${lbl} from</span> <span>${compass(d)}</span></span>`;
+    let h = `<span class="chip tide">${upTo ? 'Waves up to' : 'Waves'} ${x.wh.toFixed(1)} m${x.wp ? ' · ' + Math.round(x.wp) + ' s' : ''}</span>`;
+    if (x.sh != null) h += `<span class="chip tide">${upTo ? 'Swell up to' : 'Swell'} ${x.sh.toFixed(1)} m${x.sp ? ' · ' + Math.round(x.sp) + ' s' : ''}</span>` + (x.sh >= 0.1 ? dirChip('Swell', x.sd) : '');
+    else h += dirChip('Waves', x.wd);
+    if (x.sst != null) h += `<span class="chip tide">Sea ${x.sst.toFixed(1)}°C</span>`;
+    if (st) h += `<span class="chip sea-${st.c}">${st.t}</span>`;
+    return `<div class="chips" style="margin:8px 0">${h}</div>`;
   }
   function wxHourIdx(t) {
     const W = LIVE.wx; if (!W || !W.hourly) return -1;
@@ -1065,17 +1102,17 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
         const c = W.current, sea = seaAt(Date.now()), ww = windWord(c.wind_speed_10m, c.wind_gusts_10m);
         head = `<div class="wxnow"><div class="wxdir">${arrow(c.wind_direction_10m, 40)}<span class="mono">${compass(c.wind_direction_10m)}</span></div>
           <div><div class="wxbig">${Math.round(c.wind_speed_10m)} <small>mph</small></div><div class="note" style="margin:0">Gusts ${Math.round(c.wind_gusts_10m)} mph · ${wcode(c.weather_code)} · ${Math.round(c.temperature_2m)}°C</div></div></div>
-          <div class="chips" style="margin:8px 0">${sea && sea.wh != null ? `<span class="chip tide">Waves ${sea.wh.toFixed(1)} m${sea.wp ? ' · ' + Math.round(sea.wp) + ' s' : ''}</span>` : ''}${sea && sea.sst != null ? `<span class="chip tide">Sea ${sea.sst.toFixed(1)}°C</span>` : ''}</div>
+          ${seaChips(sea, false)}
           <div class="wxmsg ${ww.c}">${ww.t}</div>${(pr => pr ? `<div class="wxmsg ${pr.cls}" style="margin-top:8px"><b>Pressure ${pr.now} hPa, ${pr.word}</b> <span class="note" style="margin:0;display:block">${pr.tip}</span></div>` : '')(pressureInfo())}${(s => { if (!s || FACE[s.n] == null) return ''; const r = windRel(FACE[s.n], c.wind_direction_10m, c.wind_speed_10m); return `<div class="wxmsg ${r.cls}" style="margin-top:8px"><b>${r.t} at ${s.n}</b> <span class="note" style="margin:0;display:block">${r.tip}</span></div>`; })(spotHere())}${(cl => cl ? `<div class="wxmsg ${cl.cls}" style="margin-top:8px"><b>Water: ${cl.label}</b> <span class="note" style="margin:0;display:block">${cl.why} (estimate)</span>${cl.tip}</div>` : '')(clarityAt(Date.now()))}`;
       }
       let strip = '';
       for (let t = D.start; t < D.end; t += HOUR) {
         const i = wxHourIdx(t); if (i < 0) continue;
         const H = W.hourly, inWin = D.wins.some(w => t + 30 * MIN >= w.s && t + 30 * MIN < w.e && (w.kind === 'major' || w.prime));
-        strip += `<div class="hr${inWin ? ' good' : ''}${isToday(sel) && now >= t && now < t + HOUR ? ' nowh' : ''}"><span class="mono">${fmt(t)}</span>${arrow(H.wind_direction_10m[i], 18)}<b>${Math.round(H.wind_speed_10m[i])}</b><span class="g">${Math.round(H.wind_gusts_10m[i])}</span><span class="rp">${H.precipitation_probability[i] == null ? '' : H.precipitation_probability[i] + '%'}</span></div>`;
+        strip += `<div class="hr${inWin ? ' good' : ''}${isToday(sel) && now >= t && now < t + HOUR ? ' nowh' : ''}"><span class="mono">${fmt(t)}</span>${arrow(H.wind_direction_10m[i], 18)}<b>${Math.round(H.wind_speed_10m[i])}</b><span class="g">${Math.round(H.wind_gusts_10m[i])}</span><span class="rp">${H.precipitation_probability[i] == null ? '' : H.precipitation_probability[i] + '%'}</span><span class="wv">${(w => w && w.wh != null ? w.wh.toFixed(1) + 'm' : '')(seaAt(t + 30 * MIN))}</span></div>`;
       }
-      if (!isToday(sel)) { const cl = clarityAt(D.start + 12 * HOUR); if (cl) head = `<div class="wxmsg ${cl.cls}"><b>Water: ${cl.label}</b> <span class="note" style="margin:0;display:block">${cl.why} (estimate)</span>${cl.tip}</div>`; }
-      el.innerHTML = `<h2>Wind &amp; sea</h2>${status}${head}${strip ? `<details class="more"${isToday(sel) ? '' : ' open'}><summary>Hour by hour · wind mph, gusts, rain chance${D.wins.length ? ' · rust = feeding window' : ''}</summary><div class="hours">${strip}</div></details>` : '<p class="note">No forecast for this day yet (forecasts go 7 days ahead).</p>'}${LIVE.err ? `<p class="note">${LIVE.err}</p>` : ''}`;
+      if (!isToday(sel)) { const cl = clarityAt(D.start + 12 * HOUR); head = seaChips(seaDay(D.start, D.end), true) + (cl ? `<div class="wxmsg ${cl.cls}"><b>Water: ${cl.label}</b> <span class="note" style="margin:0;display:block">${cl.why} (estimate)</span>${cl.tip}</div>` : ''); }
+      el.innerHTML = `<h2>Wind &amp; sea</h2>${status}${head}${strip ? `<details class="more"${isToday(sel) ? '' : ' open'}><summary>Hour by hour · wind mph, gusts, rain chance, waves${D.wins.length ? ' · rust = feeding window' : ''}</summary><div class="hours">${strip}</div></details>` : '<p class="note">No forecast for this day yet (forecasts go 7 days ahead).</p>'}${LIVE.err ? `<p class="note">${LIVE.err}</p>` : ''}`;
     }
     const b = $('refresh'); if (b) b.addEventListener('click', () => loadLive(true));
   }
@@ -1936,6 +1973,10 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   'Wind & sea': 'Vento e mar', 'Wind': 'Vento', 'Gusts # mph': 'Rajadas # mph', 'gusts #': 'rajadas #', 'Sea #°C': 'Mar #°C', 'Waves # m · # s': 'Ondas # m · # s', 'Waves # m': 'Ondas # m',
   'Clear': 'Limpo', 'Mostly clear': 'Quase limpo', 'Partly cloudy': 'Pouco nublado', 'Cloudy': 'Nublado', 'Fog': 'Nevoeiro', 'Drizzle': 'Chuvisco', 'Rain': 'Chuva', 'Showers': 'Aguaceiros', 'Snow': 'Neve', 'Snow showers': 'Aguaceiros de neve', 'Thunder': 'Trovoada', 'rain #%': 'chuva #%', 'Calm': 'Calmo',
   'Hour by hour · wind mph, gusts, rain chance · rust = feeding window': 'Hora a hora · vento mph, rajadas, probabilidade de chuva · cor de ferrugem = período de alimentação', 'Hour by hour · wind mph, gusts, rain chance': 'Hora a hora · vento mph, rajadas, probabilidade de chuva',
+  'Hour by hour · wind mph, gusts, rain chance, waves · rust = feeding window': 'Hora a hora · vento mph, rajadas, probabilidade de chuva, ondas · cor de ferrugem = período de alimentação', 'Hour by hour · wind mph, gusts, rain chance, waves': 'Hora a hora · vento mph, rajadas, probabilidade de chuva, ondas',
+  'Waves up to # m · # s': 'Ondas até # m · # s', 'Waves up to # m': 'Ondas até # m', 'Swell # m · # s': 'Ondulação # m · # s', 'Swell # m': 'Ondulação # m', 'Swell up to # m · # s': 'Ondulação até # m · # s', 'Swell up to # m': 'Ondulação até # m',
+  'Swell from': 'Ondulação de', 'Waves from': 'Ondas de',
+  'Calm sea': 'Mar chão', 'Smooth sea': 'Mar encrespado', 'Slight sea': 'Mar de pequena vaga', 'Moderate sea: not for a small boat': 'Mar cavado: não é para barco pequeno', 'Rough sea: stay ashore': 'Mar grosso: fica em terra', 'Very rough sea: stay ashore': 'Mar muito grosso: fica em terra',
   'Live wind, weather and tides load when the app is online. Until then, tides are estimated from the moon.': 'O vento, o tempo e as marés ao vivo carregam quando a app tem internet. Até lá, as marés são estimadas pela lua.',
   'Couldn\'t load wind and weather. Showing the last saved data.': 'Não foi possível carregar o vento e o tempo. A mostrar os últimos dados guardados.',
   'No forecast for this day yet (forecasts go # days ahead).': 'Ainda não há previsão para este dia (as previsões vão até # dias).',
