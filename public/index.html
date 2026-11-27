@@ -581,7 +581,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 37 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 38 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -1193,7 +1193,9 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       try {
         const r = indexedDB.open('santoshooked', 1);
         r.onupgradeneeded = () => r.result.createObjectStore('catches', { keyPath: 'id' });
-        r.onsuccess = () => { DB = r.result; res(); };
+        r.onsuccess = () => { DB = r.result; res();
+          // ask the phone to keep the log even when storage runs low (otherwise Android may clear it)
+          try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (err) {} };
         r.onerror = () => res();
       } catch (err) { res(); }
     });
@@ -1290,7 +1292,9 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     $('l-restore').addEventListener('change', e => { restoreLog(e.target.files[0]); e.target.value = ''; });
     $('l-sp').addEventListener('change', () => { const f = FISH.find(x => x.n === $('l-sp').value); $('l-hint').textContent = f ? (f.ret ? 'Must be returned.' : f.min ? `Legal minimum ${f.min}${f.rec ? ' · recommended ' + f.rec : ''}` : `No legal minimum${f.rec ? ' · recommended ' + f.rec : ''}`) : ''; });
     $('l-sp').dispatchEvent(new Event('change'));
-    openDB().then(dbAll).then(r => { CATCHES = r; renderLog(); });
+    openDB().then(dbAll).then(r => { CATCHES = r;
+      if (!DB) logMsg = 'Warning: this phone is not letting the app save catches. Anything you log now is lost when you close the app. Use Back up catches after logging.';
+      renderLog(); });
   }
 
   // ---------- spots page ----------
@@ -2066,6 +2070,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   'Depth now ≈ # m (with today\'s tide)': 'Profundidade agora ≈ # m (com a maré de hoje)', 'Dry now (with today\'s tide)': 'A seco agora (com a maré de hoje)',
   'From the shore (high-tide line): # m': 'Distância à costa (linha da maré cheia): # m', 'From the shore (high-tide line): # km': 'Distância à costa (linha da maré cheia): # km', 'Shore more than # km away': 'Costa a mais de # km',
   'Depth: EMODnet chart data on a grid of about #–# m, so small gullies don\'t show; use the LiDAR shading for those. Not for navigation.': 'Profundidade: dados de carta EMODnet numa grelha de cerca de #–# m, por isso as valas pequenas não aparecem; para isso usa o relevo do LiDAR. Não serve para navegação.',
+  'Warning: this phone is not letting the app save catches. Anything you log now is lost when you close the app. Use Back up catches after logging.': 'Atenção: este telemóvel não está a deixar a app guardar as capturas. O que registares agora perde-se quando fechares a app. Usa "Fazer cópia de segurança" depois de registar.',
   'Shipwrecks': 'Naufrágios', 'Unnamed wreck': 'Naufrágio sem nome', 'Sank:': 'Afundou:', 'Period:': 'Período:', 'Type:': 'Tipo:', 'Least depth (m):': 'Profundidade mínima (m):', 'Max depth (m):': 'Profundidade máxima (m):', 'Depth (m):': 'Profundidade (m):', 'Protection:': 'Proteção:', 'How it sank:': 'Como afundou:', 'Position accuracy:': 'Precisão da posição:',
   'Shipwreck record: Historic England via EMODnet. Positions can be approximate.': 'Registo de naufrágio: Historic England via EMODnet. As posições podem ser aproximadas.', 'Open in Maps': 'Abrir no Maps',
   'Map': 'Mapa', 'Satellite': 'Satélite', 'Beach & seabed shape (LiDAR)': 'Forma da praia e do fundo (LiDAR)', 'Beach heights in colour (LiDAR)': 'Alturas da praia a cores (LiDAR)',
