@@ -582,7 +582,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 39 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 40 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -1236,6 +1236,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   }
   async function saveCatch(e) {
     e.preventDefault();
+    keepCode(false);
     const sp = $('l-sp').value, len = parseFloat($('l-len').value), f = FISH.find(x => x.n === sp);
     const t = parseLocalInput($('l-time').value);
     const photo = await shrinkPhoto($('l-photo').files[0]);
@@ -1492,7 +1493,29 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (err) { return d; } };
   const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (err) {} };
   const SYNC = { code: lsGet('sh-sync', ''), at: +lsGet('sh-sync-at', 0) || 0, state: '', busy: false, again: false };
-  if (!SYNC_RE.test(SYNC.code)) { SYNC.code = newSyncCode(); lsSet('sh-sync', SYNC.code); }
+  // The code is also kept in the phone's Google account (Google Password Manager, the same place Chrome keeps
+  // passwords). If the phone wipes the app, or on a new phone, the code comes back from there by itself and
+  // the log comes down from the cloud: nobody has to write a code down.
+  const CRED_OK = typeof window.PasswordCredential === 'function' && !!(navigator.credentials && navigator.credentials.store);
+  const CRED_ID = 'Santos Hooked';
+  function keepCode(force) {
+    if (!CRED_OK || !SYNC.code || (!force && lsGet('sh-sync-kept', '') === SYNC.code)) return;
+    lsSet('sh-sync-kept', SYNC.code);
+    try { navigator.credentials.store(new PasswordCredential({ id: CRED_ID, password: SYNC.code, name: 'Santos Hooked: catch log backup' })).catch(() => {}); } catch (err) {}
+  }
+  SYNC.ready = (async () => {
+    if (SYNC_RE.test(SYNC.code)) return;
+    let found = '';
+    if (CRED_OK) {
+      try {
+        const c = await Promise.race([navigator.credentials.get({ password: true, mediation: 'optional' }), new Promise(r => setTimeout(() => r(null), 60000))]);
+        if (c && SYNC_RE.test(c.password || '')) found = c.password;
+      } catch (err) {}
+    }
+    if (found) { SYNC.code = found; SYNC.at = 0; lsSet('sh-sync-kept', found); SYNC.restored = true; }
+    else SYNC.code = newSyncCode();
+    lsSet('sh-sync', SYNC.code);
+  })();
   let SYNC_DEL = []; try { SYNC_DEL = JSON.parse(lsGet('sh-sync-del', '[]')); if (!Array.isArray(SYNC_DEL)) SYNC_DEL = []; } catch (err) { SYNC_DEL = []; }
   const syncDeleted = id => { if (!SYNC_DEL.includes(id)) SYNC_DEL.push(id); lsSet('sh-sync-del', JSON.stringify(SYNC_DEL)); syncSoon(); };
   async function syncPost(body) {
@@ -1505,6 +1528,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     if (SYNC.busy) { SYNC.again = true; return; }
     SYNC.busy = true; SYNC.state = 'saving'; renderSync();
     try {
+      await SYNC.ready;
       if (DB) CATCHES = await dbAll();
       // 1. send deletions, get what the cloud has
       let sum = await syncPost({ code: SYNC.code, put: [], del: SYNC_DEL });
@@ -1539,7 +1563,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       if (changedSpots) { saveMySpots(true); try { renderMySpots(); renderLocBar(); } catch (err) {} }
       if (changedLog) CATCHES = await dbAll();
       SYNC.at = Date.now(); lsSet('sh-sync-at', String(SYNC.at)); SYNC.state = 'ok';
-      if (changedLog) renderLog();
+      if (changedLog || SYNC.restored) { if (SYNC.restored && (changedLog || changedSpots)) logMsg = 'Your log came back from your online backup.'; SYNC.restored = false; renderLog(); }
     } catch (err) { SYNC.state = 'offline'; }
     SYNC.busy = false; renderSync();
     if (SYNC.again) { SYNC.again = false; syncSoon(); }
@@ -1550,17 +1574,19 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     const status = SYNC.state === 'saving' ? 'Saving online…' : SYNC.state === 'offline' ? 'No internet right now: saved on this phone, it will go online next time.' : SYNC.at ? `Last saved online: ${when}` : 'Not saved online yet.';
     el.innerHTML = `<b>☁ Online backup: on</b><div class="note" style="margin:2px 0 6px">Every catch and ★ spot is also saved online, so nothing is lost if you change phone or the app is reinstalled.</div>
       <div class="note" style="margin:0 0 6px">${status}</div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span>Your code:</span> <b class="mono" style="font-size:1.05rem;letter-spacing:.04em">${SYNC.code}</b><button type="button" id="sync-copy">Copy</button></div>
-      <div class="note" style="margin:6px 0">Write this code down or take a screenshot. On another phone, or after a reinstall, type it below to get everything back.</div>
+      ${CRED_OK ? `<div class="note" style="margin:0 0 6px">${lsGet('sh-sync-kept', '') === SYNC.code ? 'Your backup is linked to your Google account: on a new phone, or if the app is wiped, it comes back by itself. If Chrome asked to save a password for Santos Hooked, tap Save.' : 'Your backup will be linked to your Google account when you save your first catch: if Chrome asks to save a password for Santos Hooked, tap Save.'}</div>` : ''}
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span>Your code:</span> <b class="mono" style="font-size:1.05rem;letter-spacing:.04em">${SYNC.code || '…'}</b><button type="button" id="sync-copy">Copy</button>${CRED_OK ? '<button type="button" id="sync-keep">Save to Google</button>' : ''}</div>
+      <div class="note" style="margin:6px 0">${CRED_OK ? 'Spare copy: on a phone without your Google account, type the code below.' : 'This browser can\'t keep the code in your Google account: take a screenshot of the code. On another phone, or after a reinstall, type it below to get everything back.'}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="sync-in" placeholder="SH-XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false" style="flex:1 1 170px;min-width:0"><button type="button" id="sync-use">Get my log back</button></div>
       <div class="note" id="sync-msg" style="margin:6px 0 0"></div>`;
     $('sync-copy').addEventListener('click', async () => { try { await navigator.clipboard.writeText(SYNC.code); $('sync-msg').textContent = 'Code copied.'; } catch (err) { $('sync-msg').textContent = 'Couldn\'t copy: write it down.'; } });
+    if ($('sync-keep')) $('sync-keep').addEventListener('click', () => { keepCode(true); $('sync-msg').textContent = 'If Chrome asks to save the password, tap Save.'; });
     $('sync-use').addEventListener('click', () => {
       const c = $('sync-in').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/^SH/, '');
       const code = c.length === 12 ? `SH-${c.slice(0, 4)}-${c.slice(4, 8)}-${c.slice(8)}` : '';
       if (!SYNC_RE.test(code)) { $('sync-msg').textContent = 'That code doesn\'t look right. It looks like SH-ABCD-EFGH-JK2M.'; return; }
       if (code === SYNC.code) { $('sync-msg').textContent = 'That\'s already this phone\'s code.'; return; }
-      SYNC.code = code; lsSet('sh-sync', code); SYNC.at = 0; logMsg = 'Code changed: bringing back your log and spots, and adding this phone\'s too.'; renderLog(); syncNow();
+      SYNC.code = code; lsSet('sh-sync', code); SYNC.at = 0; keepCode(true); logMsg = 'Code changed: bringing back your log and spots, and adding this phone\'s too.'; renderLog(); syncNow();
     });
   }
 
@@ -2160,6 +2186,11 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   '☁ Online backup: on': '☁ Cópia online: ligada', 'Every catch and ★ spot is also saved online, so nothing is lost if you change phone or the app is reinstalled.': 'Cada captura e cada ★ local também fica guardado online, por isso não perdes nada se mudares de telemóvel ou reinstalares a app.',
   'Saving online…': 'A guardar online…', 'No internet right now: saved on this phone, it will go online next time.': 'Sem internet agora: ficou guardado no telemóvel e vai para online da próxima vez.', 'Last saved online: #:# #/#': 'Guardado online pela última vez: #:# #/#', 'Not saved online yet.': 'Ainda não foi guardado online.',
   'Your code:': 'O teu código:', 'Copy': 'Copiar', 'Write this code down or take a screenshot. On another phone, or after a reinstall, type it below to get everything back.': 'Aponta este código ou tira um print. Noutro telemóvel, ou depois de reinstalar, escreve-o aqui em baixo para recuperar tudo.',
+  'Your backup is linked to your Google account: on a new phone, or if the app is wiped, it comes back by itself. If Chrome asked to save a password for Santos Hooked, tap Save.': 'A tua cópia está ligada à tua conta Google: num telemóvel novo, ou se a app for apagada, volta sozinha. Se o Chrome perguntou se queres guardar a palavra-passe do Santos Hooked, toca em Guardar.',
+  'Your backup will be linked to your Google account when you save your first catch: if Chrome asks to save a password for Santos Hooked, tap Save.': 'A tua cópia fica ligada à tua conta Google quando guardares a primeira captura: se o Chrome perguntar se queres guardar a palavra-passe do Santos Hooked, toca em Guardar.',
+  'Save to Google': 'Guardar no Google', 'Spare copy: on a phone without your Google account, type the code below.': 'Para emergências: num telemóvel sem a tua conta Google, escreve o código aqui em baixo.',
+  'This browser can\'t keep the code in your Google account: take a screenshot of the code. On another phone, or after a reinstall, type it below to get everything back.': 'Este navegador não consegue guardar o código na tua conta Google: tira um print ao código. Noutro telemóvel, ou depois de reinstalar, escreve-o aqui em baixo para recuperar tudo.',
+  'If Chrome asks to save the password, tap Save.': 'Se o Chrome perguntar se queres guardar a palavra-passe, toca em Guardar.', 'Your log came back from your online backup.': 'O teu registo voltou da cópia online.',
   'Get my log back': 'Recuperar o meu registo', 'Code copied.': 'Código copiado.', 'Couldn\'t copy: write it down.': 'Não deu para copiar: aponta-o.', 'That code doesn\'t look right. It looks like SH-ABCD-EFGH-JK#M.': 'Esse código não parece certo. É do género SH-ABCD-EFGH-JK#M.',
   'That\'s already this phone\'s code.': 'Esse já é o código deste telemóvel.', 'Code changed: bringing back your log and spots, and adding this phone\'s too.': 'Código mudado: a recuperar o teu registo e locais, e a juntar também os deste telemóvel.',
   'Catches are saved on this phone and online with your code. A backup file is an extra copy you can keep in Google Drive or your email.': 'As capturas ficam guardadas no telemóvel e online com o teu código. O ficheiro de cópia é uma cópia extra que podes guardar no Google Drive ou no email.',
