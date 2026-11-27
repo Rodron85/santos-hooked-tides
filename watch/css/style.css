@@ -1,0 +1,46 @@
+/* Santos Tides on the watch: same colours as the phone app, laid out for a 360 × 360 round screen */
+:root { --sea: #161616; --card: #252321; --line: #34312d; --ink: #EDE8DF; --muted: #A8A29A; --rust: #C4552B; --moon: #EDE8DF; --tide: #7FA9A3; --dusk: #D98A4E; --bad: #D9634B; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; width: 100%; height: 100%; background: #000; color: var(--ink); font-family: "Samsung One", "SamsungOneUI", Roboto, sans-serif; font-size: 18px; overflow: hidden; user-select: none; }
+#screen { position: absolute; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; overflow: hidden; border-radius: 50%; background: var(--sea); }
+.scroll { position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow-y: auto; overflow-x: hidden; padding: 62px 46px 90px; scroll-behavior: smooth; }
+.scroll::-webkit-scrollbar { display: none; }
+h1 { font-size: 15px; letter-spacing: .12em; text-transform: uppercase; color: var(--rust); text-align: center; margin: 0 0 8px; font-weight: 700; }
+.sub { text-align: center; color: var(--muted); font-size: 14px; margin: -4px 0 10px; }
+.big { font-size: 40px; font-weight: 700; text-align: center; line-height: 1.05; }
+.mid { font-size: 22px; font-weight: 600; text-align: center; }
+.c { text-align: center; }
+.mut { color: var(--muted); font-size: 14px; }
+.stars { color: var(--rust); letter-spacing: 3px; font-size: 22px; text-align: center; }
+.box { background: var(--card); border-radius: 14px; padding: 9px 12px; margin: 8px 0; border-left: 3px solid var(--line); }
+.box.prime { border-left-color: var(--rust); }
+.box.tide { border-left-color: var(--tide); }
+.box.bad { border-left-color: var(--bad); }
+.box.warn { border-left-color: var(--dusk); }
+.box b { font-weight: 700; }
+.lbl { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-top: 10px; }
+.row2 { display: flex; justify-content: space-between; gap: 8px; }
+.chip { display: inline-block; background: #2e2b28; border-radius: 10px; padding: 2px 8px; margin: 2px 2px 0 0; font-size: 14px; }
+.chip.r { background: #4a2a1f; }
+.moonrow { display: flex; justify-content: center; margin: 4px 0; }
+svg { vertical-align: middle; }
+
+/* lists: the bezel moves the orange ring, a tap chooses */
+.item { background: var(--card); border-radius: 16px; padding: 11px 14px; margin: 7px 0; border: 2px solid transparent; transition: transform .12s, border-color .12s; }
+.item .t { font-size: 19px; font-weight: 600; }
+.item .s { font-size: 14px; color: var(--muted); margin-top: 2px; }
+.item.on { border-color: var(--rust); transform: scale(1.04); background: #2c2420; }
+.item.go { background: var(--rust); color: #fff; text-align: center; }
+.item.go .s { color: #fbe3d8; }
+
+/* number / letter picker: turn the bezel, tap the middle */
+.pick { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px; }
+.pick .v { font-size: 64px; font-weight: 700; line-height: 1; margin: 6px 0; }
+.pick .u { color: var(--muted); font-size: 18px; }
+.pick .hint { color: var(--muted); font-size: 13px; margin-top: 14px; max-width: 220px; }
+.pick .ok { margin-top: 14px; background: var(--rust); color: #fff; border-radius: 30px; padding: 10px 28px; font-size: 18px; font-weight: 700; }
+.pick .skip { margin-top: 10px; color: var(--muted); font-size: 15px; padding: 6px 16px; }
+.code { font-family: monospace; font-size: 22px; letter-spacing: 1px; }
+.code i { font-style: normal; color: var(--rust); text-decoration: underline; }
+
+#toast { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); max-width: 250px; background: #2c2420; border: 1px solid var(--rust); color: var(--ink); padding: 8px 14px; border-radius: 16px; font-size: 14px; text-align: center; z-index: 9; }

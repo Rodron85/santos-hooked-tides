@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Santos Tides for Samsung Galaxy Watch (Tizen). Separate app: it doesn't change the phone app. -->
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="http://santoshooked.uk/watch" version="1.0.0" viewmodes="maximized">
+    <tizen:application id="SHTides001.SantosTides" package="SHTides001" required_version="4.0"/>
+    <content src="index.html"/>
+    <icon src="icon.png"/>
+    <name>Santos Tides</name>
+    <tizen:profile name="wearable"/>
+    <feature name="http://tizen.org/feature/screen.shape.circle"/>
+    <access origin="*" subdomains="true"/>
+    <tizen:privilege name="http://tizen.org/privilege/internet"/>
+    <tizen:privilege name="http://tizen.org/privilege/location"/>
+    <tizen:privilege name="http://tizen.org/privilege/alarm"/>
+    <tizen:privilege name="http://tizen.org/privilege/notification"/>
+    <tizen:privilege name="http://tizen.org/privilege/application.launch"/>
+    <tizen:setting background-support="disable" encryption="disable" hwkey-event="enable"/>
+    <!-- the watch's own alarms open the app with this to post a notification (best times, full and new moon) -->
+    <tizen:app-control>
+        <tizen:src name="index.html"/>
+        <tizen:operation name="http://santoshooked.uk/appcontrol/operation/alert"/>
+    </tizen:app-control>
+</widget>
