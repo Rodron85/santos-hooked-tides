@@ -466,7 +466,8 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
         <div class="field"><label for="l-notes">Notes</label><textarea id="l-notes" placeholder="Who caught it, the rig, anything worth remembering"></textarea></div>
         <div class="chips"><button type="submit" class="primary">Save catch</button><button type="button" id="l-export">Export CSV</button></div>
         <div class="chips"><button type="button" id="l-backup">Back up catches</button><label class="btnlike" for="l-restore">Restore backup</label><input type="file" id="l-restore" accept="application/json,.json" style="display:none"></div>
-        <p class="note" style="margin:0">Catches are saved on this phone only. Back up now and then, and keep the file in Google Drive or your email.</p>
+        <div id="syncbox" class="wxmsg" style="margin:10px 0 0"></div>
+        <p class="note" style="margin:8px 0 0">Catches are saved on this phone and online with your code. A backup file is an extra copy you can keep in Google Drive or your email.</p>
       </form>
       <div class="okmsg" id="logmsg" style="display:none;margin-top:10px"></div>
     </div>
@@ -581,7 +582,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     </div>
     <div class="panel">
       <h2>About</h2>
-      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 38 (auto-updates from GitHub).</p>
+      <p class="note" style="margin-top:0">Weather warnings: Met Office (UK) and IPMA (Portugal and Madeira). Wind, weather, pressure, waves and tides away from official stations: Open-Meteo, for wherever you choose or your phone's location, refreshed every 20 minutes while the app is open. Solent tides: tuned to Southampton tables. Water clarity: an estimate from recent waves, rain and tides. Moon, sun and feeding times: worked out on your phone. Rules checked 7 November 2026. Contains ADMIRALTY® tidal data: © Crown Copyright and database right. Made for Santos Hooked. App version 39 (auto-updates from GitHub).</p>
     </div>
   </section>
 </div>
@@ -919,7 +920,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   // ---------- my own spots (saved on this phone) ----------
   let MYSPOTS = [];
   try { MYSPOTS = JSON.parse(localStorage.getItem('sh-myspots') || '[]'); if (!Array.isArray(MYSPOTS)) MYSPOTS = []; } catch (err) { MYSPOTS = []; }
-  function saveMySpots() { try { localStorage.setItem('sh-myspots', JSON.stringify(MYSPOTS)); } catch (err) {} }
+  function saveMySpots(fromSync) { try { localStorage.setItem('sh-myspots', JSON.stringify(MYSPOTS)); } catch (err) {} if (!fromSync && typeof syncSoon === 'function') syncSoon(); }
   function getPos() {
     return new Promise((res, rej) => {
       if (!navigator.geolocation) return rej(new Error('nogeo'));
@@ -1246,7 +1247,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     if (f && f.ret) o.kept = 'Released';
     await dbPut(o);
     $('logform').reset(); $('l-time').value = localInputValue(Date.now());
-    CATCHES = await dbAll(); renderLog();
+    CATCHES = await dbAll(); renderLog(); syncSoon();
   }
   function renderLog() {
     if (!$('loglist')) return;
@@ -1267,7 +1268,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     $('loglist').querySelectorAll('.share').forEach(b => b.addEventListener('click', () => { const c = CATCHES.find(x => x.id === b.dataset.id); if (c) shareCatch(c); }));
     $('loglist').querySelectorAll('.del').forEach(b => b.addEventListener('click', async () => {
       if (delArm !== b.dataset.id) { delArm = b.dataset.id; renderLog(); return; }
-      delArm = null; await dbDel(b.dataset.id); CATCHES = await dbAll(); logMsg = 'Catch deleted.'; renderLog();
+      delArm = null; await dbDel(b.dataset.id); syncDeleted(b.dataset.id); CATCHES = await dbAll(); logMsg = 'Catch deleted.'; renderLog();
     }));
   }
   function exportCSV() {
@@ -1294,7 +1295,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
     $('l-sp').dispatchEvent(new Event('change'));
     openDB().then(dbAll).then(r => { CATCHES = r;
       if (!DB) logMsg = 'Warning: this phone is not letting the app save catches. Anything you log now is lost when you close the app. Use Back up catches after logging.';
-      renderLog(); });
+      renderLog(); renderSync(); syncNow(); });
   }
 
   // ---------- spots page ----------
@@ -1325,7 +1326,7 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       saveMySpots(); mySpotDraft = null; mySpotMsg = `Saved “${n}”. It's now in the Fishing at list too.`; renderMySpots(); renderLocBar();
     });
     el.querySelectorAll('.ms-fish').forEach(b => b.addEventListener('click', () => { const s = MYSPOTS[+b.dataset.i]; setLoc({ mode: 'my', lat: s.lat, lon: s.lon, name: s.n }); location.hash = 'today'; }));
-    el.querySelectorAll('.ms-del').forEach(b => b.addEventListener('click', () => { const s = MYSPOTS[+b.dataset.i]; if (mySpotDel !== s.id) { mySpotDel = s.id; renderMySpots(); return; } MYSPOTS.splice(+b.dataset.i, 1); mySpotDel = null; saveMySpots(); mySpotMsg = 'Spot deleted.'; renderMySpots(); renderLocBar(); }));
+    el.querySelectorAll('.ms-del').forEach(b => b.addEventListener('click', () => { const s = MYSPOTS[+b.dataset.i]; if (mySpotDel !== s.id) { mySpotDel = s.id; renderMySpots(); return; } MYSPOTS.splice(+b.dataset.i, 1); mySpotDel = null; syncDeleted(s.id); saveMySpots(); mySpotMsg = 'Spot deleted.'; renderMySpots(); renderLocBar(); }));
   }
   function renderSpots() {
     renderMySpots(); renderMap();
@@ -1473,9 +1474,94 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
       for (const c of list) { if (c && c.id && c.sp && c.t && !have.has(c.id)) { await dbPut(c); added++; } }
       let sp = 0; if (Array.isArray(j.myspots)) j.myspots.forEach(s => { if (s && s.id && typeof s.lat === 'number' && !MYSPOTS.some(m => m.id === s.id)) { MYSPOTS.push(s); sp++; } });
       if (sp) { saveMySpots(); renderSpots(); renderLocBar(); }
-      CATCHES = await dbAll(); logMsg = (sp ? `Restored ${sp} saved spot${sp === 1 ? '' : 's'}. ` : '') + (added ? `Restored ${added} catch${added === 1 ? '' : 'es'} from the backup.` : 'No new catches in that backup.');
+      CATCHES = await dbAll(); syncSoon(); logMsg = (sp ? `Restored ${sp} saved spot${sp === 1 ? '' : 's'}. ` : '') + (added ? `Restored ${added} catch${added === 1 ? '' : 'es'} from the backup.` : 'No new catches in that backup.');
     } catch (err) { logMsg = 'That file isn\'t a Santos Hooked backup.'; }
     renderLog();
+  }
+
+  // ---------- online copy of the log and My spots (Cloudflare) ----------
+  // Every catch and ★ spot is also kept online under this phone's backup code, so a new phone, a reinstall
+  // or the phone clearing the app's storage can't lose them. Entering the code on another phone brings it all back.
+  const SYNC_URL = /workers\.dev$|^localhost$|^127\./.test(location.hostname) ? '/api/sync' : 'https://santos-hooked-tides.ronnieandrodrigues.workers.dev/api/sync';
+  const SYNC_RE = /^SH-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/;
+  function newSyncCode() {
+    const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', b = new Uint8Array(12); crypto.getRandomValues(b);
+    const c = [...b].map(x => A[x % A.length]).join('');
+    return `SH-${c.slice(0, 4)}-${c.slice(4, 8)}-${c.slice(8)}`;
+  }
+  const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (err) { return d; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (err) {} };
+  const SYNC = { code: lsGet('sh-sync', ''), at: +lsGet('sh-sync-at', 0) || 0, state: '', busy: false, again: false };
+  if (!SYNC_RE.test(SYNC.code)) { SYNC.code = newSyncCode(); lsSet('sh-sync', SYNC.code); }
+  let SYNC_DEL = []; try { SYNC_DEL = JSON.parse(lsGet('sh-sync-del', '[]')); if (!Array.isArray(SYNC_DEL)) SYNC_DEL = []; } catch (err) { SYNC_DEL = []; }
+  const syncDeleted = id => { if (!SYNC_DEL.includes(id)) SYNC_DEL.push(id); lsSet('sh-sync-del', JSON.stringify(SYNC_DEL)); syncSoon(); };
+  async function syncPost(body) {
+    const r = await fetch(SYNC_URL, { method: 'POST', headers: { 'content-type': 'text/plain' }, body: JSON.stringify(body) });
+    const j = await r.json(); if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status); return j;
+  }
+  let syncTimer = 0;
+  function syncSoon() { clearTimeout(syncTimer); syncTimer = setTimeout(syncNow, 800); }
+  async function syncNow() {
+    if (SYNC.busy) { SYNC.again = true; return; }
+    SYNC.busy = true; SYNC.state = 'saving'; renderSync();
+    try {
+      if (DB) CATCHES = await dbAll();
+      // 1. send deletions, get what the cloud has
+      let sum = await syncPost({ code: SYNC.code, put: [], del: SYNC_DEL });
+      SYNC_DEL = []; lsSet('sh-sync-del', '[]');
+      const gone = new Set(sum.deleted);
+      // 2. upload what only this phone has, in parcels of about 1.5 MB
+      const cloudIds = new Set(sum.ids.concat(sum.spotIds));
+      const up = CATCHES.filter(c => !cloudIds.has(c.id) && !gone.has(c.id)).map(item => ({ k: 'c', item }))
+        .concat(MYSPOTS.filter(m => m && m.id && !cloudIds.has(m.id) && !gone.has(m.id)).map(item => ({ k: 'p', item })));
+      let parcel = [], size = 0;
+      for (const x of up) {
+        const n = JSON.stringify(x).length;
+        if (parcel.length && size + n > 1500000) { sum = await syncPost({ code: SYNC.code, put: parcel }); parcel = []; size = 0; }
+        parcel.push(x); size += n;
+      }
+      if (parcel.length) sum = await syncPost({ code: SYNC.code, put: parcel });
+      // 3. bring down what only the cloud has
+      const haveC = new Set(CATCHES.map(c => c.id)), haveP = new Set(MYSPOTS.map(m => m.id));
+      const need = sum.ids.filter(id => !haveC.has(id)).concat(sum.spotIds.filter(id => !haveP.has(id)));
+      let changedSpots = false, changedLog = false;
+      for (let i = 0; i < need.length; i += 25) {
+        const r = await fetch(`${SYNC_URL}?code=${encodeURIComponent(SYNC.code)}&ids=${need.slice(i, i + 25).join(',')}`);
+        const j = await r.json(); if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
+        for (const { k, item } of j.items) {
+          if (k === 'c' && item && item.id && !haveC.has(item.id)) { await dbPut(item); haveC.add(item.id); changedLog = true; }
+          if (k === 'p' && item && item.id && !haveP.has(item.id)) { MYSPOTS.push(item); haveP.add(item.id); changedSpots = true; }
+        }
+      }
+      // 4. remove here what was deleted on another phone
+      for (const id of sum.deleted) { if (haveC.has(id)) { await dbDel(id); changedLog = true; } }
+      const before = MYSPOTS.length; MYSPOTS = MYSPOTS.filter(m => !gone.has(m.id) && !sum.deleted.includes(m.id)); if (MYSPOTS.length !== before) changedSpots = true;
+      if (changedSpots) { saveMySpots(true); try { renderMySpots(); renderLocBar(); } catch (err) {} }
+      if (changedLog) CATCHES = await dbAll();
+      SYNC.at = Date.now(); lsSet('sh-sync-at', String(SYNC.at)); SYNC.state = 'ok';
+      if (changedLog) renderLog();
+    } catch (err) { SYNC.state = 'offline'; }
+    SYNC.busy = false; renderSync();
+    if (SYNC.again) { SYNC.again = false; syncSoon(); }
+  }
+  function renderSync() {
+    const el = $('syncbox'); if (!el) return;
+    const p = SYNC.at ? ukParts(SYNC.at) : null, when = p ? `${pad(p.hh)}:${pad(p.mm)} ${p.d}/${p.m + 1}` : '';
+    const status = SYNC.state === 'saving' ? 'Saving online…' : SYNC.state === 'offline' ? 'No internet right now: saved on this phone, it will go online next time.' : SYNC.at ? `Last saved online: ${when}` : 'Not saved online yet.';
+    el.innerHTML = `<b>☁ Online backup: on</b><div class="note" style="margin:2px 0 6px">Every catch and ★ spot is also saved online, so nothing is lost if you change phone or the app is reinstalled.</div>
+      <div class="note" style="margin:0 0 6px">${status}</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span>Your code:</span> <b class="mono" style="font-size:1.05rem;letter-spacing:.04em">${SYNC.code}</b><button type="button" id="sync-copy">Copy</button></div>
+      <div class="note" style="margin:6px 0">Write this code down or take a screenshot. On another phone, or after a reinstall, type it below to get everything back.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="sync-in" placeholder="SH-XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false" style="flex:1 1 170px;min-width:0"><button type="button" id="sync-use">Get my log back</button></div>
+      <div class="note" id="sync-msg" style="margin:6px 0 0"></div>`;
+    $('sync-copy').addEventListener('click', async () => { try { await navigator.clipboard.writeText(SYNC.code); $('sync-msg').textContent = 'Code copied.'; } catch (err) { $('sync-msg').textContent = 'Couldn\'t copy: write it down.'; } });
+    $('sync-use').addEventListener('click', () => {
+      const c = $('sync-in').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/^SH/, '');
+      const code = c.length === 12 ? `SH-${c.slice(0, 4)}-${c.slice(4, 8)}-${c.slice(8)}` : '';
+      if (!SYNC_RE.test(code)) { $('sync-msg').textContent = 'That code doesn\'t look right. It looks like SH-ABCD-EFGH-JK2M.'; return; }
+      if (code === SYNC.code) { $('sync-msg').textContent = 'That\'s already this phone\'s code.'; return; }
+      SYNC.code = code; lsSet('sh-sync', code); SYNC.at = 0; logMsg = 'Code changed: bringing back your log and spots, and adding this phone\'s too.'; renderLog(); syncNow();
+    });
   }
 
   // ---------- share a catch as a branded picture ----------
@@ -2071,6 +2157,12 @@ details.more > summary { cursor: pointer; font-family: var(--font-label); font-s
   'From the shore (high-tide line): # m': 'Distância à costa (linha da maré cheia): # m', 'From the shore (high-tide line): # km': 'Distância à costa (linha da maré cheia): # km', 'Shore more than # km away': 'Costa a mais de # km',
   'Depth: EMODnet chart data on a grid of about #–# m, so small gullies don\'t show; use the LiDAR shading for those. Not for navigation.': 'Profundidade: dados de carta EMODnet numa grelha de cerca de #–# m, por isso as valas pequenas não aparecem; para isso usa o relevo do LiDAR. Não serve para navegação.',
   'Warning: this phone is not letting the app save catches. Anything you log now is lost when you close the app. Use Back up catches after logging.': 'Atenção: este telemóvel não está a deixar a app guardar as capturas. O que registares agora perde-se quando fechares a app. Usa "Fazer cópia de segurança" depois de registar.',
+  '☁ Online backup: on': '☁ Cópia online: ligada', 'Every catch and ★ spot is also saved online, so nothing is lost if you change phone or the app is reinstalled.': 'Cada captura e cada ★ local também fica guardado online, por isso não perdes nada se mudares de telemóvel ou reinstalares a app.',
+  'Saving online…': 'A guardar online…', 'No internet right now: saved on this phone, it will go online next time.': 'Sem internet agora: ficou guardado no telemóvel e vai para online da próxima vez.', 'Last saved online: #:# #/#': 'Guardado online pela última vez: #:# #/#', 'Not saved online yet.': 'Ainda não foi guardado online.',
+  'Your code:': 'O teu código:', 'Copy': 'Copiar', 'Write this code down or take a screenshot. On another phone, or after a reinstall, type it below to get everything back.': 'Aponta este código ou tira um print. Noutro telemóvel, ou depois de reinstalar, escreve-o aqui em baixo para recuperar tudo.',
+  'Get my log back': 'Recuperar o meu registo', 'Code copied.': 'Código copiado.', 'Couldn\'t copy: write it down.': 'Não deu para copiar: aponta-o.', 'That code doesn\'t look right. It looks like SH-ABCD-EFGH-JK#M.': 'Esse código não parece certo. É do género SH-ABCD-EFGH-JK#M.',
+  'That\'s already this phone\'s code.': 'Esse já é o código deste telemóvel.', 'Code changed: bringing back your log and spots, and adding this phone\'s too.': 'Código mudado: a recuperar o teu registo e locais, e a juntar também os deste telemóvel.',
+  'Catches are saved on this phone and online with your code. A backup file is an extra copy you can keep in Google Drive or your email.': 'As capturas ficam guardadas no telemóvel e online com o teu código. O ficheiro de cópia é uma cópia extra que podes guardar no Google Drive ou no email.',
   'Shipwrecks': 'Naufrágios', 'Unnamed wreck': 'Naufrágio sem nome', 'Sank:': 'Afundou:', 'Period:': 'Período:', 'Type:': 'Tipo:', 'Least depth (m):': 'Profundidade mínima (m):', 'Max depth (m):': 'Profundidade máxima (m):', 'Depth (m):': 'Profundidade (m):', 'Protection:': 'Proteção:', 'How it sank:': 'Como afundou:', 'Position accuracy:': 'Precisão da posição:',
   'Shipwreck record: Historic England via EMODnet. Positions can be approximate.': 'Registo de naufrágio: Historic England via EMODnet. As posições podem ser aproximadas.', 'Open in Maps': 'Abrir no Maps',
   'Map': 'Mapa', 'Satellite': 'Satélite', 'Beach & seabed shape (LiDAR)': 'Forma da praia e do fundo (LiDAR)', 'Beach heights in colour (LiDAR)': 'Alturas da praia a cores (LiDAR)',

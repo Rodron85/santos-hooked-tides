@@ -8,5 +8,8 @@
     "directory": "./public",
     "binding": "ASSETS"
   },
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  // online copy of the catch log and My spots (lib/sync.js); SQLite Durable Objects work on the free plan
+  "durable_objects": { "bindings": [{ "name": "VAULT", "class_name": "LogVault" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["LogVault"] }]
 }

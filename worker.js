@@ -4,6 +4,9 @@ import tides from './lib/tides.js';
 import warnings from './lib/warnings.js';
 import wrecks from './lib/wrecks.js';
 import point from './lib/point.js';
+import sync, { LogVault } from './lib/sync.js';
+
+export { LogVault };
 
 const ASSETLINKS = [{
   relation: ['delegate_permission/common.handle_all_urls'],
@@ -17,6 +20,7 @@ export default {
     if (p === '/api/warnings' || p === '/.netlify/functions/warnings') return warnings(request);
     if (p === '/api/wrecks' || p === '/.netlify/functions/wrecks') return wrecks(request);
     if (p === '/api/point' || p === '/.netlify/functions/point') return point(request);
+    if (p === '/api/sync') return sync(request, env);
     if (p === '/.well-known/assetlinks.json') return new Response(JSON.stringify(ASSETLINKS), { headers: { 'content-type': 'application/json' } });
     return env.ASSETS.fetch(request);
   }
